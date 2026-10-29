@@ -1,0 +1,191 @@
+<div class="min-h-screen flex flex-col justify-center py-12 sm:px-6 lg:px-8 bg-background">
+  <div class="sm:mx-auto sm:w-full sm:max-w-md flex flex-col items-center">
+    <app-logo size="lg" class="mb-6"></app-logo>
+  </div>
+
+  <div class="mt-2 sm:mx-auto sm:w-full sm:max-w-lg">
+    <!-- Estado de Carga -->
+    <app-card *ngIf="loading()">
+      <app-card-content className="py-12 flex flex-col items-center justify-center space-y-4">
+        <div class="w-8 h-8 border-4 border-brand border-t-transparent rounded-full animate-spin"></div>
+        <p class="text-sm text-muted-foreground font-medium">Verificando invitación...</p>
+      </app-card-content>
+    </app-card>
+
+    <!-- Error crítico al obtener la invitación -->
+    <app-card *ngIf="!loading() && errorMessage() && !invitation()">
+      <app-card-header>
+        <app-card-title>Invitación no disponible</app-card-title>
+        <app-card-description>No fue posible cargar la información del enlace recibido.</app-card-description>
+      </app-card-header>
+      <app-card-content class="space-y-4">
+        <app-form-alert type="error">
+          {{ errorMessage() }}
+        </app-form-alert>
+      </app-card-content>
+      <app-card-footer class="flex justify-end gap-3">
+        <app-button variant="outline" routerLink="/panel">Ir al Panel</app-button>
+        <app-button variant="default" routerLink="/iniciar-sesion">Iniciar Sesión</app-button>
+      </app-card-footer>
+    </app-card>
+
+    <!-- Tarjeta Principal de Invitación -->
+    <app-card *ngIf="!loading() && invitation()">
+      <app-card-header [border]="true">
+        <div class="flex items-center justify-between w-full">
+          <span class="text-xs font-semibold tracking-wider uppercase text-muted-foreground">Invitación a Organización</span>
+          <app-badge [variant]="statusBadgeVariant()" [hasDot]="true">
+            {{ statusLabel() }}
+          </app-badge>
+        </div>
+        <app-card-title className="text-xl sm:text-2xl mt-1 text-foreground">
+          {{ invitation()?.organizationName || 'Organización en Dokqet' }}
+        </app-card-title>
+        <app-card-description>
+          Has recibido una invitación para integrarte a este equipo de trabajo legal.
+        </app-card-description>
+      </app-card-header>
+
+      <app-card-content className="space-y-5 pt-5">
+        <!-- Notificaciones de Éxito o Error -->
+        <app-form-alert *ngIf="successMessage()" type="success">
+          {{ successMessage() }}
+        </app-form-alert>
+
+        <app-form-alert *ngIf="errorMessage()" type="error">
+          {{ errorMessage() }}
+        </app-form-alert>
+
+        <!-- Resumen de la Invitación -->
+        <div class="rounded-lg border border-border bg-muted/40 p-4 space-y-3">
+          <div class="flex justify-between items-center text-sm">
+            <span class="text-muted-foreground">Rol asignado:</span>
+            <span class="font-semibold text-foreground">
+              {{ invitation()?.role === 'ADMIN' ? 'Administrador' : 'Abogado' }}
+            </span>
+          </div>
+
+          <div class="flex justify-between items-center text-sm" *ngIf="invitation()?.invitedByName">
+            <span class="text-muted-foreground">Invitado por:</span>
+            <span class="font-medium text-foreground">{{ invitation()?.invitedByName }}</span>
+          </div>
+
+          <div class="flex justify-between items-center text-sm">
+            <span class="text-muted-foreground">Correo destinatario:</span>
+            <span class="font-medium text-foreground font-mono text-xs sm:text-sm">{{ invitation()?.email }}</span>
+          </div>
+
+          <div class="flex justify-between items-center text-sm" *ngIf="invitation()?.expiresAt">
+            <span class="text-muted-foreground">Vence:</span>
+            <span class="text-xs text-muted-foreground">{{ invitation()?.expiresAt | date:'medium' }}</span>
+          </div>
+        </div>
+
+        <!-- Casos según el estado de la invitación -->
+        <!-- 1. YA ACEPTADA -->
+        <div *ngIf="invitation()?.status === 'ACCEPTED'" class="space-y-4">
+          <app-form-alert type="success">
+            Esta invitación ya fue aceptada. Puedes acceder directamente a la organización desde tu panel de trabajo.
+          </app-form-alert>
+          <div class="flex justify-end">
+            <app-button variant="default" routerLink="/panel">Ir al Panel de Procesos</app-button>
+          </div>
+        </div>
+
+        <!-- 2. EXPIRADA -->
+        <div *ngIf="invitation()?.status === 'EXPIRED'" class="space-y-4">
+          <app-form-alert type="warning">
+            El enlace de esta invitación ha expirado. Por favor solicita al administrador que te reenvíe una nueva invitación.
+          </app-form-alert>
+          <div class="flex justify-end">
+            <app-button variant="outline" routerLink="/iniciar-sesion">Ir al Inicio</app-button>
+          </div>
+        </div>
+
+        <!-- 3. CANCELADA O RECHAZADA -->
+        <div *ngIf="invitation()?.status === 'CANCELED' || invitation()?.status === 'REJECTED'" class="space-y-4">
+          <app-form-alert type="error">
+            Esta invitación {{ invitation()?.status === 'CANCELED' ? 'fue cancelada por el administrador' : 'fue rechazada' }}.
+          </app-form-alert>
+          <div class="flex justify-end">
+            <app-button variant="outline" routerLink="/iniciar-sesion">Ir al Inicio</app-button>
+          </div>
+        </div>
+
+        <!-- 4. PENDIENTE -->
+        <div *ngIf="invitation()?.status === 'PENDING'" class="space-y-4">
+          <!-- 4.A NO AUTENTICADO -->
+          <div *ngIf="!isAuthenticated()" class="space-y-4">
+            <app-form-alert type="info">
+              Esta invitación fue emitida para <strong>{{ invitation()?.email }}</strong>. Para aceptarla, ingresa con tu cuenta o regístrate si aún no tienes una.
+            </app-form-alert>
+
+            <div class="flex flex-col sm:flex-row gap-3 pt-2">
+              <a
+                [routerLink]="['/iniciar-sesion']"
+                [queryParams]="{ returnUrl: '/invitacion/' + token(), email: invitation()?.email }"
+                class="flex-1 inline-flex items-center justify-center rounded-lg bg-primary text-primary-foreground font-medium py-2.5 px-4 shadow-sm hover:bg-primary/90 text-sm transition-colors text-center"
+              >
+                Iniciar sesión
+              </a>
+              <a
+                [routerLink]="['/registro']"
+                [queryParams]="{ returnUrl: '/invitacion/' + token(), email: invitation()?.email }"
+                class="flex-1 inline-flex items-center justify-center rounded-lg border border-border bg-background hover:bg-muted font-medium py-2.5 px-4 shadow-xs text-sm text-foreground transition-colors text-center"
+              >
+                Crear cuenta
+              </a>
+            </div>
+          </div>
+
+          <!-- 4.B AUTENTICADO CON OTRO CORREO -->
+          <div *ngIf="isAuthenticated() && isDifferentUser()" class="space-y-4">
+            <app-form-alert type="warning">
+              <div class="space-y-1">
+                <p>Has iniciado sesión como <strong>{{ currentUser()?.email }}</strong>.</p>
+                <p>Sin embargo, esta invitación es exclusiva para <strong>{{ invitation()?.email }}</strong>.</p>
+              </div>
+            </app-form-alert>
+
+            <div class="pt-2">
+              <app-button
+                variant="outline"
+                className="w-full text-destructive hover:text-destructive"
+                (buttonClick)="logoutAndSwitchAccount()"
+              >
+                Cerrar sesión e ingresar con {{ invitation()?.email }}
+              </app-button>
+            </div>
+          </div>
+
+          <!-- 4.C AUTENTICADO CON EL CORREO CORRECTO -->
+          <div *ngIf="isAuthenticated() && isCorrectUser()" class="space-y-4">
+            <app-form-alert type="info">
+              Has iniciado sesión como <strong>{{ currentUser()?.email }}</strong>. Al unirte podrás gestionar procesos y colaborar según los permisos de tu rol.
+            </app-form-alert>
+
+            <div class="flex flex-col sm:flex-row justify-end gap-3 pt-2">
+              <app-button
+                variant="ghost"
+                [disabled]="processing()"
+                (buttonClick)="onReject()"
+                className="text-muted-foreground hover:text-destructive"
+              >
+                Rechazar
+              </app-button>
+
+              <app-button
+                variant="default"
+                [loading]="processing()"
+                [disabled]="processing()"
+                (buttonClick)="onAccept()"
+              >
+                Aceptar Invitación y Unirme
+              </app-button>
+            </div>
+          </div>
+        </div>
+      </app-card-content>
+    </app-card>
+  </div>
+</div>

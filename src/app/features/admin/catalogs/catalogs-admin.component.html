@@ -1,0 +1,971 @@
+<div class="space-y-6">
+  <!-- Breadcrumbs -->
+  <app-breadcrumbs
+    [items]="[
+      { label: 'Panel', url: '/panel' },
+      { label: 'Administración de Catálogos Maestros' }
+    ]"
+  ></app-breadcrumbs>
+
+  <!-- Header Banner -->
+  <div class="relative overflow-hidden rounded-2xl border border-border bg-card p-6 shadow-sm">
+    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div class="space-y-1">
+        <div class="flex items-center gap-2">
+          <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
+            Gestión Centralizada de Tablas Maestras
+          </h1>
+          @if (authService.isSuperAdmin()) {
+            <app-badge variant="default" className="bg-primary/90 text-primary-foreground">
+              SuperAdmin (HU-13)
+            </app-badge>
+          } @else {
+            <app-badge variant="outline" className="border-border text-muted-foreground">
+              Modo Consulta
+            </app-badge>
+          }
+        </div>
+        <p class="text-xs sm:text-sm text-muted-foreground">
+          Parametrización dinámica de tipos de documento, división política DANE, partes procesales y demás catálogos del sistema.
+        </p>
+      </div>
+
+      @if (authService.isSuperAdmin()) {
+        <div class="flex items-center gap-2">
+          <app-button (buttonClick)="openCreateModal()" size="sm">
+            <svg class="size-4 shrink-0 -ml-0.5 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
+            </svg>
+            <span>Nuevo {{ activeDefinition().singular }}</span>
+          </app-button>
+        </div>
+      }
+    </div>
+  </div>
+
+  @if (!authService.isSuperAdmin()) {
+    <app-form-alert type="info">
+      Estás visualizando los registros maestros activos disponibles en los formularios de la plataforma. La creación, edición o inactivación lógica dinámica requiere permisos de Super Administrador.
+    </app-form-alert>
+  }
+
+  <!-- Messages -->
+  @if (successMessage()) {
+    <app-form-alert type="success">{{ successMessage() }}</app-form-alert>
+  }
+  @if (errorMessage()) {
+    <app-form-alert type="error">{{ errorMessage() }}</app-form-alert>
+  }
+
+  <!-- Master-Detail Layout -->
+  <div class="flex flex-col lg:flex-row gap-5 items-start">
+    
+    <!-- LEFT NAVIGATION: Desktop Master Catalog Explorer -->
+    <aside class="hidden lg:flex w-64 xl:w-72 shrink-0 flex-col rounded-2xl border border-border bg-card shadow-xs overflow-hidden lg:sticky lg:top-20 max-h-[calc(100vh-6rem)]">
+      <!-- Explorer Header -->
+      <div class="p-4 border-b border-border/80 bg-muted/20 space-y-3">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <div class="flex size-7 items-center justify-center rounded-lg bg-brand/10 text-brand">
+              <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+              </svg>
+            </div>
+            <h2 class="text-sm font-bold text-foreground">Tablas Maestras</h2>
+          </div>
+          <span class="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[11px] font-semibold text-muted-foreground font-mono">
+            {{ filteredCatalogList().length }} / {{ catalogDefinitions.length }}
+          </span>
+        </div>
+
+        <!-- Live Search for Catalogs -->
+        <div class="relative">
+          <input
+            type="text"
+            [ngModel]="catalogSearchQuery()"
+            (ngModelChange)="catalogSearchQuery.set($event)"
+            placeholder="Buscar tabla o temática..."
+            class="h-9 w-full rounded-xl border border-input bg-background pl-8 pr-8 text-xs shadow-xs outline-none focus:border-brand focus:ring-2 focus:ring-brand/20 text-foreground transition-all"
+          />
+          <svg class="absolute left-2.5 top-2.5 size-4 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          @if (catalogSearchQuery()) {
+            <button
+              type="button"
+              (click)="clearCatalogSearch()"
+              aria-label="Limpiar búsqueda de catálogos"
+              class="absolute right-2.5 top-2.5 text-muted-foreground hover:text-foreground">
+              <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          }
+        </div>
+
+        <!-- Domain category pills -->
+        <div class="flex items-center gap-1 overflow-x-auto pb-1 text-[11px] no-scrollbar">
+          @for (cat of categories; track cat.key) {
+            <button
+              type="button"
+              (click)="setCategory(cat.key)"
+              [class.bg-brand]="selectedCategory() === cat.key"
+              [class.text-white]="selectedCategory() === cat.key"
+              [class.font-semibold]="selectedCategory() === cat.key"
+              [class.shadow-xs]="selectedCategory() === cat.key"
+              [class.bg-muted]="selectedCategory() !== cat.key"
+              [class.text-muted-foreground]="selectedCategory() !== cat.key"
+              [class.hover:text-foreground]="selectedCategory() !== cat.key"
+              class="shrink-0 rounded-lg px-2.5 py-1 transition-all cursor-pointer">
+              {{ cat.shortName }} ({{ categoryCounts()[cat.key] }})
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- Catalog List Items -->
+      <div class="flex-1 overflow-y-auto p-2 space-y-1 divide-y divide-border/20">
+        @if (filteredCatalogList().length === 0) {
+          <div class="py-8 px-4 text-center space-y-2">
+            <p class="text-xs text-muted-foreground">No hay tablas maestras que coincidan con "{{ catalogSearchQuery() }}".</p>
+            <button
+              type="button"
+              (click)="clearCatalogSearch(); setCategory('all')"
+              class="text-xs font-semibold text-brand hover:underline">
+              Restablecer filtros
+            </button>
+          </div>
+        } @else {
+          @for (cat of filteredCatalogList(); track cat.key) {
+            <button
+              type="button"
+              (click)="selectCatalog(cat.key)"
+              [class]="'group relative flex w-full items-start gap-2.5 rounded-xl p-2.5 text-left transition-all cursor-pointer ' +
+                (activeCatalogKey() === cat.key
+                  ? 'bg-brand/5 dark:bg-brand/10 border border-brand/40 shadow-xs before:absolute before:left-0 before:top-2 before:bottom-2 before:w-1.5 before:rounded-r-full before:bg-brand'
+                  : 'border border-transparent hover:bg-muted/60 text-muted-foreground hover:text-foreground')">
+              
+              <!-- Icon Container -->
+              <div [class]="'flex size-8 shrink-0 items-center justify-center rounded-lg transition-colors ' +
+                (activeCatalogKey() === cat.key 
+                  ? 'bg-brand text-white shadow-xs' 
+                  : 'bg-muted text-foreground group-hover:bg-brand/10 group-hover:text-brand')">
+                @switch (cat.icon) {
+                  @case ('id') {
+                    <svg class="size-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <rect x="3" y="4" width="18" height="16" rx="2" stroke-width="1.8" />
+                      <circle cx="9" cy="10" r="2" stroke-width="1.8" />
+                      <path stroke-linecap="round" stroke-width="1.8" d="M15 8h2m-2 4h2M7 16h10" />
+                    </svg>
+                  }
+                  @case ('user') {
+                    <svg class="size-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                  }
+                  @case ('briefcase') {
+                    <svg class="size-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <rect x="2" y="7" width="20" height="14" rx="2" stroke-width="1.8" />
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16" />
+                    </svg>
+                  }
+                  @case ('users') {
+                    <svg class="size-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                  }
+                  @case ('globe') {
+                    <svg class="size-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <circle cx="12" cy="12" r="9" stroke-width="1.8" />
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3.6 9h16.8M3.6 15h16.8M12 3a15 15 0 014 9 15 15 0 01-4 9 15 15 0 01-4-9 15 15 0 014-9z" />
+                    </svg>
+                  }
+                  @case ('map') {
+                    <svg class="size-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                      <line x1="8" y1="2" x2="8" y2="18" stroke-width="1.8" />
+                      <line x1="16" y1="6" x2="16" y2="22" stroke-width="1.8" />
+                    </svg>
+                  }
+                  @case ('building') {
+                    <svg class="size-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0H5m14 0h2M5 21H3m6-14h2m-2 4h2m-2 4h2m4-8h2m-2 4h2m-2 4h2" />
+                    </svg>
+                  }
+                  @case ('scale') {
+                    <svg class="size-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3-1m0 0l3 1m-3-1v14m3-14l3-1m0 0l-3 9a5.002 5.002 0 006.001 0M15 7l3-1" />
+                    </svg>
+                  }
+                  @case ('slash') {
+                    <svg class="size-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <circle cx="12" cy="12" r="9" stroke-width="1.8" />
+                      <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" stroke-width="1.8" />
+                    </svg>
+                  }
+                  @default {
+                    <svg class="size-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  }
+                }
+              </div>
+
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center justify-between gap-1">
+                  <span [class]="'text-xs font-semibold truncate ' + (activeCatalogKey() === cat.key ? 'text-brand' : 'text-foreground')">
+                    {{ cat.title }}
+                  </span>
+                  <span class="shrink-0 text-[10px] font-medium rounded px-1.5 py-0.2 border text-muted-foreground bg-muted/40 border-border/60">
+                    {{ cat.badge }}
+                  </span>
+                </div>
+                <p class="mt-0.5 text-[11px] text-muted-foreground line-clamp-1 leading-snug">
+                  {{ cat.description }}
+                </p>
+              </div>
+            </button>
+          }
+        }
+      </div>
+    </aside>
+
+    <!-- RIGHT DETAIL & DATA PANEL -->
+    <div class="flex-1 min-w-0 space-y-4">
+
+      <!-- Mobile Selector Trigger (Visible only on mobile/tablet) -->
+      <div class="lg:hidden rounded-2xl border border-border bg-card p-3 shadow-xs space-y-3">
+        <button
+          type="button"
+          (click)="toggleMobileSelector()"
+          class="flex w-full items-center justify-between gap-3 text-left">
+          <div class="flex items-center gap-2.5 min-w-0">
+            <div class="flex size-9 shrink-0 items-center justify-center rounded-xl bg-brand/10 text-brand font-bold">
+              @switch (activeDefinition().icon) {
+                @case ('id') {
+                  <svg class="size-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <rect x="3" y="4" width="18" height="16" rx="2" stroke-width="1.8" />
+                    <circle cx="9" cy="10" r="2" stroke-width="1.8" />
+                    <path stroke-linecap="round" stroke-width="1.8" d="M15 8h2m-2 4h2M7 16h10" />
+                  </svg>
+                }
+                @case ('user') {
+                  <svg class="size-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                }
+                @case ('briefcase') {
+                  <svg class="size-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <rect x="2" y="7" width="20" height="14" rx="2" stroke-width="1.8" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16" />
+                  </svg>
+                }
+                @case ('users') {
+                  <svg class="size-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
+                }
+                @case ('globe') {
+                  <svg class="size-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <circle cx="12" cy="12" r="9" stroke-width="1.8" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3.6 9h16.8M3.6 15h16.8M12 3a15 15 0 014 9 15 15 0 01-4 9 15 15 0 01-4-9 15 15 0 014-9z" />
+                  </svg>
+                }
+                @case ('map') {
+                  <svg class="size-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                    <line x1="8" y1="2" x2="8" y2="18" stroke-width="1.8" />
+                    <line x1="16" y1="6" x2="16" y2="22" stroke-width="1.8" />
+                  </svg>
+                }
+                @case ('building') {
+                  <svg class="size-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0H5m14 0h2M5 21H3m6-14h2m-2 4h2m-2 4h2m4-8h2m-2 4h2m-2 4h2" />
+                  </svg>
+                }
+                @case ('scale') {
+                  <svg class="size-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3-1m0 0l3 1m-3-1v14m3-14l3-1m0 0l-3 9a5.002 5.002 0 006.001 0M15 7l3-1" />
+                  </svg>
+                }
+                @case ('slash') {
+                  <svg class="size-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <circle cx="12" cy="12" r="9" stroke-width="1.8" />
+                    <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" stroke-width="1.8" />
+                  </svg>
+                }
+                @default {
+                  <svg class="size-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                }
+              }
+            </div>
+            <div class="min-w-0">
+              <span class="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                {{ activeDefinition().categoryLabel }}
+              </span>
+              <h2 class="text-sm font-bold text-foreground truncate">
+                {{ activeDefinition().title }}
+              </h2>
+            </div>
+          </div>
+          
+          <div class="flex shrink-0 items-center gap-1.5 rounded-lg border border-border bg-muted/60 px-2.5 py-1 text-xs font-semibold text-foreground">
+            <span>{{ mobileSelectorOpen() ? 'Cerrar' : 'Cambiar tabla' }}</span>
+            <svg [class]="'size-3.5 transition-transform duration-200 ' + (mobileSelectorOpen() ? 'rotate-180' : '')" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
+        </button>
+
+        <!-- Expanded Mobile Picker -->
+        @if (mobileSelectorOpen()) {
+          <div class="pt-3 border-t border-border space-y-3">
+            <div class="relative">
+              <input
+                type="text"
+                [ngModel]="catalogSearchQuery()"
+                (ngModelChange)="catalogSearchQuery.set($event)"
+                placeholder="Filtrar tablas maestras..."
+                class="h-9 w-full rounded-xl border border-input bg-background pl-8 pr-3 text-xs text-foreground outline-none focus:border-brand focus:ring-2 focus:ring-brand/20"
+              />
+              <svg class="absolute left-2.5 top-2.5 size-4 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+
+            <div class="flex items-center gap-1.5 overflow-x-auto pb-1 text-[11px] no-scrollbar">
+              @for (cat of categories; track cat.key) {
+                <button
+                  type="button"
+                  (click)="setCategory(cat.key)"
+                  [class.bg-brand]="selectedCategory() === cat.key"
+                  [class.text-white]="selectedCategory() === cat.key"
+                  [class.bg-muted]="selectedCategory() !== cat.key"
+                  [class.text-muted-foreground]="selectedCategory() !== cat.key"
+                  class="shrink-0 rounded-lg px-2.5 py-1 font-medium transition-colors">
+                  {{ cat.shortName }} ({{ categoryCounts()[cat.key] }})
+                </button>
+              }
+            </div>
+
+            <div class="max-h-64 overflow-y-auto space-y-1 divide-y divide-border/20">
+              @for (cat of filteredCatalogList(); track cat.key) {
+                <button
+                  type="button"
+                  (click)="selectCatalogAndCloseMobile(cat.key)"
+                  [class]="'flex w-full items-center justify-between p-2.5 rounded-xl text-left transition-colors ' +
+                    (activeCatalogKey() === cat.key ? 'bg-brand/10 text-brand font-semibold' : 'text-foreground hover:bg-muted/60')">
+                  <div class="flex items-center gap-2.5 min-w-0">
+                    <span class="text-xs truncate font-medium">{{ cat.title }}</span>
+                  </div>
+                  <span class="text-[10px] text-muted-foreground border border-border/60 rounded px-1.5 py-0.5 shrink-0 bg-muted/40">
+                    {{ cat.badge }}
+                  </span>
+                </button>
+              }
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- Main Card with Table -->
+      <app-card>
+        <app-card-header>
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div class="space-y-1">
+              <div class="flex items-center gap-2">
+                <span class="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  {{ activeDefinition().categoryLabel }}
+                </span>
+                <span class="text-muted-foreground/40 text-xs">/</span>
+                <span class="rounded bg-muted px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground border border-border/60">
+                  {{ activeDefinition().badge }}
+                </span>
+              </div>
+              <div class="flex items-center gap-2">
+                <app-card-title>{{ activeDefinition().title }}</app-card-title>
+                <span class="rounded-full bg-muted px-2 py-0.5 text-xs font-mono font-medium text-muted-foreground">
+                  {{ filteredItems().length }}
+                </span>
+              </div>
+              <app-card-description>{{ activeDefinition().description }}</app-card-description>
+            </div>
+
+            <!-- Search Filter inside Table Records -->
+            <div class="flex items-center gap-2">
+              <div class="relative w-full sm:w-64">
+                <input
+                  type="text"
+                  [ngModel]="searchQuery()"
+                  (ngModelChange)="searchQuery.set($event)"
+                  placeholder="Buscar por código o nombre..."
+                  class="h-9 w-full rounded-xl border border-input bg-background pl-8 pr-3 text-xs shadow-xs outline-none focus:border-brand focus:ring-2 focus:ring-brand/20 text-foreground transition-all"
+                />
+                <svg class="absolute left-2.5 top-2.5 size-4 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+            </div>
+          </div>
+        </app-card-header>
+
+    <app-card-content>
+      @if (loading()) {
+        <div class="py-12 flex flex-col items-center justify-center gap-2 text-muted-foreground text-xs">
+          <div class="size-6 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
+          <span>Consultando catálogo maestro en tiempo real...</span>
+        </div>
+      } @else if (filteredItems().length === 0) {
+        <app-empty-state
+          title="No se encontraron registros"
+          description="No hay elementos que coincidan con la búsqueda en este catálogo."
+        ></app-empty-state>
+      } @else {
+        <!-- Mobile Card List View (Cero scroll horizontal en smartphones y pantallas pequeñas) -->
+        <div class="md:hidden space-y-3">
+          @for (item of filteredItems(); track item.id) {
+            <div class="rounded-xl border border-border bg-card p-3.5 shadow-2xs space-y-3 transition-colors hover:border-brand/40">
+              <!-- Card Header: Code, Order & Status -->
+              <div class="flex items-start justify-between gap-2">
+                <div class="space-y-1 min-w-0">
+                  <div class="flex items-center gap-2">
+                    <span class="rounded bg-muted px-2 py-0.5 font-mono text-xs font-semibold text-foreground border border-border/60">
+                      {{ item.code }}
+                    </span>
+                    <span class="text-[11px] font-mono text-muted-foreground">
+                      Orden #{{ item.displayOrder }}
+                    </span>
+                  </div>
+                  <h3 class="text-sm font-semibold text-foreground leading-snug">
+                    {{ item.name }}
+                  </h3>
+                </div>
+
+                <app-badge [variant]="item.isActive ? 'success' : 'destructive'" className="shrink-0">
+                  {{ item.isActive ? 'Activo' : 'Inactivo' }}
+                </app-badge>
+              </div>
+
+              <!-- Descripción si existe -->
+              @if (item.description) {
+                <p class="text-xs text-muted-foreground line-clamp-2">
+                  {{ item.description }}
+                </p>
+              }
+
+              <!-- Atributos específicos en rejilla limpia de 2 columnas -->
+              <div class="rounded-lg bg-muted/40 border border-border/60 p-2.5 text-xs grid grid-cols-2 gap-2">
+                @if (activeCatalogKey() === 'document-types') {
+                  <div>
+                    <span class="text-[10px] uppercase tracking-wider text-muted-foreground block font-medium">Código DIAN</span>
+                    <span class="font-mono font-medium text-foreground">{{ item.dianCode || '—' }}</span>
+                  </div>
+                  <div>
+                    <span class="text-[10px] uppercase tracking-wider text-muted-foreground block font-medium">Aplica a</span>
+                    <span class="font-medium text-foreground">{{ item.applicablePersonType || 'BOTH' }}</span>
+                  </div>
+                }
+                @if (activeCatalogKey() === 'countries') {
+                  <div>
+                    <span class="text-[10px] uppercase tracking-wider text-muted-foreground block font-medium">ISO Alpha-3</span>
+                    <span class="font-mono font-medium text-foreground">{{ item.isoAlpha3 || '—' }}</span>
+                  </div>
+                  <div>
+                    <span class="text-[10px] uppercase tracking-wider text-muted-foreground block font-medium">Indicativo</span>
+                    <span class="font-mono font-medium text-foreground">{{ item.phoneCode || '—' }}</span>
+                  </div>
+                }
+                @if (activeCatalogKey() === 'departments') {
+                  <div>
+                    <span class="text-[10px] uppercase tracking-wider text-muted-foreground block font-medium">País</span>
+                    <span class="font-medium text-foreground">{{ item.countryCode || 'CO' }}</span>
+                  </div>
+                }
+                @if (activeCatalogKey() === 'cities') {
+                  <div class="col-span-2">
+                    <span class="text-[10px] uppercase tracking-wider text-muted-foreground block font-medium">Departamento</span>
+                    <span class="font-medium text-foreground">{{ item.departmentName || item.departmentCode || '—' }}</span>
+                  </div>
+                }
+                @if (activeCatalogKey() === 'person-types') {
+                  <div>
+                    <span class="text-[10px] uppercase tracking-wider text-muted-foreground block font-medium">Exige NIT</span>
+                    <span class="font-medium text-foreground">{{ item.requiresNit ? 'Sí' : 'No' }}</span>
+                  </div>
+                  <div>
+                    <span class="text-[10px] uppercase tracking-wider text-muted-foreground block font-medium">Razón Social</span>
+                    <span class="font-medium text-foreground">{{ item.requiresLegalName ? 'Sí' : 'No' }}</span>
+                  </div>
+                }
+                @if (activeCatalogKey() === 'party-categories') {
+                  <div class="col-span-2">
+                    <span class="text-[10px] uppercase tracking-wider text-muted-foreground block font-medium">Seleccionable en representación</span>
+                    <span class="font-medium text-foreground">{{ item.selectableAsRepresented ? 'Sí, seleccionable' : 'No' }}</span>
+                  </div>
+                }
+                @if (activeCatalogKey() === 'dismissal-reasons') {
+                  <div class="col-span-2">
+                    <span class="text-[10px] uppercase tracking-wider text-muted-foreground block font-medium">Alcance</span>
+                    <span class="font-mono font-medium text-foreground">{{ item.scope || 'BOTH' }}</span>
+                  </div>
+                }
+                @if (activeCatalogKey() === 'judicial-specialties') {
+                  <div class="col-span-2">
+                    <span class="text-[10px] uppercase tracking-wider text-muted-foreground block font-medium">Código Especialidad Rama</span>
+                    <span class="font-mono font-medium text-foreground">{{ item.ramaSpecialtyCode || '—' }}</span>
+                  </div>
+                }
+                @if (activeCatalogKey() === 'consent-types') {
+                  <div>
+                    <span class="text-[10px] uppercase tracking-wider text-muted-foreground block font-medium">Versión</span>
+                    <span class="font-mono font-medium text-foreground">{{ item.currentVersion || 'v1.0' }}</span>
+                  </div>
+                  <div>
+                    <span class="text-[10px] uppercase tracking-wider text-muted-foreground block font-medium">Obligatorio</span>
+                    <span class="font-medium text-foreground">{{ item.isMandatory ? 'Sí' : 'No' }}</span>
+                  </div>
+                }
+              </div>
+
+              <!-- Botones de Acción (Zona táctil accesible min 44px) -->
+              @if (authService.isSuperAdmin()) {
+                <div class="flex items-center gap-2 pt-1 border-t border-border/40">
+                  <app-button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1 justify-center"
+                    (buttonClick)="openEditModal(item)">
+                    <svg class="size-3.5 mr-1 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                    <span>Editar</span>
+                  </app-button>
+
+                  <app-button
+                    [variant]="item.isActive ? 'ghost' : 'secondary'"
+                    size="sm"
+                    [disabled]="togglingStatus() === item.id"
+                    (buttonClick)="toggleStatus(item)"
+                    [className]="'flex-1 justify-center ' + (item.isActive ? 'text-destructive hover:bg-destructive/10' : 'text-emerald-600')">
+                    {{ item.isActive ? 'Inactivar' : 'Activar' }}
+                  </app-button>
+                </div>
+              }
+            </div>
+          }
+        </div>
+
+        <!-- Desktop Multi-column Table View (>= md) -->
+        <div class="hidden md:block rounded-lg border border-border">
+          <table class="w-full text-left text-xs table-auto">
+            <thead class="bg-muted/40 text-muted-foreground border-b border-border uppercase tracking-wider font-semibold text-[11px]">
+              <tr>
+                <th class="px-2.5 py-2.5 w-20">Código</th>
+                <th class="px-2.5 py-2.5">Nombre</th>
+                
+                @if (activeCatalogKey() === 'document-types') {
+                  <th class="px-2 py-2.5 w-16 text-center">DIAN</th>
+                  <th class="px-2.5 py-2.5 w-24">Aplica a</th>
+                }
+                @if (activeCatalogKey() === 'countries') {
+                  <th class="px-2 py-2.5 w-16 text-center">ISO</th>
+                  <th class="px-2 py-2.5 w-16 text-center">Ind.</th>
+                }
+                @if (activeCatalogKey() === 'departments') {
+                  <th class="px-2.5 py-2.5 w-16 text-center">País</th>
+                }
+                @if (activeCatalogKey() === 'cities') {
+                  <th class="px-2.5 py-2.5">Dpto.</th>
+                }
+                @if (activeCatalogKey() === 'person-types') {
+                  <th class="px-2 py-2.5 w-16 text-center">NIT</th>
+                  <th class="px-2 py-2.5 w-20 text-center">Razón Soc.</th>
+                }
+                @if (activeCatalogKey() === 'party-categories') {
+                  <th class="px-2.5 py-2.5 w-24 text-center">Representable</th>
+                }
+                @if (activeCatalogKey() === 'dismissal-reasons') {
+                  <th class="px-2.5 py-2.5 w-20">Alcance</th>
+                }
+                @if (activeCatalogKey() === 'judicial-specialties') {
+                  <th class="px-2.5 py-2.5 w-24 text-center">Cód. Rama</th>
+                }
+                @if (activeCatalogKey() === 'consent-types') {
+                  <th class="px-2 py-2.5 w-16 text-center">Versión</th>
+                  <th class="px-2 py-2.5 w-16 text-center">Oblig.</th>
+                }
+
+                <th class="px-2 py-2.5 w-14 text-center">Orden</th>
+                <th class="px-2 py-2.5 w-20 text-center">Estado</th>
+                @if (authService.isSuperAdmin()) {
+                  <th class="px-2.5 py-2.5 w-20 text-right">Acciones</th>
+                }
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-border/60 bg-card">
+              @for (item of filteredItems(); track item.id) {
+                <tr class="hover:bg-muted/40 transition-colors">
+                  <!-- Código -->
+                  <td class="px-2.5 py-2 font-mono font-medium text-foreground whitespace-nowrap">
+                    <span class="rounded bg-muted px-1.5 py-0.5 border border-border/60 text-[11px]">
+                      {{ item.code }}
+                    </span>
+                  </td>
+
+                  <!-- Nombre y descripción -->
+                  <td class="px-2.5 py-2">
+                    <div class="font-medium text-foreground truncate max-w-[170px] lg:max-w-[240px]" [title]="item.name">
+                      {{ item.name }}
+                    </div>
+                    @if (item.description) {
+                      <div class="text-[11px] text-muted-foreground truncate max-w-[170px] lg:max-w-[240px]" [title]="item.description">
+                        {{ item.description }}
+                      </div>
+                    }
+                  </td>
+
+                  <!-- Específicos -->
+                  @if (activeCatalogKey() === 'document-types') {
+                    <td class="px-2 py-2 text-center font-mono text-muted-foreground whitespace-nowrap">{{ item.dianCode || '—' }}</td>
+                    <td class="px-2.5 py-2 text-muted-foreground whitespace-nowrap">{{ item.applicablePersonType || 'BOTH' }}</td>
+                  }
+                  @if (activeCatalogKey() === 'countries') {
+                    <td class="px-2 py-2 text-center font-mono text-muted-foreground whitespace-nowrap">{{ item.isoAlpha3 || '—' }}</td>
+                    <td class="px-2 py-2 text-center font-mono text-muted-foreground whitespace-nowrap">{{ item.phoneCode || '—' }}</td>
+                  }
+                  @if (activeCatalogKey() === 'departments') {
+                    <td class="px-2.5 py-2 text-center text-muted-foreground whitespace-nowrap">{{ item.countryCode || 'CO' }}</td>
+                  }
+                  @if (activeCatalogKey() === 'cities') {
+                    <td class="px-2.5 py-2 text-muted-foreground truncate max-w-[120px]">{{ item.departmentName || item.departmentCode || '—' }}</td>
+                  }
+                  @if (activeCatalogKey() === 'person-types') {
+                    <td class="px-2 py-2 text-center text-muted-foreground whitespace-nowrap">{{ item.requiresNit ? 'Sí' : 'No' }}</td>
+                    <td class="px-2 py-2 text-center text-muted-foreground whitespace-nowrap">{{ item.requiresLegalName ? 'Sí' : 'No' }}</td>
+                  }
+                  @if (activeCatalogKey() === 'party-categories') {
+                    <td class="px-2.5 py-2 text-center whitespace-nowrap">
+                      <app-badge [variant]="item.selectableAsRepresented ? 'success' : 'outline'">
+                        {{ item.selectableAsRepresented ? 'Sí' : 'No' }}
+                      </app-badge>
+                    </td>
+                  }
+                  @if (activeCatalogKey() === 'dismissal-reasons') {
+                    <td class="px-2.5 py-2 text-muted-foreground font-mono whitespace-nowrap">{{ item.scope || 'BOTH' }}</td>
+                  }
+                  @if (activeCatalogKey() === 'judicial-specialties') {
+                    <td class="px-2.5 py-2 text-center font-mono text-muted-foreground whitespace-nowrap">{{ item.ramaSpecialtyCode || '—' }}</td>
+                  }
+                  @if (activeCatalogKey() === 'consent-types') {
+                    <td class="px-2 py-2 text-center font-mono text-muted-foreground whitespace-nowrap">{{ item.currentVersion || 'v1.0' }}</td>
+                    <td class="px-2 py-2 text-center text-muted-foreground whitespace-nowrap">{{ item.isMandatory ? 'Sí' : 'No' }}</td>
+                  }
+
+                  <!-- Orden -->
+                  <td class="px-2 py-2 text-center text-muted-foreground font-mono whitespace-nowrap">
+                    {{ item.displayOrder }}
+                  </td>
+
+                  <!-- Estado -->
+                  <td class="px-2 py-2 text-center whitespace-nowrap">
+                    <app-badge [variant]="item.isActive ? 'success' : 'destructive'">
+                      {{ item.isActive ? 'Activo' : 'Inactivo' }}
+                    </app-badge>
+                  </td>
+
+                  <!-- Acciones (Solo SuperAdmin) -->
+                  @if (authService.isSuperAdmin()) {
+                    <td class="px-2.5 py-2 text-right whitespace-nowrap">
+                      <div class="inline-flex items-center justify-end gap-1">
+                        <button
+                          type="button"
+                          (click)="openEditModal(item)"
+                          title="Editar registro"
+                          aria-label="Editar registro"
+                          class="inline-flex size-7 items-center justify-center rounded-lg border border-border bg-background hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer">
+                          <svg class="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          </svg>
+                        </button>
+                        
+                        <button
+                          type="button"
+                          [disabled]="togglingStatus() === item.id"
+                          (click)="toggleStatus(item)"
+                          [title]="item.isActive ? 'Inactivar registro' : 'Activar registro'"
+                          [attr.aria-label]="item.isActive ? 'Inactivar registro' : 'Activar registro'"
+                          [class]="'inline-flex size-7 items-center justify-center rounded-lg border transition-colors cursor-pointer ' +
+                            (item.isActive 
+                              ? 'border-transparent text-muted-foreground hover:border-destructive/30 hover:bg-destructive/10 hover:text-destructive' 
+                              : 'border-transparent text-emerald-600 hover:border-emerald-500/30 hover:bg-emerald-500/10')">
+                          @if (item.isActive) {
+                            <svg class="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                            </svg>
+                          } @else {
+                            <svg class="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                            </svg>
+                          }
+                        </button>
+                      </div>
+                    </td>
+                  }
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </app-card-content>
+  </app-card>
+    </div>
+  </div>
+
+  <!-- Modal para Crear / Editar Registro Maestro -->
+  <app-modal
+    [isOpen]="showEditModal()"
+    [title]="(isEditing() ? 'Editar ' : 'Crear ') + activeDefinition().singular"
+    [description]="'Configura los atributos del registro maestro administrable.'"
+    [confirmText]="isEditing() ? 'Guardar Cambios' : 'Crear Registro'"
+    [confirmVariant]="'default'"
+    (confirmed)="saveItem()"
+    (cancelled)="closeModal()">
+    
+    <form [formGroup]="editForm" class="space-y-4 pt-2">
+      <!-- Código semántico -->
+      <div class="space-y-1">
+        <label class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          Código Único <span class="text-destructive">*</span>
+        </label>
+        <input
+          type="text"
+          formControlName="code"
+          placeholder="Ej. CC, 05001, DEMANDANTE..."
+          class="h-9 w-full rounded-md border border-input bg-background px-3 py-1 font-mono text-xs uppercase shadow-xs outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 text-foreground disabled:opacity-60"
+        />
+        <span class="text-[10px] text-muted-foreground">Código semántico inmutable en mayúsculas sin espacios.</span>
+      </div>
+
+      <!-- Nombre -->
+      <div class="space-y-1">
+        <label class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          Nombre / Etiqueta Visible <span class="text-destructive">*</span>
+        </label>
+        <input
+          type="text"
+          formControlName="name"
+          placeholder="Nombre visible para desplegables..."
+          class="h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-xs shadow-xs outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 text-foreground"
+        />
+      </div>
+
+      <!-- Descripción -->
+      <div class="space-y-1">
+        <label class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          Descripción o Tooltip (Opcional)
+        </label>
+        <textarea
+          formControlName="description"
+          rows="2"
+          placeholder="Ayuda contextual para los usuarios..."
+          class="w-full rounded-md border border-input bg-background px-3 py-2 text-xs shadow-xs outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 text-foreground"
+        ></textarea>
+      </div>
+
+      <!-- Campos específicos de Tipo de Documento -->
+      @if (activeCatalogKey() === 'document-types') {
+        <div class="grid grid-cols-2 gap-3 pt-2 border-t border-border">
+          <div class="space-y-1">
+            <label class="text-xs text-muted-foreground">Código DIAN (Oficial)</label>
+            <input
+              type="text"
+              formControlName="dianCode"
+              placeholder="Ej. 13, 22, 31, 47"
+              class="h-9 w-full rounded-md border border-input bg-background px-2.5 py-1 text-xs font-mono text-foreground"
+            />
+          </div>
+          <div class="space-y-1">
+            <label class="text-xs text-muted-foreground">Tipo de Persona</label>
+            <select
+              formControlName="applicablePersonType"
+              class="h-9 w-full rounded-md border border-input bg-background px-2.5 py-1 text-xs text-foreground">
+              <option value="NATURAL">NATURAL</option>
+              <option value="JURIDICA">JURIDICA</option>
+              <option value="BOTH">AMBOS (BOTH)</option>
+            </select>
+          </div>
+        </div>
+        <div class="space-y-1">
+          <label class="text-xs text-muted-foreground">Expresión Regular de Validación (Regex)</label>
+          <input
+            type="text"
+            formControlName="validationRegex"
+            placeholder="^[0-9]{6,10}$"
+            class="h-9 w-full rounded-md border border-input bg-background px-2.5 py-1 text-xs font-mono text-foreground"
+          />
+        </div>
+      }
+
+      <!-- Campos específicos de País -->
+      @if (activeCatalogKey() === 'countries') {
+        <div class="grid grid-cols-2 gap-3 pt-2 border-t border-border">
+          <div class="space-y-1">
+            <label class="text-xs text-muted-foreground">ISO Alpha-3</label>
+            <input
+              type="text"
+              formControlName="isoAlpha3"
+              placeholder="COL"
+              class="h-9 w-full rounded-md border border-input bg-background px-2.5 py-1 text-xs font-mono text-foreground uppercase"
+            />
+          </div>
+          <div class="space-y-1">
+            <label class="text-xs text-muted-foreground">Indicativo Telefónico</label>
+            <input
+              type="text"
+              formControlName="phoneCode"
+              placeholder="+57"
+              class="h-9 w-full rounded-md border border-input bg-background px-2.5 py-1 text-xs font-mono text-foreground"
+            />
+          </div>
+        </div>
+      }
+
+      <!-- Campos específicos de Departamento -->
+      @if (activeCatalogKey() === 'departments') {
+        <div class="space-y-1 pt-2 border-t border-border">
+          <label class="text-xs text-muted-foreground">Código de País Perteneciente</label>
+          <input
+            type="text"
+            formControlName="countryCode"
+            placeholder="CO"
+            class="h-9 w-full rounded-md border border-input bg-background px-2.5 py-1 text-xs font-mono text-foreground uppercase"
+          />
+        </div>
+      }
+
+      <!-- Campos específicos de Ciudad -->
+      @if (activeCatalogKey() === 'cities') {
+        <div class="space-y-1 pt-2 border-t border-border">
+          <label class="text-xs text-muted-foreground">Código DANE del Departamento</label>
+          <input
+            type="text"
+            formControlName="departmentCode"
+            placeholder="05 (Antioquia), 11 (Bogotá)..."
+            class="h-9 w-full rounded-md border border-input bg-background px-2.5 py-1 text-xs font-mono text-foreground"
+          />
+        </div>
+      }
+
+      <!-- Campos específicos de Tipo de Persona -->
+      @if (activeCatalogKey() === 'person-types') {
+        <div class="grid grid-cols-2 gap-3 pt-2 border-t border-border">
+          <label class="flex items-center gap-2 text-xs text-foreground cursor-pointer">
+            <input type="checkbox" formControlName="requiresNit" class="size-4 rounded accent-primary" />
+            <span>Exige NIT</span>
+          </label>
+          <label class="flex items-center gap-2 text-xs text-foreground cursor-pointer">
+            <input type="checkbox" formControlName="requiresLegalName" class="size-4 rounded accent-primary" />
+            <span>Exige Razón Social</span>
+          </label>
+        </div>
+      }
+
+      <!-- Campos específicos de Categoría de Parte -->
+      @if (activeCatalogKey() === 'party-categories') {
+        <div class="space-y-2 pt-2 border-t border-border">
+          <label class="flex items-center gap-2 text-xs text-foreground cursor-pointer">
+            <input type="checkbox" formControlName="selectableAsRepresented" class="size-4 rounded accent-primary" />
+            <span>Seleccionable en "Parte que represento"</span>
+          </label>
+          <div class="space-y-1">
+            <label class="text-xs text-muted-foreground">Palabras clave para reconocimiento automático</label>
+            <input
+              type="text"
+              formControlName="matchingKeywords"
+              placeholder="demandante,accionante,ejecutante..."
+              class="h-9 w-full rounded-md border border-input bg-background px-2.5 py-1 text-xs text-foreground"
+            />
+          </div>
+        </div>
+      }
+
+      <!-- Campos específicos de Motivos de Descarte -->
+      @if (activeCatalogKey() === 'dismissal-reasons') {
+        <div class="space-y-1 pt-2 border-t border-border">
+          <label class="text-xs text-muted-foreground">Alcance</label>
+          <select formControlName="scope" class="h-9 w-full rounded-md border border-input bg-background px-2.5 py-1 text-xs text-foreground">
+            <option value="PROCESS">PROCESS (Proceso)</option>
+            <option value="INSTANCE">INSTANCE (Instancia detectada)</option>
+            <option value="BOTH">BOTH (Ambos)</option>
+          </select>
+        </div>
+      }
+
+      <!-- Campos específicos de Especialidades Judiciales -->
+      @if (activeCatalogKey() === 'judicial-specialties') {
+        <div class="space-y-1 pt-2 border-t border-border">
+          <label class="text-xs text-muted-foreground">Código de Especialidad en Radicado (Dígitos 6-12)</label>
+          <input
+            type="text"
+            formControlName="ramaSpecialtyCode"
+            placeholder="Ej. 03, 05, 31"
+            class="h-9 w-full rounded-md border border-input bg-background px-2.5 py-1 text-xs font-mono text-foreground"
+          />
+        </div>
+      }
+
+      <!-- Campos específicos de Políticas y Consentimientos -->
+      @if (activeCatalogKey() === 'consent-types') {
+        <div class="grid grid-cols-2 gap-3 pt-2 border-t border-border">
+          <div class="space-y-1">
+            <label class="text-xs text-muted-foreground">Versión Vigente</label>
+            <input
+              type="text"
+              formControlName="currentVersion"
+              placeholder="v1.0"
+              class="h-9 w-full rounded-md border border-input bg-background px-2.5 py-1 text-xs font-mono text-foreground"
+            />
+          </div>
+          <div class="flex items-center pt-4">
+            <label class="flex items-center gap-2 text-xs text-foreground cursor-pointer">
+              <input type="checkbox" formControlName="isMandatory" class="size-4 rounded accent-primary" />
+              <span>Aceptación Obligatoria</span>
+            </label>
+          </div>
+        </div>
+        <div class="space-y-1">
+          <label class="text-xs text-muted-foreground">URL del Documento Legal</label>
+          <input
+            type="text"
+            formControlName="documentUrl"
+            placeholder="https://dokqet.com/legal/terminos"
+            class="h-9 w-full rounded-md border border-input bg-background px-2.5 py-1 text-xs text-foreground"
+          />
+        </div>
+      }
+
+      <!-- Orden de despliegue y estado activo -->
+      <div class="grid grid-cols-2 gap-3 pt-2 border-t border-border">
+        <div class="space-y-1">
+          <label class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Orden de Despliegue
+          </label>
+          <input
+            type="number"
+            formControlName="displayOrder"
+            class="h-9 w-full rounded-md border border-input bg-background px-2.5 py-1 text-xs font-mono text-foreground"
+          />
+        </div>
+        <div class="flex items-center pt-5">
+          <label class="flex items-center gap-2 text-xs text-foreground cursor-pointer">
+            <input type="checkbox" formControlName="isActive" class="size-4 rounded accent-primary" />
+            <span class="font-medium">Activo para Formularios</span>
+          </label>
+        </div>
+      </div>
+    </form>
+  </app-modal>
+</div>

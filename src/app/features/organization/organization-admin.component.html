@@ -1,0 +1,507 @@
+<div class="flex flex-col gap-6 max-w-4xl mx-auto">
+  <app-breadcrumbs
+    backUrl="/panel"
+    backLabel="Volver al panel"
+    [items]="isCreateMode() ? [{ label: 'Nueva organización' }] : [{ label: 'Organización' }]">
+  </app-breadcrumbs>
+
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-semibold tracking-tight text-foreground">
+        {{ isCreateMode() ? 'Crear nueva organización' : (org()?.name || 'Organización') }}
+      </h1>
+      <p class="text-sm text-muted-foreground mt-0.5">
+        {{ isCreateMode() 
+          ? 'Registra tu firma jurídica o despacho para invitar colaboradores y centralizar expedientes.' 
+          : 'Configuración fiscal, miembros del equipo y permisos de acceso.' }}
+      </p>
+    </div>
+
+    <div class="flex items-center gap-2">
+      <a routerLink="/catalogos">
+        <app-button variant="outline" size="sm">
+          <svg class="size-4 shrink-0 mr-1.5 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+          </svg>
+          <span>Tablas Maestras</span>
+        </app-button>
+      </a>
+    </div>
+  </div>
+
+  @if (loading()) {
+    <div class="py-24 text-center text-muted-foreground flex flex-col items-center justify-center gap-3">
+      <svg class="size-8 animate-spin text-primary" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+      </svg>
+      <span class="text-sm">Cargando datos de la organización…</span>
+    </div>
+  } @else {
+    <!-- Notification messages -->
+    @if (successMessage()) {
+      <app-form-alert type="success">
+        {{ successMessage() }}
+      </app-form-alert>
+    }
+    @if (errorMessage()) {
+      <app-form-alert type="error">
+        {{ errorMessage() }}
+      </app-form-alert>
+    }
+
+    <!-- Personal Workspace Notice -->
+    @if (!isCreateMode() && org()?.isPersonal) {
+      <app-form-alert type="info">
+        Estás viendo tu <strong>espacio de trabajo personal</strong>. Este espacio es privado y no admite NIT ni miembros invitados.
+        Para registrar los datos de tu firma o invitar a otros abogados, 
+        <a routerLink="/organizaciones/nueva" class="font-semibold underline underline-offset-2 hover:text-foreground">crea una organización</a>.
+      </app-form-alert>
+    }
+
+    <!-- Organization Data Card -->
+    <app-card>
+      <app-card-header>
+        <div class="flex items-center justify-between w-full">
+          <div class="flex flex-col gap-0.5">
+            <app-card-title>{{ isCreateMode() ? 'Datos de la nueva firma o empresa' : 'Datos de la organización' }}</app-card-title>
+            <app-card-description>{{ isCreateMode() ? 'Ingresa los datos fiscales tal como figuran en el RUT ante la DIAN.' : 'Datos como aparecen en el RUT ante la DIAN.' }}</app-card-description>
+          </div>
+
+          @if (!isCreateMode() && isAdmin() && !editing() && !isCooldownActive() && !org()?.isPersonal) {
+            <app-button variant="outline" size="sm" (buttonClick)="startEditing()">
+              Editar
+            </app-button>
+          }
+        </div>
+      </app-card-header>
+
+      @if (!editing()) {
+        <!-- View Mode -->
+        <app-card-content className="flex flex-col gap-4">
+          <dl class="grid gap-x-6 gap-y-3 text-sm sm:grid-cols-[10rem_1fr]">
+            <dt class="text-muted-foreground">Nombre visible</dt>
+            <dd class="font-medium text-foreground uppercase">{{ org()?.name }}</dd>
+
+            <dt class="text-muted-foreground">Tipo de persona</dt>
+            <dd class="text-foreground">
+              {{ formatPersonType(org()?.personType) }}
+            </dd>
+
+            @if (org()?.personType === PersonType.JURIDICA && org()?.legalName) {
+              <dt class="text-muted-foreground">Razón social</dt>
+              <dd class="text-foreground uppercase">{{ org()?.legalName }}</dd>
+            }
+
+            <dt class="text-muted-foreground">NIT</dt>
+            <dd class="text-foreground font-mono">
+              @if (org()?.nit) {
+                {{ org()?.nit }}-{{ calculatedDv() }}
+              } @else {
+                <span class="text-muted-foreground font-sans">Sin NIT</span>
+              }
+            </dd>
+          </dl>
+
+          @if (isCooldownActive()) {
+            <app-form-alert type="info">
+              Los datos fiscales se modificaron recientemente. Próxima edición disponible en {{ remainingCooldownDays() }} días.
+            </app-form-alert>
+          }
+        </app-card-content>
+      } @else {
+        <!-- Edit Mode -->
+        <form [formGroup]="orgForm" (ngSubmit)="onSaveClick()">
+          <app-card-content className="flex flex-col gap-5">
+            <div class="floating-group">
+              <div class="floating-field-container">
+                <input 
+                  id="name" 
+                  type="text" 
+                  formControlName="name"
+                  placeholder="Nombre de la firma o despacho"
+                  class="floating-input uppercase" />
+                <label for="name" class="floating-label">
+                  Nombre visible *
+                </label>
+              </div>
+              <p class="floating-hint">Así la verán tus abogados en la plataforma.</p>
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+              <span class="text-sm font-medium text-foreground">
+                Tipo de persona <span class="text-destructive">*</span>
+              </span>
+              <div class="grid gap-2 sm:grid-cols-2">
+                @if (personTypes().length > 0) {
+                  @for (pt of personTypes(); track pt.id) {
+                    <label 
+                      [class]="'flex cursor-pointer items-center gap-2.5 rounded-md border p-3 text-sm transition-colors ' +
+                        (orgForm.value.personType === pt.code ? 'border-primary bg-secondary/50 font-medium' : 'border-border')">
+                      <input 
+                        type="radio" 
+                        formControlName="personType" 
+                        [value]="pt.code" 
+                        class="size-4 accent-primary" />
+                      <span>{{ pt.name }}</span>
+                    </label>
+                  }
+                } @else {
+                  <label 
+                    [class]="'flex cursor-pointer items-center gap-2.5 rounded-md border p-3 text-sm transition-colors ' +
+                      (orgForm.value.personType === PersonType.JURIDICA ? 'border-primary bg-secondary/50 font-medium' : 'border-border')">
+                    <input 
+                      type="radio" 
+                      formControlName="personType" 
+                      [value]="PersonType.JURIDICA" 
+                      class="size-4 accent-primary" />
+                    <span>Persona jurídica</span>
+                  </label>
+
+                  <label 
+                    [class]="'flex cursor-pointer items-center gap-2.5 rounded-md border p-3 text-sm transition-colors ' +
+                      (orgForm.value.personType === PersonType.NATURAL ? 'border-primary bg-secondary/50 font-medium' : 'border-border')">
+                    <input 
+                      type="radio" 
+                      formControlName="personType" 
+                      [value]="PersonType.NATURAL" 
+                      class="size-4 accent-primary" />
+                    <span>Persona natural</span>
+                  </label>
+                }
+              </div>
+            </div>
+
+            @if (orgForm.value.personType === 'JURIDICA' || orgForm.value.personType === PersonType.JURIDICA) {
+              <div class="floating-group">
+                <div class="floating-field-container">
+                  <input 
+                    id="legalName" 
+                    type="text" 
+                    formControlName="legalName"
+                    placeholder="RODRIGUEZ ASOCIADOS S.A.S."
+                    class="floating-input uppercase" />
+                  <label for="legalName" class="floating-label">
+                    Razón social *
+                  </label>
+                </div>
+              </div>
+            }
+
+            <div class="flex flex-col gap-1.5">
+              <label for="nit" class="text-sm font-medium text-foreground">
+                NIT y Dígito de Verificación (DIAN)
+              </label>
+              <div class="grid grid-cols-[1fr_auto_4.5rem] items-center gap-2">
+                <input 
+                  id="nit" 
+                  type="text" 
+                  formControlName="nit" 
+                  (input)="onNitInput()"
+                  inputmode="numeric"
+                  placeholder="900123456"
+                  class="h-9 w-full font-mono rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50" />
+                <span class="text-muted-foreground font-bold">–</span>
+                <div class="h-9 flex items-center justify-center font-mono font-bold text-sm rounded-md border border-input bg-muted/40 text-foreground">
+                  {{ calculatedDv() || '-' }}
+                </div>
+              </div>
+              <span class="text-xs text-muted-foreground">El dígito verificador se calcula automáticamente según la DIAN.</span>
+            </div>
+
+            <!-- Domicilio / Ubicación Geográfica en Cascada -->
+            <div class="flex flex-col gap-2 pt-2 border-t border-border">
+              <div class="flex items-center justify-between">
+                <label class="text-sm font-medium text-foreground">
+                  Domicilio Principal (Catálogo Geográfico)
+                </label>
+                @if (loadingGeo()) {
+                  <span class="text-xs text-muted-foreground animate-pulse">Cargando municipios...</span>
+                }
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div class="flex flex-col gap-1">
+                  <label class="text-xs text-muted-foreground">País</label>
+                  <select 
+                    formControlName="countryCode"
+                    (change)="onCountryChange($any($event.target).value)"
+                    class="h-9 w-full rounded-md border border-input bg-background px-2.5 py-1 text-xs shadow-xs outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50 text-foreground">
+                    @for (c of countries(); track c.id) {
+                      <option [value]="c.code">{{ c.name }} ({{ c.code }})</option>
+                    }
+                  </select>
+                </div>
+
+                <div class="flex flex-col gap-1">
+                  <label class="text-xs text-muted-foreground">Departamento (DANE)</label>
+                  <select 
+                    formControlName="departmentCode"
+                    (change)="onDepartmentChange($any($event.target).value)"
+                    class="h-9 w-full rounded-md border border-input bg-background px-2.5 py-1 text-xs shadow-xs outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50 text-foreground">
+                    <option value="">Selecciona departamento...</option>
+                    @for (dept of departments(); track dept.id) {
+                      <option [value]="dept.code">{{ dept.name }} ({{ dept.code }})</option>
+                    }
+                  </select>
+                </div>
+
+                <div class="flex flex-col gap-1">
+                  <label class="text-xs text-muted-foreground">Municipio (DANE)</label>
+                  <select 
+                    formControlName="cityId"
+                    class="h-9 w-full rounded-md border border-input bg-background px-2.5 py-1 text-xs shadow-xs outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50 text-foreground">
+                    <option [ngValue]="null">Selecciona municipio...</option>
+                    @for (city of cities(); track city.id) {
+                      <option [value]="city.id">{{ city.name }} ({{ city.code }})</option>
+                    }
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            @if (!isCreateMode()) {
+              <app-form-alert type="warning">
+                Los datos fiscales se pueden editar una vez cada {{ cooldownDays }} días. Verifica cuidadosamente antes de guardar.
+              </app-form-alert>
+            }
+          </app-card-content>
+
+          <app-card-footer>
+            <div class="flex w-full justify-end gap-2">
+              <app-button variant="outline" size="sm" (buttonClick)="cancelEditing()" [disabled]="savingOrg()">
+                Cancelar
+              </app-button>
+              <app-button size="sm" type="submit" [disabled]="orgForm.invalid" [loading]="savingOrg()">
+                {{ isCreateMode() ? 'Crear organización' : 'Guardar cambios' }}
+              </app-button>
+            </div>
+          </app-card-footer>
+        </form>
+      }
+    </app-card>
+
+    <!-- Members Card -->
+    @if (!isCreateMode()) {
+      <app-card>
+        <app-card-header>
+          <div class="flex items-center justify-between w-full">
+            <div class="flex flex-col gap-0.5">
+              <app-card-title>Miembros del equipo ({{ members().length }})</app-card-title>
+              <app-card-description>
+                {{ org()?.isPersonal 
+                  ? 'Tu espacio personal es privado y no admite invitados. Para colaborar con un equipo, crea una organización.' 
+                  : 'Abogados y miembros con acceso a los expedientes.' }}
+              </app-card-description>
+            </div>
+
+            @if (isAdmin() && !org()?.isPersonal) {
+              <app-button size="sm" (buttonClick)="showInviteModal.set(true)">
+                <svg class="size-4 shrink-0 -ml-0.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                </svg>
+                Invitar miembro
+              </app-button>
+            }
+          </div>
+        </app-card-header>
+
+        <app-card-content>
+          @if (membersError()) {
+            <div class="mb-4">
+              <app-form-alert type="error">{{ membersError() }}</app-form-alert>
+            </div>
+          }
+
+          <ul class="divide-y divide-border/60 text-sm">
+            @for (m of members(); track m.userId) {
+              <li class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 py-3 first:pt-0 last:pb-0">
+                <div>
+                  <div class="flex items-center gap-2">
+                    <span class="font-medium text-foreground">{{ m.name }}</span>
+                    @if (m.isCreator) {
+                      <app-badge variant="warning">Fundador</app-badge>
+                    }
+                  </div>
+                  <p class="text-xs text-muted-foreground mt-0.5">
+                    {{ m.email || 'Usuario registrado' }} · Miembro desde {{ m.joinedAt | date:'mediumDate' }}
+                  </p>
+                </div>
+
+                <div class="flex items-center gap-2">
+                  <app-badge [variant]="m.role === 'ADMIN' ? 'default' : 'secondary'">
+                    {{ formatRole(m.role) }}
+                  </app-badge>
+
+                  @if (isAdmin() && !m.isCreator && m.userId !== currentUserId()) {
+                    <app-button variant="ghost" size="sm" (buttonClick)="toggleRole(m)">
+                      Cambiar a {{ m.role === 'ADMIN' ? 'Abogado' : 'Admin' }}
+                    </app-button>
+
+                    <app-button variant="destructive" size="sm" (buttonClick)="promptRemoveMember(m)">
+                      Retirar
+                    </app-button>
+                  }
+                </div>
+              </li>
+            } @empty {
+              <li class="py-6 text-center text-xs text-muted-foreground">
+                No se encontraron miembros registrados en esta organización.
+              </li>
+            }
+          </ul>
+        </app-card-content>
+      </app-card>
+    }
+
+    <!-- Invitations Card -->
+    @if (!isCreateMode()) {
+      <app-card>
+        <app-card-header>
+          <div class="flex items-center justify-between w-full">
+            <div class="flex flex-col gap-0.5">
+              <app-card-title>
+                Invitaciones enviadas {{ !org()?.isPersonal ? '(' + invitations().length + ')' : '' }}
+              </app-card-title>
+              <app-card-description>
+                {{ org()?.isPersonal 
+                  ? 'Las invitaciones son exclusivas de organizaciones de firma o equipo.' 
+                  : 'Historial de solicitudes de ingreso, fecha de envío y estado de respuesta.' }}
+              </app-card-description>
+            </div>
+
+            @if (isAdmin() && !org()?.isPersonal) {
+              <app-button variant="outline" size="sm" (buttonClick)="showInviteModal.set(true)">
+                <svg class="size-4 shrink-0 -ml-0.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                </svg>
+                Nueva invitación
+              </app-button>
+            }
+          </div>
+        </app-card-header>
+
+        <app-card-content>
+          @if (org()?.isPersonal) {
+            <div class="py-6 text-center flex flex-col items-center justify-center gap-2">
+              <p class="text-sm font-medium text-foreground">Tu espacio personal es unipersonal</p>
+              <p class="text-xs text-muted-foreground max-w-md">
+                Las invitaciones a abogados y colaboradores se gestionan en las organizaciones de firma (como <strong>SUPER ABOGADOS</strong>). Puedes cambiarte de organización desde el menú selector superior.
+              </p>
+            </div>
+          } @else if (loadingInvitations()) {
+            <div class="py-8 text-center text-xs text-muted-foreground">
+              Cargando invitaciones…
+            </div>
+          } @else {
+            <ul class="divide-y divide-border/60 text-sm">
+              @for (inv of invitations(); track inv.id) {
+                <li class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 py-3 first:pt-0 last:pb-0">
+                  <div class="flex flex-col gap-0.5">
+                    <div class="flex items-center gap-2">
+                      <span class="font-medium text-foreground">{{ inv.email }}</span>
+                      @if (inv.invitedName) {
+                        <span class="text-xs text-muted-foreground">({{ inv.invitedName }})</span>
+                      }
+                      <app-badge [variant]="getInvitationBadgeVariant(inv.status)">
+                        {{ formatInvitationStatus(inv.status) }}
+                      </app-badge>
+                    </div>
+
+                    <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground mt-0.5">
+                      <span>Rol: <strong class="text-foreground">{{ formatRole(inv.role) }}</strong></span>
+                      <span>·</span>
+                      <span>Enviado: {{ inv.createdAt | date:'medium' }}</span>
+                      @if (inv.invitedByName) {
+                        <span>·</span>
+                        <span>Por: {{ inv.invitedByName }}</span>
+                      }
+                    </div>
+                  </div>
+
+                  <div class="flex items-center gap-2">
+                    @if (isAdmin() && inv.status === 'PENDING') {
+                      <app-button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="text-destructive hover:bg-destructive/10" 
+                        (buttonClick)="cancelInvitation(inv)">
+                        Cancelar
+                      </app-button>
+                    }
+                  </div>
+                </li>
+              } @empty {
+                <li class="py-6 text-center text-sm text-muted-foreground">
+                  No hay invitaciones enviadas en esta organización.
+                </li>
+              }
+            </ul>
+          }
+        </app-card-content>
+      </app-card>
+    }
+  }
+
+  <!-- Confirmation Edit Modal -->
+  <app-modal
+    [isOpen]="confirmSaveModal()"
+    title="¿Guardar los cambios?"
+    [description]="'Después de guardar no podrás editar de nuevo los datos de la organización durante ' + cooldownDays + ' días.'"
+    confirmText="Guardar"
+    (confirmed)="executeSave()"
+    (cancelled)="confirmSaveModal.set(false)">
+  </app-modal>
+
+  <!-- Invite Member Modal -->
+  <app-modal
+    [isOpen]="showInviteModal()"
+    title="Invitar miembro a la firma"
+    description="El invitado recibirá un correo con instrucciones para unirse al equipo."
+    confirmText="Enviar invitación"
+    (confirmed)="sendInvitation()"
+    (cancelled)="showInviteModal.set(false)">
+    
+    <form [formGroup]="inviteForm" class="flex flex-col gap-4 text-left">
+      <div class="floating-group">
+        <div class="floating-field-container">
+          <input 
+            id="invEmail" 
+            type="email" 
+            formControlName="email"
+            placeholder="colega@firma.co"
+            class="floating-input" />
+          <label for="invEmail" class="floating-label">
+            Correo electrónico *
+          </label>
+        </div>
+      </div>
+
+      <div class="floating-group">
+        <div class="floating-field-container">
+          <select 
+            id="invRole" 
+            formControlName="role"
+            class="floating-select cursor-pointer">
+            @for (opt of memberRoleOptions; track opt.value) {
+              <option [value]="opt.value">{{ opt.label }}</option>
+            }
+          </select>
+          <label for="invRole" class="floating-label">
+            Rol en la firma *
+          </label>
+        </div>
+      </div>
+    </form>
+  </app-modal>
+
+  <!-- Remove Member Modal -->
+  <app-modal
+    [isOpen]="confirmRemoveModal()"
+    title="¿Retirar miembro de la firma?"
+    [description]="'¿Estás seguro de retirar a ' + (selectedMemberToRemove()?.name || 'este miembro') + '? Sus procesos asignados pasarán a estado sin asignar.'"
+    confirmText="Retirar miembro"
+    confirmVariant="destructive"
+    (confirmed)="executeRemoveMember()"
+    (cancelled)="confirmRemoveModal.set(false)">
+  </app-modal>
+</div>

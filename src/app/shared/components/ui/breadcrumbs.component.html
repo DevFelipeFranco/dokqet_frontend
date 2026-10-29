@@ -1,0 +1,33 @@
+<nav aria-label="Navegación de migas" class="mb-4 flex items-center gap-2 text-sm text-muted-foreground">
+  @if (backUrl()) {
+    <a 
+      [routerLink]="backUrl()" 
+      class="inline-flex items-center gap-1.5 font-medium hover:text-foreground transition-colors">
+      <svg class="size-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+      </svg>
+      {{ backLabel() }}
+    </a>
+  }
+
+  @if (items().length > 0 && backUrl()) {
+    <span class="text-border" aria-hidden="true">/</span>
+  }
+
+  <ol class="flex items-center gap-2">
+    @for (item of items(); track $index; let last = $last) {
+      <li class="flex items-center gap-2">
+        @if (!last && item.url) {
+          <a [routerLink]="item.url" class="hover:text-foreground transition-colors">
+            {{ item.label }}
+          </a>
+          <span class="text-border" aria-hidden="true">/</span>
+        } @else {
+          <span class="font-medium text-foreground truncate max-w-xs sm:max-w-md" aria-current="page">
+            {{ item.label }}
+          </span>
+        }
+      </li>
+    }
+  </ol>
+</nav>

@@ -1,0 +1,320 @@
+<div class="flex flex-col gap-6 max-w-3xl mx-auto">
+  <app-breadcrumbs
+    backUrl="/panel"
+    backLabel="Volver al panel"
+    [items]="[{ label: 'Registrar proceso judicial' }]">
+  </app-breadcrumbs>
+
+  <app-card>
+    <app-card-header>
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <app-card-title className="text-xl">Vigilar nuevo proceso judicial</app-card-title>
+          <app-card-description className="mt-1">
+            Conecta Dokqet con la Rama Judicial de Colombia para recibir alertas automáticas de nuevas actuaciones en <strong class="text-foreground font-semibold">{{ orgStore.activeOrg()?.name || 'tu organización' }}</strong>.
+          </app-card-description>
+        </div>
+        <div class="hidden sm:flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+          <svg class="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+        </div>
+      </div>
+    </app-card-header>
+
+    <app-card-content className="flex flex-col gap-8">
+      <!-- Paso 1: Radicado -->
+      <form [formGroup]="searchForm" (ngSubmit)="onSearch()" class="flex flex-col gap-3">
+        <div class="flex items-center justify-between">
+          <h2 class="flex items-center gap-2.5 font-semibold text-foreground text-sm">
+            <span class="flex size-6 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground font-semibold" aria-hidden="true">1</span>
+            Consulta de radicado en Rama Judicial
+          </h2>
+          <span class="text-xs font-mono" [class.text-emerald-600]="radicadoLength() === radicadoMaxLength" [class.text-muted-foreground]="radicadoLength() !== radicadoMaxLength">
+            {{ radicadoLength() }}/{{ radicadoMaxLength }} dígitos
+            @if (radicadoLength() === radicadoMaxLength) {
+              ✓
+            }
+          </span>
+        </div>
+
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-start">
+          <div class="flex-1 floating-group">
+            <div class="floating-field-container">
+              <input 
+                id="radicado" 
+                type="text" 
+                formControlName="radicado"
+                inputmode="numeric"
+                maxlength="40"
+                placeholder="Ej. 05001333300020130157702 o con guiones" 
+                class="floating-input font-mono" />
+              <label for="radicado" class="floating-label">
+                Número de radicado único nacional (23 dígitos)
+              </label>
+            </div>
+            <p class="floating-hint">
+              Puedes escribir o pegar el código con guiones, puntos o espacios.
+            </p>
+          </div>
+
+          <div>
+            <app-button 
+              type="submit" 
+              variant="outline" 
+              className="h-[46px] px-4"
+              [disabled]="searchForm.invalid || searching()"
+              [loading]="searching()">
+              <svg class="size-4 shrink-0 -ml-0.5 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              Consultar proceso
+            </app-button>
+          </div>
+        </div>
+
+        <!-- Judicial Code format explainer tooltip / helper -->
+        <details class="text-xs text-muted-foreground bg-muted/40 rounded-md p-2.5 border border-border/50">
+          <summary class="cursor-pointer font-medium text-foreground/80 hover:text-foreground">
+            ¿Cómo está compuesto el radicado de 23 dígitos?
+          </summary>
+          <div class="mt-2 grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-border/40 font-mono text-[11px]">
+            <div><span class="text-muted-foreground">05:</span> Depto.</div>
+            <div><span class="text-muted-foreground">001:</span> Municipio</div>
+            <div><span class="text-muted-foreground">33:</span> Corporación</div>
+            <div><span class="text-muted-foreground">33:</span> Especialidad</div>
+            <div><span class="text-muted-foreground">000:</span> Despacho</div>
+            <div><span class="text-muted-foreground">2013:</span> Año radicación</div>
+            <div><span class="text-muted-foreground">01577:</span> Consecutivo</div>
+            <div><span class="text-muted-foreground">02:</span> Recurso / Instancia</div>
+          </div>
+        </details>
+
+        @if (searching()) {
+          <div class="flex items-center gap-2 p-3 bg-primary/[0.04] rounded-lg border border-primary/20 text-xs text-primary" aria-live="polite">
+            <svg class="size-4 shrink-0 animate-spin" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+            </svg>
+            <span>Consultando servidores de la Rama Judicial de Colombia. Esto puede tomar unos segundos…</span>
+          </div>
+        }
+
+        @if (searchError()) {
+          <app-form-alert type="error">
+            {{ searchError() }}
+          </app-form-alert>
+        }
+      </form>
+
+      <!-- Paso 2: Proceso encontrado -->
+      @if (searched() && candidates().length > 0) {
+        <section class="flex flex-col gap-3 pt-4 border-t border-border/60">
+          <div class="flex items-center justify-between">
+            <h2 class="flex items-center gap-2.5 font-semibold text-foreground text-sm">
+              <span class="flex size-6 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground font-semibold" aria-hidden="true">2</span>
+              {{ candidates().length === 1 ? 'Expediente encontrado en la Rama Judicial' : 'Expedientes encontrados (' + candidates().length + ')' }}
+            </h2>
+          </div>
+
+          @if (candidates().length > 1) {
+            <p class="text-xs text-muted-foreground">
+              Este número de radicado registra múltiples incidentes o cuadernos. Selecciona el expediente que deseas registrar en vigilancia:
+            </p>
+          }
+
+          <div class="flex flex-col gap-2.5">
+            @for (c of candidates(); track c.idProceso) {
+              <label 
+                [class]="'flex items-start gap-3.5 rounded-lg border p-4 transition-all ' + 
+                  (c.alreadyInOrganization ? 'cursor-not-allowed opacity-60 bg-muted/30 border-dashed' : 'cursor-pointer hover:border-primary/50 hover:bg-muted/30 ') +
+                  (selectedCandidate()?.idProceso === c.idProceso ? 'border-primary bg-primary/[0.03] ring-2 ring-primary/20 shadow-xs' : 'border-border bg-card')">
+                <input 
+                  type="radio" 
+                  name="selectedProcess" 
+                  [value]="c.idProceso"
+                  [disabled]="c.alreadyInOrganization"
+                  [checked]="selectedCandidate()?.idProceso === c.idProceso"
+                  (change)="selectCandidate(c)"
+                  class="mt-1 size-4 accent-primary" />
+                
+                <div class="flex min-w-0 flex-1 flex-col gap-2">
+                  <div class="flex items-start justify-between gap-2 flex-wrap">
+                    <div class="flex flex-col">
+                      <span class="font-semibold text-foreground text-sm leading-snug">{{ c.despacho || 'Despacho judicial' }}</span>
+                      @if (c.departamento) {
+                        <span class="text-xs text-muted-foreground">{{ c.departamento }}</span>
+                      }
+                    </div>
+                    <div class="flex items-center gap-1.5 flex-wrap">
+                      @if (c.alreadyInOrganization) {
+                        <app-badge variant="outline" className="border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-700/50 dark:bg-amber-950/30 dark:text-amber-300">
+                          Ya en vigilancia
+                        </app-badge>
+                      } @else if (selectedCandidate()?.idProceso === c.idProceso) {
+                        <app-badge variant="default">Seleccionado</app-badge>
+                      }
+                      @if (c.esPrivado) {
+                        <app-badge variant="warning">Privado</app-badge>
+                      }
+                    </div>
+                  </div>
+
+                  <div class="text-xs text-muted-foreground flex items-center gap-2 flex-wrap">
+                    <span class="font-mono font-medium text-foreground bg-muted/60 px-2 py-0.5 rounded border border-border/50">
+                      {{ c.llaveProceso | radicado }}
+                    </span>
+                    <span>·</span>
+                    <span class="flex items-center gap-1">
+                      <svg class="size-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                      {{ c.fechaUltimaActuacion ? 'Última actuación: ' + c.fechaUltimaActuacion : 'Sin actuaciones registradas' }}
+                    </span>
+                  </div>
+
+                  @if (c.sujetosProcesales) {
+                    <div class="text-xs bg-muted/30 p-2 rounded border border-border/40 mt-0.5">
+                      <span class="font-semibold text-foreground">Partes del proceso:</span>
+                      <span class="text-muted-foreground ml-1">{{ c.sujetosProcesales }}</span>
+                    </div>
+                  }
+
+                  @if (c.alreadyInOrganization) {
+                    <p class="text-xs font-medium text-amber-700 dark:text-amber-400">
+                      Este expediente ya está siendo vigilado por tu organización.
+                    </p>
+                  }
+                </div>
+              </label>
+            }
+          </div>
+
+          @if (selectedCandidate()?.esPrivado) {
+            <app-form-alert type="warning">
+              <div class="flex flex-col gap-2">
+                <span class="font-medium">
+                  Este proceso se encuentra catalogado como de reserva / privado por la Rama Judicial.
+                </span>
+                <span class="text-xs">
+                  Dokqet puede mantenerlo registrado, pero la Rama Judicial no expondrá el contenido de las actuaciones ni las partes hasta que el despacho levante la reserva.
+                </span>
+                <label class="flex items-center gap-2 font-normal text-foreground cursor-pointer pt-1">
+                  <input 
+                    type="checkbox" 
+                    [formControl]="acceptPrivateControl"
+                    class="size-4 rounded border-border accent-primary focus:ring-ring" />
+                  <span class="text-xs font-medium">Entiendo la reserva y deseo vigilar el expediente de todas formas</span>
+                </label>
+              </div>
+            </app-form-alert>
+          }
+        </section>
+      }
+
+      <!-- Paso 3: Datos de la organización -->
+      @if (selectedCandidate() && !selectedCandidate()?.alreadyInOrganization) {
+        <section class="flex flex-col gap-4 pt-4 border-t border-border/60">
+          <h2 class="flex items-center gap-2.5 font-semibold text-foreground text-sm">
+            <span class="flex size-6 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground font-semibold" aria-hidden="true">3</span>
+            Asignación y datos internos del despacho
+          </h2>
+
+          <form [formGroup]="registerForm" class="flex flex-col gap-4">
+            <div class="grid gap-4 sm:grid-cols-2">
+              <div class="floating-group">
+                <div class="floating-field-container">
+                  <select 
+                    id="responsible" 
+                    formControlName="responsibleUserId"
+                    class="floating-select">
+                    <option [value]="null">Sin asignar (a todo el equipo)</option>
+                    @for (m of members(); track m.userId) {
+                      <option [value]="m.userId">
+                        {{ m.name }} {{ m.userId === currentUserId() ? ' (tú)' : '' }}
+                      </option>
+                    }
+                  </select>
+                  <label for="responsible" class="floating-label">
+                    Abogado responsable
+                  </label>
+                </div>
+                <p class="floating-hint">Recibirá las notificaciones prioritarias de este proceso.</p>
+              </div>
+
+              <div class="floating-group">
+                <div class="floating-field-container">
+                  <select 
+                    id="party" 
+                    formControlName="representedParty"
+                    class="floating-select">
+                    @if (representedParties().length > 0) {
+                      @for (p of representedParties(); track p.id) {
+                        <option [value]="p.code">{{ p.name }}</option>
+                      }
+                    } @else {
+                      @for (opt of representedPartyOptions; track opt.value) {
+                        <option [value]="opt.value">{{ opt.label }}</option>
+                      }
+                    }
+                  </select>
+                  <label for="party" class="floating-label">
+                    Parte representada
+                  </label>
+                </div>
+                <p class="floating-hint">Permite filtrar fácilmente en tu panel de control.</p>
+              </div>
+            </div>
+
+            <div class="floating-group">
+              <div class="floating-field-container">
+                <textarea 
+                  id="notes" 
+                  formControlName="notes"
+                  rows="3"
+                  [maxLength]="notesMaxLength"
+                  placeholder="Escribe anotaciones de estrategia procesal, cliente, número de radicado interno..." 
+                  class="floating-textarea pt-3"></textarea>
+                <label for="notes" class="floating-label">
+                  Notas internas y expediente del despacho
+                </label>
+              </div>
+              <div class="flex items-center justify-between text-xs text-muted-foreground mt-1">
+                <span>Solo visibles para los miembros de tu organización.</span>
+                <span class="font-mono">{{ notesLength() }}/{{ notesMaxLength }}</span>
+              </div>
+            </div>
+          </form>
+        </section>
+      }
+    </app-card-content>
+
+    <app-card-footer className="mt-4 flex flex-col gap-4 border-t border-border/40 pt-4">
+      @if (registerError()) {
+        <div class="w-full">
+          <app-form-alert type="error">
+            {{ registerError() }}
+          </app-form-alert>
+        </div>
+      }
+
+      <div class="flex w-full flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+        <a routerLink="/panel">
+          <app-button variant="outline" className="w-full sm:w-auto">
+            Cancelar
+          </app-button>
+        </a>
+        <app-button 
+          (buttonClick)="onRegister()"
+          [disabled]="!canSubmit()"
+          [loading]="registering()"
+          className="w-full sm:w-auto">
+          <svg class="size-4 shrink-0 -ml-0.5 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          {{ registering() ? 'Activando vigilancia…' : 'Comenzar vigilancia judicial' }}
+        </app-button>
+      </div>
+    </app-card-footer>
+  </app-card>
+</div>

@@ -1,0 +1,28 @@
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { StatCardComponent } from './stat-card.component';
+
+describe('StatCardComponent', () => {
+  let component: StatCardComponent;
+  let fixture: ComponentFixture<StatCardComponent>;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [StatCardComponent]
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(StatCardComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+  });
+
+  it('should create stat card component', () => {
+    expect(component).toBeTruthy();
+  });
+
+  it('should apply active border classes when active is true', () => {
+    fixture.componentRef.setInput('active', true);
+    fixture.detectChanges();
+    expect(component.computedClass()).toContain('border-primary');
+    expect(component.computedClass()).toContain('ring-2');
+  });
+});

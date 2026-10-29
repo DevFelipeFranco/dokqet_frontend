@@ -1,0 +1,13 @@
+<div [class]="'relative text-left ' + (fullWidth() ? 'block w-full' : 'inline-block')">
+  <div (click)="toggle()" [class]="fullWidth() ? 'w-full' : ''">
+    <ng-content select="[dropdown-trigger]"></ng-content>
+  </div>
+
+  @if (isOpen()) {
+    <div 
+      [class]="'absolute z-50 mt-1.5 min-w-[13.5rem] rounded-xl border border-border bg-popover p-1.5 text-popover-foreground shadow-lg animate-in fade-in-0 zoom-in-95 ' + (align() === 'right' ? 'right-0' : 'left-0')"
+      (click)="onMenuClick($event)">
+      <ng-content select="[dropdown-content]"></ng-content>
+    </div>
+  }
+</div>

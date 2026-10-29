@@ -1,0 +1,31 @@
+@if (isOpen()) {
+  <div 
+    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs transition-opacity animate-in fade-in"
+    (click)="onBackdropClick($event)">
+    <div 
+      class="relative w-full max-w-lg rounded-xl border border-border bg-card p-6 text-card-foreground shadow-xl transition-all zoom-in-95 duration-150"
+      role="dialog" 
+      aria-modal="true"
+      (click)="$event.stopPropagation()">
+      <div class="flex flex-col gap-2">
+        <h2 class="text-lg font-semibold tracking-tight text-foreground">{{ title() }}</h2>
+        @if (description()) {
+          <p class="text-sm text-muted-foreground">{{ description() }}</p>
+        }
+      </div>
+
+      <div class="py-4 text-sm">
+        <ng-content></ng-content>
+      </div>
+
+      <div class="mt-4 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+        <app-button variant="outline" (buttonClick)="onCancel()">
+          {{ cancelText() }}
+        </app-button>
+        <app-button [variant]="confirmVariant()" (buttonClick)="onConfirm()">
+          {{ confirmText() }}
+        </app-button>
+      </div>
+    </div>
+  </div>
+}

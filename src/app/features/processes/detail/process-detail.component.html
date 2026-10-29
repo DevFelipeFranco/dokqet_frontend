@@ -1,0 +1,919 @@
+@if (loading()) {
+  <div class="space-y-4 py-6" role="status" aria-live="polite">
+    <span class="sr-only">Cargando expediente judicial...</span>
+    <div class="h-24 w-full animate-pulse rounded-2xl bg-card border border-border"></div>
+    <div class="grid grid-cols-2 xl:grid-cols-4 gap-3.5">
+      @for (i of [1, 2, 3, 4]; track i) {
+        <div class="h-20 animate-pulse rounded-xl bg-card border border-border"></div>
+      }
+    </div>
+    <div class="h-96 w-full animate-pulse rounded-2xl bg-card border border-border"></div>
+  </div>
+} @else if (error()) {
+  <app-card>
+    <app-card-header>
+      <app-card-title>Proceso no encontrado</app-card-title>
+    </app-card-header>
+    <app-card-content>
+      <p class="text-muted-foreground mb-4">{{ error() }}</p>
+      <a routerLink="/panel">
+        <app-button variant="outline">Volver al panel</app-button>
+      </a>
+    </app-card-content>
+  </app-card>
+} @else {
+  @if (detail(); as v) {
+    <div class="flex flex-col gap-5">
+      <!-- Breadcrumb -->
+      <app-breadcrumbs
+        backUrl="/panel"
+        backLabel="Volver a expedientes"
+        [items]="[{ label: (v.process.radicado | radicado) }]">
+      </app-breadcrumbs>
+
+      <!-- Main Elevated Container (Prodex Style) -->
+      <section 
+        aria-label="Ficha y actuaciones del expediente judicial"
+        class="flex flex-col gap-6 rounded-2xl border border-border bg-card p-4 sm:p-6 shadow-xs">
+
+        <!-- 1. Executive Header Row: Radicado, Quick Metadata Summary & Global Actions -->
+        <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between border-b border-border/70 pb-5">
+          <div class="min-w-0 space-y-1.5">
+            <div class="flex flex-wrap items-center gap-2 sm:gap-2.5">
+              <h2 class="font-mono text-lg sm:text-2xl font-bold tracking-tight text-foreground tabular-nums">
+                {{ v.process.radicado | radicado }}
+              </h2>
+
+              <button 
+                type="button"
+                (click)="copyRadicado()"
+                class="inline-flex h-7 items-center gap-1.5 rounded-lg border border-border bg-background px-2.5 font-mono text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer shadow-2xs select-none"
+                title="Copiar los 23 dígitos del radicado">
+                @if (copied()) {
+                  <span class="font-sans font-semibold text-emerald-600 dark:text-emerald-400">✓ Copiado</span>
+                } @else {
+                  <svg class="size-3.5 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                  </svg>
+                  <span class="font-sans">Copiar</span>
+                }
+              </button>
+
+              <span class="inline-flex items-center rounded-full border border-border bg-muted/60 px-2.5 py-0.5 text-xs font-medium text-foreground">
+                Instancia {{ v.process.instancia }}
+              </span>
+
+              @if (v.process.esPrivado) {
+                <span class="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2.5 py-0.5 text-xs font-semibold text-amber-800 dark:text-amber-300">
+                  <svg class="size-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+                  Reserva judicial
+                </span>
+              }
+            </div>
+
+            <p class="text-xs sm:text-sm font-medium text-foreground">
+              {{ v.process.despacho || 'Despacho judicial sin especificar' }}
+              @if (v.process.departamento) {
+                <span class="font-normal text-muted-foreground"> · {{ v.process.departamento }}</span>
+              }
+            </p>
+
+            <!-- Compact 1-Line Contextual Strip (Responsible Lawyer, Represented Party & Last Sync) -->
+            <div class="flex flex-wrap items-center gap-x-4 gap-y-1 pt-1 text-xs text-muted-foreground">
+              <span class="inline-flex items-center gap-1.5">
+                <span>Responsable:</span>
+                @if (v.organization.responsibleName) {
+                  <strong class="font-semibold text-foreground">{{ v.organization.responsibleName }}</strong>
+                } @else {
+                  <strong class="font-semibold text-brand">Sin asignar</strong>
+                }
+              </span>
+              <span aria-hidden="true">·</span>
+              <span>
+                Representa: <strong class="font-semibold text-foreground">{{ formatParty(v.organization.representedParty) }}</strong>
+              </span>
+              @if (v.process.ponente) {
+                <span aria-hidden="true">·</span>
+                <span>
+                  Ponente: <strong class="font-medium text-foreground">{{ v.process.ponente }}</strong>
+                </span>
+              }
+              <button
+                type="button"
+                (click)="startEditOrg()"
+                class="text-xs font-semibold text-brand hover:underline cursor-pointer">
+                Editar asignación
+              </button>
+            </div>
+          </div>
+
+          <!-- Header Action Buttons (Matching Prodex top-right buttons) -->
+          <div class="flex flex-wrap items-center gap-2 shrink-0">
+            <button
+              type="button"
+              (click)="exportActuacionesCsv()"
+              [disabled]="v.actuaciones.length === 0"
+              class="inline-flex h-9 items-center gap-2 rounded-xl border border-border bg-background px-3.5 text-xs sm:text-sm font-medium text-foreground shadow-2xs hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 transition-colors cursor-pointer">
+              <svg class="size-4 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <span>{{ exportedCsv() ? '¡CSV descargado!' : 'Exportar actuaciones' }}</span>
+            </button>
+
+            @if (v.newActuacionesCount > 0) {
+              <button
+                type="button"
+                (click)="markAsSeen()"
+                class="inline-flex h-9 items-center gap-1.5 rounded-xl bg-primary px-3.5 text-xs sm:text-sm font-semibold text-primary-foreground shadow-xs hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-ring transition-colors cursor-pointer">
+                <svg class="size-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+                <span>Marcar leídas ({{ v.newActuacionesCount }})</span>
+              </button>
+            }
+
+            <button
+              type="button"
+              (click)="confirmUnfollow.set(true)"
+              class="inline-flex h-9 items-center gap-1.5 rounded-xl border border-destructive/25 bg-destructive/10 px-3 text-xs sm:text-sm font-semibold text-destructive hover:bg-destructive/20 transition-colors cursor-pointer">
+              <span>Dejar de vigilar</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 2. 4 KPI Metric Cards Row (Interactive Filters for the Expediente) -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3.5">
+          <app-stat-card
+            label="Total actuaciones registradas"
+            [value]="v.totalActuaciones"
+            dotColor="bg-violet-600 dark:bg-violet-400"
+            [active]="activeSectionTab() === 'ACTUACIONES' && actuacionFilter() === 'ALL'"
+            className="cursor-pointer"
+            (click)="setActuacionFilter('ALL')">
+          </app-stat-card>
+
+          <app-stat-card
+            label="Actuaciones nuevas sin leer"
+            [value]="v.newActuacionesCount"
+            dotColor="bg-amber-500 dark:bg-amber-400"
+            [active]="activeSectionTab() === 'ACTUACIONES' && actuacionFilter() === 'NEW'"
+            className="cursor-pointer"
+            (click)="setActuacionFilter('NEW')">
+          </app-stat-card>
+
+          <app-stat-card
+            label="Con términos procesales"
+            [value]="actuacionesWithTermsCount()"
+            dotColor="bg-brand"
+            [active]="activeSectionTab() === 'ACTUACIONES' && actuacionFilter() === 'TERMS'"
+            className="cursor-pointer"
+            (click)="setActuacionFilter('TERMS')">
+          </app-stat-card>
+
+          <app-stat-card
+            label="Sujetos procesales vinculados"
+            [value]="v.parties.length"
+            dotColor="bg-emerald-500 dark:bg-emerald-400"
+            [active]="activeSectionTab() === 'PARTIES'"
+            className="cursor-pointer"
+            (click)="setSectionTab('PARTIES')">
+          </app-stat-card>
+        </div>
+
+        <!-- 3. Primary Section Tabs (Puts Actuaciones First so the user doesn't scroll past static cards) -->
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-border">
+          <nav aria-label="Secciones del expediente" class="flex items-center gap-6 overflow-x-auto -mb-px">
+            <button
+              type="button"
+              (click)="setSectionTab('ACTUACIONES')"
+              [class]="'whitespace-nowrap border-b-2 pb-3 pt-1 text-xs sm:text-sm transition-colors cursor-pointer flex items-center gap-2 ' + 
+                (activeSectionTab() === 'ACTUACIONES' 
+                  ? 'border-brand text-foreground font-semibold' 
+                  : 'border-transparent text-muted-foreground hover:text-foreground font-medium')">
+              <span>Actuaciones judiciales</span>
+              <span class="rounded-full bg-muted px-2 py-0.2 text-[11px] font-semibold text-foreground tabular-nums">
+                {{ v.totalActuaciones }}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              (click)="setSectionTab('PARTIES')"
+              [class]="'whitespace-nowrap border-b-2 pb-3 pt-1 text-xs sm:text-sm transition-colors cursor-pointer flex items-center gap-2 ' + 
+                (activeSectionTab() === 'PARTIES' 
+                  ? 'border-brand text-foreground font-semibold' 
+                  : 'border-transparent text-muted-foreground hover:text-foreground font-medium')">
+              <span>Sujetos procesales</span>
+              <span class="rounded-full bg-muted px-2 py-0.2 text-[11px] font-semibold text-foreground tabular-nums">
+                {{ v.parties.length }}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              (click)="setSectionTab('TECHNICAL')"
+              [class]="'whitespace-nowrap border-b-2 pb-3 pt-1 text-xs sm:text-sm transition-colors cursor-pointer ' + 
+                (activeSectionTab() === 'TECHNICAL' 
+                  ? 'border-brand text-foreground font-semibold' 
+                  : 'border-transparent text-muted-foreground hover:text-foreground font-medium')">
+              Ficha técnica y gestión interna
+            </button>
+          </nav>
+
+          @if (v.process.ultimaConsulta) {
+            <span class="text-[11px] text-muted-foreground pb-2">
+              Sincronizado con Rama Judicial: <strong class="font-medium text-foreground">{{ v.process.ultimaConsulta }}</strong>
+            </span>
+          }
+        </div>
+
+        <!-- ========================================================================= -->
+        <!-- TAB 1: ACTUACIONES JUDICIALES (STRUCTURED, SCANNABLE, NO ENDLESS SCROLL) -->
+        <!-- ========================================================================= -->
+        @if (activeSectionTab() === 'ACTUACIONES') {
+          <div class="flex flex-col gap-4">
+            
+            <!-- Actuaciones Control Bar: Quick Sub-Filters, Search, Density & View Mode -->
+            <div class="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between rounded-xl border border-border/70 bg-muted/30 p-3">
+              <!-- Quick Filter Pills -->
+              <div class="flex flex-wrap items-center gap-1.5" role="group" aria-label="Filtrar actuaciones por categoría">
+                <button
+                  type="button"
+                  (click)="setActuacionFilter('ALL')"
+                  [class]="'rounded-lg px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer ' + 
+                    (actuacionFilter() === 'ALL' 
+                      ? 'bg-primary text-primary-foreground shadow-2xs font-semibold' 
+                      : 'bg-background border border-border/70 text-muted-foreground hover:text-foreground')">
+                  Todas ({{ v.actuaciones.length }})
+                </button>
+
+                <button
+                  type="button"
+                  (click)="setActuacionFilter('NEW')"
+                  [class]="'rounded-lg px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer flex items-center gap-1.5 ' + 
+                    (actuacionFilter() === 'NEW' 
+                      ? 'bg-primary text-primary-foreground shadow-2xs font-semibold' 
+                      : 'bg-background border border-border/70 text-muted-foreground hover:text-foreground')">
+                  <span class="size-1.5 rounded-full bg-amber-500" aria-hidden="true"></span>
+                  <span>Nuevas ({{ actuacionesNewInBatchCount() }})</span>
+                </button>
+
+                <button
+                  type="button"
+                  (click)="setActuacionFilter('TERMS')"
+                  [class]="'rounded-lg px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer flex items-center gap-1.5 ' + 
+                    (actuacionFilter() === 'TERMS' 
+                      ? 'bg-primary text-primary-foreground shadow-2xs font-semibold' 
+                      : 'bg-background border border-border/70 text-muted-foreground hover:text-foreground')">
+                  <span>Con términos ({{ actuacionesWithTermsCount() }})</span>
+                </button>
+
+                <button
+                  type="button"
+                  (click)="setActuacionFilter('DOCS')"
+                  [class]="'rounded-lg px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer flex items-center gap-1.5 ' + 
+                    (actuacionFilter() === 'DOCS' 
+                      ? 'bg-primary text-primary-foreground shadow-2xs font-semibold' 
+                      : 'bg-background border border-border/70 text-muted-foreground hover:text-foreground')">
+                  <span>Con anexos ({{ actuacionesWithDocsCount() }})</span>
+                </button>
+              </div>
+
+              <!-- Right Controls: Search Input + Expand All Toggle + Rows per View + View Mode Switcher -->
+              <div class="flex flex-wrap items-center gap-2">
+                <!-- Search inside Actuaciones -->
+                <div class="relative flex-1 sm:w-64 sm:flex-initial">
+                  <svg class="size-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                  <input
+                    type="text"
+                    [(ngModel)]="actuacionSearch"
+                    placeholder="Buscar auto, sentencia, texto..."
+                    aria-label="Buscar dentro de las actuaciones"
+                    class="h-8 w-full rounded-lg border border-border bg-background pl-8 pr-7 text-xs text-foreground placeholder:text-muted-foreground outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30 transition-all" />
+                  @if (actuacionSearch) {
+                    <button
+                      type="button"
+                      (click)="actuacionSearch = ''"
+                      aria-label="Limpiar búsqueda de actuaciones"
+                      class="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground text-xs cursor-pointer">
+                      ✕
+                    </button>
+                  }
+                </div>
+
+                <!-- Expand / Collapse All Annotations Button -->
+                <button
+                  type="button"
+                  (click)="toggleExpandAllAnnotations()"
+                  class="inline-flex h-8 items-center gap-1.5 rounded-lg border border-border bg-background px-2.5 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
+                  title="Expandir o contraer el texto completo de todas las anotaciones">
+                  <span>{{ expandAllAnnotations() ? 'Contraer textos' : 'Expandir textos' }}</span>
+                </button>
+
+                <!-- Server Page Size Selector (10, 20, 40) -->
+                <div class="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-2.5 h-8 text-xs text-muted-foreground">
+                  <label for="actPageSize" class="sr-only">Actuaciones por página</label>
+                  <span>Por página:</span>
+                  <select
+                    id="actPageSize"
+                    [ngModel]="pageSize()"
+                    (ngModelChange)="setPageSize($event)"
+                    [disabled]="loadingActuaciones()"
+                    class="bg-transparent font-semibold text-foreground outline-none cursor-pointer disabled:opacity-50">
+                    @for (sizeOpt of pageSizeOptions; track sizeOpt) {
+                      <option [ngValue]="sizeOpt">{{ sizeOpt }} filas</option>
+                    }
+                  </select>
+                </div>
+
+                <!-- View Mode Toggle (Tabla vs Cronología) -->
+                <div class="inline-flex items-center rounded-lg border border-border bg-background p-0.5" role="group" aria-label="Modo de visualización">
+                  <button
+                    type="button"
+                    (click)="actuacionViewMode.set('TABLE')"
+                    title="Vista de tabla estructurada"
+                    aria-label="Vista de tabla estructurada"
+                    [class]="'inline-flex h-7 items-center gap-1 rounded-md px-2 text-xs font-medium transition-colors cursor-pointer ' + (actuacionViewMode() === 'TABLE' ? 'bg-muted text-foreground font-semibold' : 'text-muted-foreground hover:text-foreground')">
+                    <svg class="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                    <span class="hidden sm:inline">Tabla</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    (click)="actuacionViewMode.set('TIMELINE')"
+                    title="Vista de fichas cronológicas"
+                    aria-label="Vista de fichas cronológicas"
+                    [class]="'inline-flex h-7 items-center gap-1 rounded-md px-2 text-xs font-medium transition-colors cursor-pointer ' + (actuacionViewMode() === 'TIMELINE' ? 'bg-muted text-foreground font-semibold' : 'text-muted-foreground hover:text-foreground')">
+                    <svg class="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                    <span class="hidden sm:inline">Fichas</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!--Empty state when filter returns 0 items -->
+            @if (filteredActuaciones().length === 0) {
+              <app-empty-state
+                title="No se encontraron actuaciones"
+                description="Ninguna actuación en esta página coincide con los filtros o términos de búsqueda aplicados."
+                actionLabel="Restablecer filtros de actuaciones"
+                (actionClick)="resetActuacionFilters()">
+              </app-empty-state>
+            } @else if (actuacionViewMode() === 'TABLE') {
+              <!-- MODE A: STRUCTURED COMPACT DATA TABLE (Default, Prodex Style) -->
+              <div [class]="'relative overflow-x-auto rounded-xl border border-border/70 transition-opacity ' + (loadingActuaciones() ? 'opacity-60 pointer-events-none' : '')">
+                <table class="w-full min-w-[820px] border-collapse text-left text-xs sm:text-sm">
+                  <thead>
+                    <tr class="border-b border-border/70 bg-muted/50 text-[11px] font-semibold text-muted-foreground select-none">
+                      <th scope="col" class="w-20 py-3 pl-4 pr-2">
+                        <span># Cons.</span>
+                      </th>
+                      <th scope="col" class="w-32 py-3 px-3">
+                        <button
+                          type="button"
+                          (click)="toggleActuacionSortOrder()"
+                          class="inline-flex items-center gap-1 font-semibold text-muted-foreground hover:text-foreground cursor-pointer">
+                          <span>Fecha</span>
+                          <span class="text-[10px] opacity-75" aria-hidden="true">{{ actuacionSortOrder() === 'desc' ? '↓' : '↑' }}</span>
+                        </button>
+                      </th>
+                      <th scope="col" class="w-56 py-3 px-3">
+                        <span>Actuación / Trámite</span>
+                      </th>
+                      <th scope="col" class="py-3 px-3">
+                        <span>Anotación Judicial</span>
+                      </th>
+                      <th scope="col" class="w-44 py-3 px-3">
+                        <span>Término Procesal</span>
+                      </th>
+                      <th scope="col" class="w-24 py-3 pl-3 pr-4 text-right">
+                        <span>Acción</span>
+                      </th>
+                    </tr>
+                  </thead>
+
+                  <tbody class="divide-y divide-border/60 bg-card">
+                    @for (a of visibleActuaciones(); track a.id) {
+                      <tr [class]="'group transition-colors align-top ' + (a.isNew ? 'bg-amber-500/[0.04] hover:bg-amber-500/[0.08]' : 'hover:bg-muted/35')">
+                        
+                        <!-- Col 1: Consecutivo & New Indicator -->
+                        <td class="py-3.5 pl-4 pr-2 font-mono text-xs font-semibold text-muted-foreground tabular-nums">
+                          <div class="flex items-center gap-1.5">
+                            @if (a.isNew) {
+                              <span class="size-2 shrink-0 rounded-full bg-brand" title="Actuación nueva sin revisar"></span>
+                            }
+                            <span>#{{ a.consecutivo }}</span>
+                          </div>
+                        </td>
+
+                        <!-- Col 2: Fecha de Actuación & Fecha de Registro -->
+                        <td class="py-3.5 px-3 whitespace-nowrap tabular-nums">
+                          <div class="flex flex-col">
+                            <span class="text-xs sm:text-sm font-semibold text-foreground">
+                              {{ a.fechaActuacion || 'Sin fecha' }}
+                            </span>
+                            @if (a.fechaRegistro) {
+                              <span class="text-[11px] text-muted-foreground">
+                                Reg: {{ a.fechaRegistro }}
+                              </span>
+                            }
+                          </div>
+                        </td>
+
+                        <!-- Col 3: Tipo de Actuación & Badges -->
+                        <td class="py-3.5 px-3">
+                          <div class="flex flex-col items-start gap-1">
+                            <span class="text-xs sm:text-sm font-semibold text-foreground leading-snug">
+                              {{ a.tipoActuacion || 'Actuación judicial' }}
+                            </span>
+                            <div class="flex flex-wrap items-center gap-1">
+                              @if (a.isNew) {
+                                <span class="inline-flex items-center rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-bold text-amber-800 dark:text-amber-300">
+                                  Nueva
+                                </span>
+                              }
+                              @if (a.tieneDocumentos) {
+                                <span class="inline-flex items-center gap-1 rounded-full border border-border bg-muted px-2 py-0.5 text-[10px] font-medium text-foreground">
+                                  <svg class="size-3 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                                  </svg>
+                                  Con anexo
+                                </span>
+                              }
+                            </div>
+                          </div>
+                        </td>
+
+                        <!-- Col 4: Anotación Judicial with 2-Line Clamp & Progressive Disclosure -->
+                        <td class="py-3.5 px-3 max-w-md">
+                          @if (a.anotacion) {
+                            <div class="flex flex-col items-start gap-1">
+                              <p [class]="'text-xs sm:text-sm text-foreground/90 leading-relaxed whitespace-pre-line break-words ' + (isActuacionExpanded(a.id) ? '' : 'line-clamp-2')">
+                                {{ a.anotacion }}
+                              </p>
+                              @if (isLongAnnotation(a.anotacion)) {
+                                <button
+                                  type="button"
+                                  (click)="toggleActuacionExpand(a.id)"
+                                  class="inline-flex items-center gap-1 text-[11px] font-semibold text-brand hover:underline cursor-pointer select-none">
+                                  <span>{{ isActuacionExpanded(a.id) ? 'Mostrar menos' : 'Ver anotación completa' }}</span>
+                                </button>
+                              }
+                            </div>
+                          } @else {
+                            <span class="text-xs italic text-muted-foreground">Sin anotación registrada en estados</span>
+                          }
+                        </td>
+
+                        <!-- Col 5: Términos Procesales (Inicia -> Vence) -->
+                        <td class="py-3.5 px-3 whitespace-nowrap">
+                          @if (a.fechaInicial || a.fechaFinal) {
+                            <div class="inline-flex flex-col gap-0.5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-2.5 py-1.5 text-xs">
+                              <span class="flex items-center gap-1 font-semibold text-amber-800 dark:text-amber-300 tabular-nums">
+                                <svg class="size-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <span>{{ a.fechaInicial || '?' }} → {{ a.fechaFinal || '?' }}</span>
+                              </span>
+                              <span class="text-[10px] text-amber-800/80 dark:text-amber-300/80">
+                                Término procesal
+                              </span>
+                            </div>
+                          } @else {
+                            <span class="inline-flex items-center rounded-full bg-muted/60 px-2.5 py-1 text-[11px] font-medium text-muted-foreground">
+                              Sin término
+                            </span>
+                          }
+                        </td>
+
+                        <!-- Col 6: Quick Actions (Expand Detail & Copy Summary) -->
+                        <td class="py-3.5 pl-3 pr-4 text-right whitespace-nowrap">
+                          <div class="inline-flex items-center justify-end gap-1">
+                            <button
+                              type="button"
+                              (click)="toggleActuacionExpand(a.id)"
+                              [title]="isActuacionExpanded(a.id) ? 'Contraer detalle' : 'Expandir detalle de la actuación'"
+                              [attr.aria-label]="'Alternar detalle de actuación ' + a.consecutivo"
+                              class="inline-flex size-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer">
+                              <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                @if (isActuacionExpanded(a.id)) {
+                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+                                } @else {
+                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                }
+                              </svg>
+                            </button>
+
+                            <button
+                              type="button"
+                              (click)="copyActuacion(a)"
+                              [title]="copiedActuacionId() === a.id ? '¡Actuación copiada!' : 'Copiar resumen de la actuación'"
+                              [attr.aria-label]="'Copiar actuación ' + a.consecutivo"
+                              class="inline-flex size-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer">
+                              @if (copiedActuacionId() === a.id) {
+                                <span class="text-xs font-bold text-emerald-600 dark:text-emerald-400">✓</span>
+                              } @else {
+                                <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                </svg>
+                              }
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            } @else {
+              <!-- MODE B: COMPACT TIMELINE CARDS (2-Column Grid on Large Screens or Accordion Cards) -->
+              <ol class="grid grid-cols-1 lg:grid-cols-2 gap-3.5">
+                @for (a of visibleActuaciones(); track a.id) {
+                  <li [class]="'flex flex-col justify-between gap-2.5 rounded-xl border p-4 transition-colors ' + (a.isNew ? 'border-amber-500/40 bg-amber-500/[0.04]' : 'border-border bg-background hover:bg-muted/25')">
+                    <div class="flex items-start justify-between gap-2">
+                      <div class="flex flex-wrap items-center gap-2">
+                        <span class="rounded-md bg-muted px-2 py-0.5 font-mono text-xs font-bold text-foreground tabular-nums">
+                          #{{ a.consecutivo }}
+                        </span>
+                        <span class="font-mono text-xs font-semibold text-muted-foreground tabular-nums">
+                          {{ a.fechaActuacion || 'Sin fecha' }}
+                        </span>
+                        @if (a.isNew) {
+                          <span class="rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-bold text-amber-800 dark:text-amber-300">
+                            Nueva
+                          </span>
+                        }
+                        @if (a.tieneDocumentos) {
+                          <span class="rounded-full border border-border bg-card px-2 py-0.5 text-[10px] font-medium text-foreground">
+                            Anexo
+                          </span>
+                        }
+                      </div>
+
+                      <button
+                        type="button"
+                        (click)="copyActuacion(a)"
+                        class="inline-flex size-7 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
+                        title="Copiar resumen de actuación">
+                        @if (copiedActuacionId() === a.id) {
+                          <span class="text-xs font-bold text-emerald-600">✓</span>
+                        } @else {
+                          <svg class="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                          </svg>
+                        }
+                      </button>
+                    </div>
+
+                    <div>
+                      <h4 class="text-xs sm:text-sm font-semibold text-foreground">
+                        {{ a.tipoActuacion || 'Actuación judicial' }}
+                      </h4>
+                      @if (a.anotacion) {
+                        <p [class]="'mt-1 text-xs text-muted-foreground leading-relaxed whitespace-pre-line ' + (isActuacionExpanded(a.id) ? '' : 'line-clamp-2')">
+                          {{ a.anotacion }}
+                        </p>
+                        @if (isLongAnnotation(a.anotacion)) {
+                          <button
+                            type="button"
+                            (click)="toggleActuacionExpand(a.id)"
+                            class="mt-1 text-[11px] font-semibold text-brand hover:underline cursor-pointer">
+                            {{ isActuacionExpanded(a.id) ? 'Contraer texto' : 'Ver texto completo' }}
+                          </button>
+                        }
+                      }
+                    </div>
+
+                    @if (a.fechaInicial || a.fechaFinal) {
+                      <div class="inline-flex w-fit items-center gap-1.5 rounded-lg border border-amber-500/25 bg-amber-500/10 px-2.5 py-1 text-xs font-semibold text-amber-800 dark:text-amber-300 tabular-nums">
+                        <svg class="size-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span>Término: {{ a.fechaInicial || '?' }} al {{ a.fechaFinal || '?' }}</span>
+                      </div>
+                    }
+                  </li>
+                }
+              </ol>
+            }
+
+            <!-- Unified Server-Side Footer Pagination (?page=X&pageSize=Y) -->
+            @if (v.totalActuaciones > 0) {
+              <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between pt-2 text-xs text-muted-foreground">
+                <div class="flex flex-wrap items-center gap-2">
+                  <p class="tabular-nums">
+                    Mostrando <strong class="font-semibold text-foreground">{{ pageStartIndex() }}-{{ pageEndIndex() }}</strong> de <strong class="font-semibold text-foreground">{{ v.totalActuaciones }}</strong> actuaciones registradas
+                  </p>
+                  @if (loadingActuaciones()) {
+                    <span class="inline-flex items-center gap-1.5 text-brand font-medium" role="status" aria-live="polite">
+                      <span class="size-2 rounded-full bg-brand animate-ping" aria-hidden="true"></span>
+                      <span>Consultando página {{ currentPage() }}...</span>
+                    </span>
+                  }
+                </div>
+
+                <nav aria-label="Paginación de actuaciones en servidor" class="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    (click)="goToPage(currentPage() - 1)"
+                    [disabled]="currentPage() <= 1 || loadingActuaciones()"
+                    class="inline-flex h-8 items-center gap-1 rounded-lg border border-border bg-background px-2.5 text-xs font-medium text-foreground hover:bg-muted disabled:opacity-40 disabled:pointer-events-none transition-colors cursor-pointer">
+                    <span aria-hidden="true">‹</span>
+                    <span>Anterior</span>
+                  </button>
+
+                  @for (pNum of visiblePageNumbers(); track pNum) {
+                    <button
+                      type="button"
+                      (click)="goToPage(pNum)"
+                      [disabled]="loadingActuaciones()"
+                      [attr.aria-current]="currentPage() === pNum ? 'page' : null"
+                      [class]="'inline-flex size-8 items-center justify-center rounded-lg text-xs font-semibold tabular-nums transition-colors cursor-pointer ' + 
+                        (currentPage() === pNum 
+                          ? 'bg-primary text-primary-foreground shadow-2xs' 
+                          : 'border border-border bg-background text-foreground hover:bg-muted')">
+                      {{ pNum }}
+                    </button>
+                  }
+
+                  <button
+                    type="button"
+                    (click)="goToPage(currentPage() + 1)"
+                    [disabled]="currentPage() >= totalPages() || loadingActuaciones()"
+                    class="inline-flex h-8 items-center gap-1 rounded-lg border border-border bg-background px-2.5 text-xs font-medium text-foreground hover:bg-muted disabled:opacity-40 disabled:pointer-events-none transition-colors cursor-pointer">
+                    <span>Siguiente</span>
+                    <span aria-hidden="true">›</span>
+                  </button>
+                </nav>
+              </div>
+            }
+          </div>
+        }
+
+        <!-- ========================================================================= -->
+        <!-- TAB 2: SUJETOS PROCESALES (STRUCTURED TABLE)                              -->
+        <!-- ========================================================================= -->
+        @if (activeSectionTab() === 'PARTIES') {
+          <div class="flex flex-col gap-4">
+            @if (v.parties.length === 0) {
+              <app-empty-state
+                title="Sin sujetos procesales registrados"
+                description="La Rama Judicial aún no reporta sujetos procesales detallados para este radicado.">
+              </app-empty-state>
+            } @else {
+              <div class="overflow-x-auto rounded-xl border border-border/70">
+                <table class="w-full min-w-[600px] border-collapse text-left text-xs sm:text-sm">
+                  <thead>
+                    <tr class="border-b border-border/70 bg-muted/50 text-[11px] font-semibold text-muted-foreground">
+                      <th scope="col" class="py-3 pl-4 pr-3">Rol / Categoría</th>
+                      <th scope="col" class="py-3 px-3">Nombre o Razón Social</th>
+                      <th scope="col" class="py-3 px-3">Tipo en Rama Judicial</th>
+                      <th scope="col" class="py-3 pl-3 pr-4 text-right">Estado</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-border/60 bg-card">
+                    @for (s of v.parties; track s.idRegSujeto) {
+                      <tr class="hover:bg-muted/35 transition-colors">
+                        <td class="py-3 pl-4 pr-3 whitespace-nowrap">
+                          <span class="inline-flex items-center rounded-full bg-secondary px-2.5 py-0.5 text-xs font-semibold text-secondary-foreground">
+                            {{ formatCategory(s.categoria) }}
+                          </span>
+                        </td>
+                        <td class="py-3 px-3 font-medium text-foreground">
+                          {{ s.nombreRazonSocial || 'Sin nombre registrado' }}
+                        </td>
+                        <td class="py-3 px-3 text-muted-foreground">
+                          {{ s.tipoSujeto || 'Parte procesal' }}
+                        </td>
+                        <td class="py-3 pl-3 pr-4 text-right whitespace-nowrap">
+                          @if (s.esEmplazado) {
+                            <span class="inline-flex items-center rounded-full bg-amber-500/15 px-2.5 py-0.5 text-xs font-semibold text-amber-800 dark:text-amber-300">
+                              Emplazado
+                            </span>
+                          } @else {
+                            <span class="inline-flex items-center rounded-full bg-emerald-500/15 px-2.5 py-0.5 text-xs font-semibold text-emerald-800 dark:text-emerald-300">
+                              Vinculado
+                            </span>
+                          }
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
+          </div>
+        }
+
+        <!-- ========================================================================= -->
+        <!-- TAB 3: FICHA TÉCNICA DEL DESPACHO Y GESTIÓN INTERNA DE LA FIRMA           -->
+        <!-- ========================================================================= -->
+        @if (activeSectionTab() === 'TECHNICAL') {
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            <!-- Card A: Gestión Interna de la Organización -->
+            <app-card>
+              <app-card-header [border]="true">
+                <div class="flex items-center justify-between w-full">
+                  <div>
+                    <app-card-title>Gestión en {{ orgStore.activeOrg()?.name || 'la firma' }}</app-card-title>
+                    <app-card-description>Asignación de responsable interno y notas privadas del caso</app-card-description>
+                  </div>
+                  @if (!editingOrg()) {
+                    <app-button variant="outline" size="sm" (buttonClick)="startEditOrg()">
+                      Editar
+                    </app-button>
+                  }
+                </div>
+              </app-card-header>
+
+              @if (!editingOrg()) {
+                <app-card-content className="flex flex-col gap-3 text-sm">
+                  <dl class="grid gap-3.5 sm:grid-cols-2">
+                    <div>
+                      <dt class="text-xs text-muted-foreground">Abogado responsable</dt>
+                      <dd class="mt-0.5 font-semibold text-foreground">
+                        @if (v.organization.responsibleName) {
+                          {{ v.organization.responsibleName }}
+                        } @else {
+                          <span class="text-brand">Sin asignar</span>
+                        }
+                      </dd>
+                    </div>
+
+                    <div>
+                      <dt class="text-xs text-muted-foreground">Parte representada</dt>
+                      <dd class="mt-0.5 font-semibold text-foreground">
+                        {{ formatParty(v.organization.representedParty) }}
+                      </dd>
+                    </div>
+
+                    <div class="sm:col-span-2">
+                      <dt class="text-xs text-muted-foreground">Notas internas del expediente</dt>
+                      <dd class="mt-1 rounded-xl border border-border/70 bg-muted/30 p-3 text-xs sm:text-sm text-foreground whitespace-pre-line">
+                        {{ v.organization.notes || 'Sin notas internas registradas para este proceso.' }}
+                      </dd>
+                    </div>
+                  </dl>
+                </app-card-content>
+              } @else {
+                <app-card-content className="flex flex-col gap-4">
+                  <div class="grid gap-4 sm:grid-cols-2">
+                    <div class="floating-group">
+                      <div class="floating-field-container">
+                        <select 
+                          id="editResponsible" 
+                          [(ngModel)]="editResponsibleId"
+                          class="floating-select cursor-pointer">
+                          <option [value]="''">Sin asignar</option>
+                          @for (m of members(); track m.userId) {
+                            <option [value]="m.userId">{{ m.name }}</option>
+                          }
+                        </select>
+                        <label for="editResponsible" class="floating-label">
+                          Abogado responsable
+                        </label>
+                      </div>
+                    </div>
+
+                    <div class="floating-group">
+                      <div class="floating-field-container">
+                        <select 
+                          id="editParty" 
+                          [(ngModel)]="editParty"
+                          class="floating-select cursor-pointer">
+                          @if (representedParties().length > 0) {
+                            @for (p of representedParties(); track p.id) {
+                              <option [value]="p.code">{{ p.name }}</option>
+                            }
+                          } @else {
+                            <option [value]="RepresentedParty.SIN_DEFINIR">Sin definir</option>
+                            <option [value]="RepresentedParty.DEMANDANTE">Demandante</option>
+                            <option [value]="RepresentedParty.DEMANDADO">Demandado</option>
+                            <option [value]="RepresentedParty.OTRA">Otra parte</option>
+                          }
+                        </select>
+                        <label for="editParty" class="floating-label">
+                          Parte que representa
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="floating-group">
+                    <div class="floating-field-container">
+                      <textarea 
+                        id="editNotes" 
+                        [(ngModel)]="editNotes"
+                        rows="3"
+                        placeholder="Escribe notas de estrategia procesal o radicado interno..."
+                        class="floating-textarea pt-3"></textarea>
+                      <label for="editNotes" class="floating-label">
+                        Notas internas del expediente
+                      </label>
+                    </div>
+                  </div>
+
+                  @if (editError()) {
+                    <app-form-alert type="error">
+                      {{ editError() }}
+                    </app-form-alert>
+                  }
+                </app-card-content>
+
+                <app-card-footer>
+                  <div class="flex w-full justify-end gap-2">
+                    <app-button variant="outline" size="sm" (buttonClick)="cancelEditOrg()" [disabled]="savingOrg()">
+                      Cancelar
+                    </app-button>
+                    <app-button size="sm" (buttonClick)="saveEditOrg()" [loading]="savingOrg()">
+                      Guardar cambios
+                    </app-button>
+                  </div>
+                </app-card-footer>
+              }
+            </app-card>
+
+            <!-- Card B: Ficha Técnica Oficial de la Rama Judicial -->
+            <app-card>
+              <app-card-header [border]="true">
+                <app-card-title>Ficha técnica oficial del despacho</app-card-title>
+                <app-card-description>Metadatos extraídos del Portal Único de la Rama Judicial</app-card-description>
+              </app-card-header>
+              <app-card-content>
+                <dl class="grid gap-3.5 text-sm sm:grid-cols-2">
+                  <div>
+                    <dt class="text-xs text-muted-foreground">Tipo de proceso</dt>
+                    <dd class="mt-0.5 font-medium text-foreground">{{ v.process.tipoProceso || 'No especificado' }}</dd>
+                  </div>
+                  <div>
+                    <dt class="text-xs text-muted-foreground">Clase de proceso</dt>
+                    <dd class="mt-0.5 font-medium text-foreground">{{ v.process.claseProceso || 'No especificado' }}</dd>
+                  </div>
+                  <div>
+                    <dt class="text-xs text-muted-foreground">Juez / Magistrado ponente</dt>
+                    <dd class="mt-0.5 font-medium text-foreground">{{ v.process.ponente || 'No registrado' }}</dd>
+                  </div>
+                  <div>
+                    <dt class="text-xs text-muted-foreground">Recurso actual</dt>
+                    <dd class="mt-0.5 font-medium text-foreground">{{ v.process.recurso || 'Sin recurso activo' }}</dd>
+                  </div>
+                  <div>
+                    <dt class="text-xs text-muted-foreground">Ubicación física del expediente</dt>
+                    <dd class="mt-0.5 font-medium text-foreground">{{ v.process.ubicacion || 'Despacho' }}</dd>
+                  </div>
+                  <div>
+                    <dt class="text-xs text-muted-foreground">Fecha de radicación inicial</dt>
+                    <dd class="mt-0.5 font-mono font-medium text-foreground tabular-nums">{{ v.process.fechaInicio || 'Sin fecha' }}</dd>
+                  </div>
+                  @if (v.process.notaRadicacion) {
+                    <div class="sm:col-span-2">
+                      <dt class="text-xs text-muted-foreground">Nota de radicación</dt>
+                      <dd class="mt-0.5 text-foreground">{{ v.process.notaRadicacion }}</dd>
+                    </div>
+                  }
+                </dl>
+              </app-card-content>
+            </app-card>
+          </div>
+        }
+      </section>
+    </div>
+
+    <!-- Unfollow Modal Dialog -->
+    <app-modal
+      [isOpen]="confirmUnfollow()"
+      title="¿Dejar de seguir el proceso?"
+      description="La organización dejará de recibir alertas y actualizaciones automáticas de la Rama Judicial para este expediente."
+      confirmText="Dejar de seguir"
+      confirmVariant="destructive"
+      (confirmed)="executeUnfollow()"
+      (cancelled)="confirmUnfollow.set(false)">
+      @if (dismissalReasons().length > 0) {
+        <div class="floating-group text-left">
+          <div class="floating-field-container">
+            <select 
+              id="dismissalReason" 
+              [(ngModel)]="selectedDismissalReason"
+              class="floating-select cursor-pointer">
+              @for (dr of dismissalReasons(); track dr.id) {
+                <option [value]="dr.code">{{ dr.name }}</option>
+              }
+            </select>
+            <label for="dismissalReason" class="floating-label">
+              Motivo de desvinculación
+            </label>
+          </div>
+          <p class="floating-hint">Este motivo quedará registrado en las auditorías de vigilancia.</p>
+        </div>
+      }
+    </app-modal>
+  }
+}

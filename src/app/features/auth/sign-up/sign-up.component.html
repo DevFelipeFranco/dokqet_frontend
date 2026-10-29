@@ -1,0 +1,229 @@
+<div class="min-h-svh flex flex-col items-center justify-center p-4 py-12 bg-background">
+  <a routerLink="/" class="mb-6" aria-label="Dokqet, ir al inicio">
+    <app-logo height="h-9"></app-logo>
+  </a>
+
+  <app-card className="w-full max-w-lg shadow-sm">
+    <app-card-header>
+      <app-card-title className="text-xl">Crea tu cuenta de despacho</app-card-title>
+      <app-card-description>
+        Ingresa tus datos profesionales para gestionar procesos judiciales en Dokqet.
+      </app-card-description>
+    </app-card-header>
+
+    <form [formGroup]="form" (ngSubmit)="onSubmit()">
+      <app-card-content className="flex flex-col gap-4">
+        <!-- Document info -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div class="floating-group">
+            <div class="floating-field-container">
+              <select 
+                id="documentType" 
+                formControlName="documentType"
+                class="floating-select cursor-pointer">
+                @for (dt of documentTypes(); track dt.id) {
+                  <option [value]="dt.code">{{ dt.name }} ({{ dt.code }})</option>
+                }
+              </select>
+              <label for="documentType" class="floating-label">
+                Tipo Doc. *
+              </label>
+            </div>
+          </div>
+          <div class="sm:col-span-2 floating-group">
+            <div class="floating-field-container">
+              <input 
+                id="documentNumber" 
+                type="text" 
+                formControlName="documentNumber"
+                inputmode="numeric"
+                class="floating-input"
+                placeholder="1020304050" 
+                required />
+              <label for="documentNumber" class="floating-label">
+                Número de Documento *
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Género (Catálogo Maestro) -->
+        @if (genders().length > 0) {
+          <div class="floating-group">
+            <div class="floating-field-container">
+              <select 
+                id="genderCode" 
+                formControlName="genderCode"
+                class="floating-select cursor-pointer">
+                <option value="">Selecciona una opción...</option>
+                @for (g of genders(); track g.id) {
+                  <option [value]="g.code">{{ g.name }}</option>
+                }
+              </select>
+              <label for="genderCode" class="floating-label">
+                Género (Opcional)
+              </label>
+            </div>
+          </div>
+        }
+
+        <!-- Names -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div class="floating-group">
+            <div class="floating-field-container">
+              <input 
+                id="firstName" 
+                type="text" 
+                formControlName="firstName"
+                class="floating-input"
+                placeholder="Carlos" 
+                required />
+              <label for="firstName" class="floating-label">
+                Primer Nombre *
+              </label>
+            </div>
+          </div>
+          <div class="floating-group">
+            <div class="floating-field-container">
+              <input 
+                id="middleName" 
+                type="text" 
+                formControlName="middleName"
+                class="floating-input"
+                placeholder="Andrés" />
+              <label for="middleName" class="floating-label">
+                Segundo Nombre
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div class="floating-group">
+            <div class="floating-field-container">
+              <input 
+                id="lastName" 
+                type="text" 
+                formControlName="lastName"
+                class="floating-input"
+                placeholder="Rodríguez" 
+                required />
+              <label for="lastName" class="floating-label">
+                Primer Apellido *
+              </label>
+            </div>
+          </div>
+          <div class="floating-group">
+            <div class="floating-field-container">
+              <input 
+                id="secondLastName" 
+                type="text" 
+                formControlName="secondLastName"
+                class="floating-input"
+                placeholder="Pérez" />
+              <label for="secondLastName" class="floating-label">
+                Segundo Apellido
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Account -->
+        <div class="floating-group">
+          <div class="floating-field-container">
+            <input 
+              id="email" 
+              type="email" 
+              formControlName="email"
+              autoComplete="email" 
+              class="floating-input"
+              placeholder="nombre@firma.co" 
+              required />
+            <label for="email" class="floating-label">
+              Correo Electrónico *
+            </label>
+          </div>
+        </div>
+
+        <div class="floating-group">
+          <div class="floating-field-container">
+            <input 
+              id="password" 
+              type="password" 
+              formControlName="password"
+              autoComplete="new-password" 
+              class="floating-input"
+              placeholder="Mínimo 8 caracteres" 
+              required />
+            <label for="password" class="floating-label">
+              Contraseña *
+            </label>
+          </div>
+        </div>
+
+        <!-- Consents (Dinámicos de la tabla consent_types) -->
+        <div class="pt-3 border-t border-border flex flex-col gap-2.5">
+          @if (consentTypes().length > 0) {
+            @for (c of consentTypes(); track c.id) {
+              <label class="flex items-start gap-2.5 cursor-pointer text-xs text-muted-foreground">
+                <input 
+                  type="checkbox" 
+                  [formControlName]="c.code === 'TERMS' ? 'acceptTerms' : 'acceptPrivacy'"
+                  class="mt-0.5 size-4 rounded border-border accent-primary focus:ring-ring" />
+                <span>
+                  Acepto la <strong class="text-foreground font-medium">{{ c.name }}</strong> (versión {{ c.currentVersion || 'vigente' }}).
+                  @if (c.documentUrl) {
+                    <a [href]="c.documentUrl" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline ml-1">Ver documento legal</a>
+                  }
+                </span>
+              </label>
+            }
+          } @else {
+            <label class="flex items-start gap-2.5 cursor-pointer text-xs text-muted-foreground">
+              <input 
+                type="checkbox" 
+                formControlName="acceptTerms"
+                class="mt-0.5 size-4 rounded border-border accent-primary focus:ring-ring" />
+              <span>Acepto los términos de servicio y las condiciones de la plataforma Dokqet.</span>
+            </label>
+            <label class="flex items-start gap-2.5 cursor-pointer text-xs text-muted-foreground">
+              <input 
+                type="checkbox" 
+                formControlName="acceptPrivacy"
+                class="mt-0.5 size-4 rounded border-border accent-primary focus:ring-ring" />
+              <span>Autorizo el tratamiento de mis datos personales de acuerdo con la política de privacidad (Ley 1581 de 2012).</span>
+            </label>
+          }
+        </div>
+      </app-card-content>
+
+      <app-card-footer className="mt-4 flex flex-col gap-4">
+        @if (errorMessage()) {
+          <div class="w-full">
+            <app-form-alert type="error">
+              {{ errorMessage() }}
+            </app-form-alert>
+          </div>
+        }
+
+        <div class="w-full">
+          <app-button 
+            type="submit" 
+            size="lg" 
+            className="w-full"
+            [disabled]="form.invalid"
+            [loading]="loading()">
+            {{ loading() ? 'Creando cuenta…' : 'Registrarse' }}
+          </app-button>
+        </div>
+
+        <p class="text-sm text-muted-foreground text-center">
+          ¿Ya tienes cuenta?
+          <a routerLink="/iniciar-sesion" class="font-medium text-link hover:underline ml-1">
+            Inicia sesión
+          </a>
+        </p>
+      </app-card-footer>
+    </form>
+  </app-card>
+</div>
