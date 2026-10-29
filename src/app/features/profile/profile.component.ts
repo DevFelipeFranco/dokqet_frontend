@@ -36,7 +36,9 @@ import {
   EmptyStateComponent,
   FormAlertComponent,
   ModalComponent,
-  StatCardComponent
+  StatCardComponent,
+  SkeletonComponent,
+  SkeletonTableComponent
 } from '../../shared/components/ui';
 
 /**
@@ -89,7 +91,9 @@ export function computeMemberStats(members: Member[]) {
     BreadcrumbsComponent,
     EmptyStateComponent,
     StatCardComponent,
-    ModalComponent
+    ModalComponent,
+    SkeletonComponent,
+    SkeletonTableComponent
   ],
   templateUrl: './profile.component.html'
 })

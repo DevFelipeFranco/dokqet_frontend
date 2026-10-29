@@ -16,7 +16,8 @@ import {
   FormAlertComponent,
   BadgeComponent,
   BadgeVariant,
-  LogoComponent
+  LogoComponent,
+  SkeletonComponent
 } from '../../shared/components/ui';
 
 @Component({
@@ -34,7 +35,8 @@ import {
     ButtonComponent,
     FormAlertComponent,
     BadgeComponent,
-    LogoComponent
+    LogoComponent,
+    SkeletonComponent
   ],
   templateUrl: './accept-invitation.component.html'
 })

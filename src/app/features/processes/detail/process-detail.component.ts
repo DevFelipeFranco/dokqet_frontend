@@ -29,7 +29,10 @@ import {
   BreadcrumbsComponent,
   ModalComponent,
   StatCardComponent,
-  EmptyStateComponent
+  EmptyStateComponent,
+  SkeletonComponent,
+  SkeletonCardGridComponent,
+  SkeletonTableComponent
 } from '../../../shared/components/ui';
 
 /** Pestañas de sección principal dentro de la ficha del expediente */
@@ -60,7 +63,10 @@ export type ActuacionViewMode = 'TABLE' | 'TIMELINE';
     BreadcrumbsComponent,
     ModalComponent,
     StatCardComponent,
-    EmptyStateComponent
+    EmptyStateComponent,
+    SkeletonComponent,
+    SkeletonCardGridComponent,
+    SkeletonTableComponent
   ],
   templateUrl: './process-detail.component.html'
 })

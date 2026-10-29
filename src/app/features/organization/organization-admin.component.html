@@ -30,12 +30,79 @@
   </div>
 
   @if (loading()) {
-    <div class="py-24 text-center text-muted-foreground flex flex-col items-center justify-center gap-3">
-      <svg class="size-8 animate-spin text-primary" fill="none" viewBox="0 0 24 24">
-        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
-      </svg>
-      <span class="text-sm">Cargando datos de la organización…</span>
+    <div class="space-y-6" role="status" aria-live="polite" aria-busy="true">
+      <span class="sr-only">Cargando datos de la organización y equipo de trabajo...</span>
+
+      <!-- Organization Data Card Skeleton -->
+      <app-card>
+        <app-card-header>
+          <div class="flex items-center justify-between w-full">
+            <div class="space-y-1.5">
+              <app-skeleton width="180px" height="1.25rem"></app-skeleton>
+              <app-skeleton width="260px" height="0.875rem"></app-skeleton>
+            </div>
+            <app-skeleton width="70px" height="2rem" rounded="rounded-lg"></app-skeleton>
+          </div>
+        </app-card-header>
+        <app-card-content className="flex flex-col gap-5 pt-3">
+          <!-- Structured Form / dl preview skeleton -->
+          <div class="grid gap-x-6 gap-y-4 sm:grid-cols-[10rem_1fr] text-sm">
+            <app-skeleton width="110px" height="1rem"></app-skeleton>
+            <app-skeleton width="240px" height="1.125rem"></app-skeleton>
+
+            <app-skeleton width="100px" height="1rem"></app-skeleton>
+            <app-skeleton width="160px" height="1.125rem"></app-skeleton>
+
+            <app-skeleton width="90px" height="1rem"></app-skeleton>
+            <app-skeleton width="220px" height="1.125rem"></app-skeleton>
+
+            <app-skeleton width="70px" height="1rem"></app-skeleton>
+            <div class="flex items-center gap-2">
+              <app-skeleton width="120px" height="1.125rem"></app-skeleton>
+              <app-skeleton width="24px" height="1.125rem" rounded="rounded"></app-skeleton>
+            </div>
+          </div>
+
+          <!-- DANE Geographic Cascade Skeleton -->
+          <div class="flex flex-col gap-2 pt-4 border-t border-border">
+            <app-skeleton width="220px" height="1rem"></app-skeleton>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+              <div class="space-y-1">
+                <app-skeleton width="50px" height="0.75rem"></app-skeleton>
+                <app-skeleton width="100%" height="2.25rem" rounded="rounded-md"></app-skeleton>
+              </div>
+              <div class="space-y-1">
+                <app-skeleton width="110px" height="0.75rem"></app-skeleton>
+                <app-skeleton width="100%" height="2.25rem" rounded="rounded-md"></app-skeleton>
+              </div>
+              <div class="space-y-1">
+                <app-skeleton width="100px" height="0.75rem"></app-skeleton>
+                <app-skeleton width="100%" height="2.25rem" rounded="rounded-md"></app-skeleton>
+              </div>
+            </div>
+          </div>
+        </app-card-content>
+      </app-card>
+
+      <!-- Team Members & Invitations Card Skeleton -->
+      <app-card>
+        <app-card-header>
+          <div class="flex items-center justify-between w-full">
+            <div class="space-y-1.5">
+              <app-skeleton width="160px" height="1.25rem"></app-skeleton>
+              <app-skeleton width="280px" height="0.875rem"></app-skeleton>
+            </div>
+            <app-skeleton width="120px" height="2rem" rounded="rounded-lg"></app-skeleton>
+          </div>
+        </app-card-header>
+        <app-card-content className="p-0">
+          <app-skeleton-table 
+            variant="team" 
+            [rows]="3" 
+            srText="Cargando directorio de miembros de la firma...">
+          </app-skeleton-table>
+        </app-card-content>
+      </app-card>
     </div>
   } @else {
     <!-- Notification messages -->

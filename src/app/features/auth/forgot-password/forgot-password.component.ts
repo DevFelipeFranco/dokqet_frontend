@@ -1,6 +1,6 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../../core/auth/auth.service';
 import {
@@ -34,9 +34,10 @@ import {
   ],
   templateUrl: './forgot-password.component.html'
 })
-export class ForgotPasswordComponent {
+export class ForgotPasswordComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly authService = inject(AuthService);
+  private readonly route = inject(ActivatedRoute);
 
   readonly loading = signal(false);
   readonly successMessage = signal<string | null>(null);
@@ -45,6 +46,13 @@ export class ForgotPasswordComponent {
   readonly form = this.fb.group({
     email: ['', [Validators.required, Validators.email]]
   });
+
+  ngOnInit(): void {
+    const emailParam = this.route.snapshot.queryParams['email'];
+    if (emailParam) {
+      this.form.patchValue({ email: emailParam });
+    }
+  }
 
   /**
    * Solicita el enlace seguro de restablecimiento de contraseña

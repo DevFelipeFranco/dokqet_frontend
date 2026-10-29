@@ -1,10 +1,11 @@
 import { Component, computed, input } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { SkeletonComponent } from './skeleton.component';
 
 @Component({
   selector: 'app-stat-card',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, SkeletonComponent],
   templateUrl: './stat-card.component.html'
 })
 export class StatCardComponent {
@@ -16,6 +17,7 @@ export class StatCardComponent {
   dotColor = input<string>('bg-violet-600 dark:bg-violet-400');
   className = input<string>('');
   active = input<boolean>(false);
+  loading = input<boolean>(false);
 
   displayLabel = computed(() => this.label() || this.title() || '');
 

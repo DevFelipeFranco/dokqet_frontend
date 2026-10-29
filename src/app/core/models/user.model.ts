@@ -18,6 +18,32 @@ export interface User {
   cityId?: string | null;
   emailVerified: boolean;
   isSuperAdmin: boolean;
+  failedLoginAttempts?: number;
+  lockedUntil?: string | null;
+  lastFailedLoginAt?: string | null;
+  lockReason?: string | null;
+  isLocked?: boolean;
+}
+
+export interface ProblemDetailAccountLocked {
+  type: string;
+  title: string;
+  status: number;
+  detail: string;
+  instance?: string;
+  success?: boolean;
+  message?: string;
+  timestamp?: string;
+  lockedUntil: string;
+  minutesRemaining: number;
+}
+
+export interface UserUnlockResponse {
+  userId: string;
+  email: string;
+  failedLoginAttempts: number;
+  lockedUntil: string | null;
+  isLocked: boolean;
 }
 
 export interface AuthResponse {

@@ -16,7 +16,9 @@ import {
 } from '../../core/constants';
 import {
   EmptyStateComponent,
-  StatCardComponent
+  StatCardComponent,
+  SkeletonCardGridComponent,
+  SkeletonTableComponent
 } from '../../shared/components/ui';
 
 /**
@@ -52,7 +54,9 @@ export function matchesProcessQuery(process: ProcessListItem, query: string): bo
     FormsModule,
     RadicadoPipe,
     EmptyStateComponent,
-    StatCardComponent
+    StatCardComponent,
+    SkeletonCardGridComponent,
+    SkeletonTableComponent
   ],
   templateUrl: './dashboard.component.html'
 })

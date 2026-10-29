@@ -29,7 +29,9 @@ import {
   BadgeVariant,
   FormAlertComponent,
   BreadcrumbsComponent,
-  ModalComponent
+  ModalComponent,
+  SkeletonComponent,
+  SkeletonTableComponent
 } from '../../shared/components/ui';
 
 /**
@@ -65,7 +67,9 @@ export function calculateRemainingCooldownDays(
     BadgeComponent,
     FormAlertComponent,
     BreadcrumbsComponent,
-    ModalComponent
+    ModalComponent,
+    SkeletonComponent,
+    SkeletonTableComponent
   ],
   templateUrl: './organization-admin.component.html'
 })

@@ -86,4 +86,29 @@ describe('UserService', () => {
     expect(req.request.body).toEqual(payload);
     req.flush({ success: true, message: 'Contraseña cambiada' });
   });
+
+  it('unlockUser should POST /api/v1/users/{id}/unlock', () => {
+    const targetUserId = 'usr-target-456';
+    service.unlockUser(targetUserId).subscribe(res => {
+      expect(res.success).toBeTrue();
+      expect(res.data.isLocked).toBeFalse();
+      expect(res.data.failedLoginAttempts).toBe(0);
+      expect(res.data.lockedUntil).toBeNull();
+    });
+
+    const req = httpMock.expectOne(`http://localhost:8080/api/v1/users/${targetUserId}/unlock`);
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({});
+    req.flush({
+      success: true,
+      message: 'Cuenta de usuario desbloqueada exitosamente.',
+      data: {
+        userId: targetUserId,
+        email: 'abogado.bloqueado@dokqet.com',
+        failedLoginAttempts: 0,
+        lockedUntil: null,
+        isLocked: false
+      }
+    });
+  });
 });

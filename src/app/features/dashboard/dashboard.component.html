@@ -50,43 +50,47 @@
   </div>
 
   <!-- 2. 4 KPI Metric Cards Row (With Semantic Colored Dots like Reference Design) -->
-  <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3.5">
-    <app-stat-card 
-      label="Total expedientes vigilados" 
-      [value]="processes().length"
-      dotColor="bg-violet-600 dark:bg-violet-400"
-      [active]="activeTab() === 'ALL'"
-      className="cursor-pointer"
-      (click)="setTab('ALL')">
-    </app-stat-card>
+  @if (loading()) {
+    <app-skeleton-card-grid [count]="4"></app-skeleton-card-grid>
+  } @else {
+    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3.5">
+      <app-stat-card 
+        label="Total expedientes vigilados" 
+        [value]="processes().length"
+        dotColor="bg-violet-600 dark:bg-violet-400"
+        [active]="activeTab() === 'ALL'"
+        className="cursor-pointer"
+        (click)="setTab('ALL')">
+      </app-stat-card>
 
-    <app-stat-card 
-      label="Actuaciones con novedades" 
-      [value]="totalWithNews()" 
-      dotColor="bg-amber-500 dark:bg-amber-400"
-      [active]="activeTab() === 'NEWS'"
-      className="cursor-pointer"
-      (click)="setTab('NEWS')">
-    </app-stat-card>
+      <app-stat-card 
+        label="Actuaciones con novedades" 
+        [value]="totalWithNews()" 
+        dotColor="bg-amber-500 dark:bg-amber-400"
+        [active]="activeTab() === 'NEWS'"
+        className="cursor-pointer"
+        (click)="setTab('NEWS')">
+      </app-stat-card>
 
-    <app-stat-card 
-      label="Expedientes a mi cargo" 
-      [value]="totalMine()"
-      dotColor="bg-emerald-500 dark:bg-emerald-400"
-      [active]="activeTab() === 'MINE'"
-      className="cursor-pointer"
-      (click)="setTab('MINE')">
-    </app-stat-card>
+      <app-stat-card 
+        label="Expedientes a mi cargo" 
+        [value]="totalMine()"
+        dotColor="bg-emerald-500 dark:bg-emerald-400"
+        [active]="activeTab() === 'MINE'"
+        className="cursor-pointer"
+        (click)="setTab('MINE')">
+      </app-stat-card>
 
-    <app-stat-card 
-      label="Expedientes sin asignar" 
-      [value]="totalUnassigned()" 
-      dotColor="bg-brand"
-      [active]="activeTab() === 'UNASSIGNED'"
-      className="cursor-pointer"
-      (click)="setTab('UNASSIGNED')">
-    </app-stat-card>
-  </div>
+      <app-stat-card 
+        label="Expedientes sin asignar" 
+        [value]="totalUnassigned()" 
+        dotColor="bg-brand"
+        [active]="activeTab() === 'UNASSIGNED'"
+        className="cursor-pointer"
+        (click)="setTab('UNASSIGNED')">
+      </app-stat-card>
+    </div>
+  }
 
   <!-- 3. Underline Filter Tabs & Inline Search -->
   <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between border-b border-border">
@@ -162,13 +166,11 @@
 
   <!-- 4. Data Grid / Process Table -->
   @if (loading()) {
-    <!-- Skeleton Loading State -->
-    <div class="space-y-2.5 py-2" role="status" aria-live="polite">
-      <span class="sr-only">Cargando listado de expedientes judiciales...</span>
-      @for (i of [1, 2, 3, 4, 5]; track i) {
-        <div class="h-14 w-full animate-pulse rounded-xl bg-muted/60 border border-border/40"></div>
-      }
-    </div>
+    <app-skeleton-table 
+      variant="processes" 
+      [rows]="5" 
+      srText="Cargando listado de expedientes judiciales...">
+    </app-skeleton-table>
   } @else if (sortedProcesses().length === 0) {
     <app-empty-state
       [title]="emptyTitle()"

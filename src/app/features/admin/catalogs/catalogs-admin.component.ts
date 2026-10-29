@@ -27,7 +27,9 @@ import {
   CardTitleComponent,
   EmptyStateComponent,
   FormAlertComponent,
-  ModalComponent
+  ModalComponent,
+  SkeletonComponent,
+  SkeletonTableComponent
 } from '../../../shared/components/ui';
 
 export type CatalogKey =
@@ -201,7 +203,9 @@ export const CATALOG_DEFINITIONS: CatalogMetadata[] = [
     FormAlertComponent,
     BreadcrumbsComponent,
     ModalComponent,
-    EmptyStateComponent
+    EmptyStateComponent,
+    SkeletonComponent,
+    SkeletonTableComponent
   ],
   templateUrl: './catalogs-admin.component.html'
 })

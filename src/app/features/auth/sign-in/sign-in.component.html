@@ -114,9 +114,64 @@
           </p>
         </div>
 
+        <!-- Account Unlocked Notice -->
+        @if (accountUnlockedNotice()) {
+          <div class="mb-4 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3.5 text-xs text-emerald-800 dark:text-emerald-300 flex items-start gap-2.5">
+            <svg class="size-4 shrink-0 text-emerald-600 dark:text-emerald-400 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span>{{ accountUnlockedNotice() }}</span>
+          </div>
+        }
+
+        <!-- Account Locked Security Banner (HTTP 423) -->
+        @if (lockedInfo(); as lock) {
+          <div class="mb-5 rounded-xl border border-rose-500/40 bg-rose-500/10 dark:bg-rose-950/20 p-4 flex flex-col gap-3 shadow-xs">
+            <div class="flex items-start gap-3">
+              <div class="size-8 rounded-lg bg-rose-500/20 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0 mt-0.5">
+                <svg class="size-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+              </div>
+              <div class="flex-1 space-y-1">
+                <div class="flex items-center justify-between gap-2">
+                  <h3 class="text-sm font-semibold text-rose-900 dark:text-rose-200">
+                    Cuenta Bloqueada por Seguridad
+                  </h3>
+                  <span class="inline-flex items-center gap-1.5 rounded-md bg-rose-500/20 px-2.5 py-0.5 font-mono text-xs font-bold text-rose-700 dark:text-rose-300 shrink-0">
+                    <svg class="size-3 animate-pulse text-rose-600 dark:text-rose-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    {{ countdownDisplay() }}
+                  </span>
+                </div>
+                <p class="text-xs text-rose-800 dark:text-rose-300/90 leading-relaxed">
+                  {{ lock.detail }}
+                </p>
+              </div>
+            </div>
+
+            <!-- Emergency Quick Unlock CTA -->
+            <div class="pt-2.5 border-t border-rose-500/20 flex flex-col sm:flex-row items-center justify-between gap-2">
+              <span class="text-[11px] text-rose-700/80 dark:text-rose-400/80 text-center sm:text-left">
+                ¿Necesitas acceder a tus expedientes de inmediato?
+              </span>
+              <a 
+                [routerLink]="['/recuperar-contrasena']" 
+                [queryParams]="{ email: form.value.email || '' }"
+                class="inline-flex items-center gap-1.5 text-xs font-semibold text-rose-700 dark:text-rose-300 hover:text-rose-900 dark:hover:text-rose-100 hover:underline cursor-pointer">
+                <span>Restablecer contraseña</span>
+                <svg class="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                </svg>
+              </a>
+            </div>
+          </div>
+        }
+
         <form [formGroup]="form" (ngSubmit)="onSubmit()" class="flex flex-col gap-4">
           <!-- Email Floating Field -->
-          <div class="floating-group">
+          <div class="floating-group" [class.opacity-60]="lockedInfo() !== null">
             <div class="floating-field-container">
               <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-muted-foreground z-10">
                 <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -128,6 +183,7 @@
                 type="email" 
                 formControlName="email"
                 autoComplete="email" 
+                [readonly]="lockedInfo() !== null"
                 placeholder="abogado@firma.co" 
                 class="floating-input has-prefix"
                 required />
@@ -138,7 +194,7 @@
           </div>
 
           <!-- Password Floating Field with Visibility Toggle & CapsLock Warning -->
-          <div class="floating-group">
+          <div class="floating-group" [class.opacity-60]="lockedInfo() !== null">
             <div class="floating-field-container">
               <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-muted-foreground z-10">
                 <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -150,6 +206,7 @@
                 [type]="showPassword() ? 'text' : 'password'" 
                 formControlName="password"
                 autoComplete="current-password" 
+                [readonly]="lockedInfo() !== null"
                 (keydown)="checkCapsLock($event)"
                 (keyup)="checkCapsLock($event)"
                 placeholder="Ingresa tu contraseña" 
@@ -162,8 +219,9 @@
               <!-- Toggle Visibility Button -->
               <button 
                 type="button"
+                [disabled]="lockedInfo() !== null"
                 (click)="togglePasswordVisibility()"
-                class="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground hover:text-foreground transition-colors cursor-pointer z-10"
+                class="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground hover:text-foreground transition-colors cursor-pointer z-10 disabled:opacity-50"
                 [attr.aria-label]="showPassword() ? 'Ocultar contraseña' : 'Ver contraseña'">
                 @if (showPassword()) {
                   <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -179,7 +237,10 @@
             </div>
 
             <div class="flex items-center justify-end mt-1">
-              <a routerLink="/recuperar-contrasena" class="text-xs text-link font-medium hover:underline">
+              <a 
+                [routerLink]="['/recuperar-contrasena']" 
+                [queryParams]="{ email: form.value.email || '' }"
+                class="text-xs text-link font-medium hover:underline">
                 ¿Olvidaste tu contraseña?
               </a>
             </div>
@@ -195,8 +256,29 @@
             }
           </div>
 
-          <!-- Error Alert if failure -->
-          @if (errorMessage()) {
+          <!-- Warning Alert on Remaining Attempts (HTTP 400 with attempts countdown) -->
+          @if (!lockedInfo() && warningAttempts() !== null) {
+            <div class="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3.5 flex items-start gap-2.5">
+              <svg class="size-4 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <div class="space-y-1 text-xs text-amber-900 dark:text-amber-200">
+                <p class="font-medium">
+                  Credenciales incorrectas. Te restan <strong>{{ warningAttempts() }}</strong> intento(s) antes de que tu cuenta sea bloqueada temporalmente por 15 minutos.
+                </p>
+                <p class="text-[11px] text-amber-800/80 dark:text-amber-300/80">
+                  Si no recuerdas tu clave, te sugerimos 
+                  <a [routerLink]="['/recuperar-contrasena']" [queryParams]="{ email: form.value.email || '' }" class="underline font-semibold hover:text-amber-950 dark:hover:text-amber-100">
+                    restablecerla aquí
+                  </a> 
+                  para evitar la congelación de tu cuenta.
+                </p>
+              </div>
+            </div>
+          }
+
+          <!-- Generic Error Alert if failure and not remaining attempts -->
+          @if (!lockedInfo() && warningAttempts() === null && errorMessage()) {
             <app-form-alert type="error">
               {{ errorMessage() }}
             </app-form-alert>
@@ -208,12 +290,19 @@
               type="submit" 
               size="lg" 
               className="w-full h-11 text-sm font-semibold shadow-sm"
-              [disabled]="form.invalid"
+              [disabled]="form.invalid || lockedInfo() !== null"
               [loading]="loading()">
-              <svg class="size-4 shrink-0 -ml-0.5 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
-              </svg>
-              {{ loading() ? 'Verificando despacho…' : 'Ingresar al despacho' }}
+              @if (lockedInfo()) {
+                <svg class="size-4 shrink-0 -ml-0.5 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+                Acceso bloqueado por seguridad
+              } @else {
+                <svg class="size-4 shrink-0 -ml-0.5 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+                </svg>
+                {{ loading() ? 'Verificando despacho…' : 'Ingresar al despacho' }}
+              }
             </app-button>
           </div>
         </form>

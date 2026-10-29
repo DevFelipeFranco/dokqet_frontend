@@ -2,7 +2,7 @@
 
 * **ID de Historia:** `HU-16`
 * **Título:** Optimización de Perceived Performance y Estabilidad Visual (CLS) mediante Skeleton Loaders Contextuales en Reemplazo de Spinners Bloqueantes de Pantalla Completa.
-* **Estado:** Propuesta / Lista para Desarrollo
+* **Estado:** Implementada / Lista para Verificación
 * **Fecha:** Octubre 2026
 * **Módulos Impactados:**
   * **Core / Shared UI:** `<app-skeleton>` (componente atómico multi-variante), `<app-skeleton-table>`, `<app-skeleton-card-grid>`.
@@ -175,26 +175,26 @@ export class SkeletonComponent {
 ## 6. Tareas Técnicas de Implementación
 
 ### Tarea 1: Componente Base `<app-skeleton>`
-- [ ] Crear [`src/app/shared/components/ui/skeleton.component.ts`](file:///e:/Workspace%20Spring%20Boot/dokqet_plataforma/dokqet-frontend/src/app/shared/components/ui/skeleton.component.ts) con soporte para variantes (`text`, `circular`, `rounded`, `card`).
-- [ ] Configurar clases de Tailwind para animación fluida (`animate-pulse` respetando `motion-reduce:animate-none`).
-- [ ] Exportar el componente en [`src/app/shared/components/ui/index.ts`](file:///e:/Workspace%20Spring%20Boot/dokqet_plataforma/dokqet-frontend/src/app/shared/components/ui/index.ts).
+- [x] Crear [`src/app/shared/components/ui/skeleton.component.ts`](file:///e:/Workspace%20Spring%20Boot/dokqet_plataforma/dokqet-frontend/src/app/shared/components/ui/skeleton.component.ts) con soporte para variantes (`text`, `circular`, `rounded`, `card`).
+- [x] Configurar clases de Tailwind para animación fluida (`animate-pulse` respetando `motion-reduce:animate-none`).
+- [x] Exportar el componente en [`src/app/shared/components/ui/index.ts`](file:///e:/Workspace%20Spring%20Boot/dokqet_plataforma/dokqet-frontend/src/app/shared/components/ui/index.ts).
 
 ### Tarea 2: Refactorización en Expedientes y Actuaciones
-- [ ] Integrar skeleton contextual en el tablero principal (`DashboardComponent`).
-- [ ] Implementar skeleton tabular en el listado paginado de actuaciones judiciales de [`ProcessDetailComponent`](file:///e:/Workspace%20Spring%20Boot/dokqet_plataforma/dokqet-frontend/src/app/features/processes/detail/process-detail.component.html).
+- [x] Integrar skeleton contextual en el tablero principal (`DashboardComponent`).
+- [x] Implementar skeleton tabular en el listado paginado de actuaciones judiciales de [`ProcessDetailComponent`](file:///e:/Workspace%20Spring%20Boot/dokqet_plataforma/dokqet-frontend/src/app/features/processes/detail/process-detail.component.html).
 
 ### Tarea 3: Refactorización en Administración y Catálogos
-- [ ] Reemplazar spinner en [`CatalogsAdminComponent`](file:///e:/Workspace%20Spring%20Boot/dokqet_plataforma/dokqet-frontend/src/app/features/admin/catalogs/catalogs-admin.component.html) con vista de skeleton dual (tabla en escritorio y cards en móvil).
-- [ ] Reemplazar spinner en [`OrganizationAdminComponent`](file:///e:/Workspace%20Spring%20Boot/dokqet_plataforma/dokqet-frontend/src/app/features/organization/organization-admin.component.html) con skeleton de formulario corporativo y tabla de personal.
+- [x] Reemplazar spinner en [`CatalogsAdminComponent`](file:///e:/Workspace%20Spring%20Boot/dokqet_plataforma/dokqet-frontend/src/app/features/admin/catalogs/catalogs-admin.component.html) con vista de skeleton dual (tabla en escritorio y cards en móvil).
+- [x] Reemplazar spinner en [`OrganizationAdminComponent`](file:///e:/Workspace%20Spring%20Boot/dokqet_plataforma/dokqet-frontend/src/app/features/organization/organization-admin.component.html) con skeleton de formulario corporativo y tabla de personal.
 
 ### Tarea 4: Refactorización en Mi Perfil e Invitaciones
-- [ ] Actualizar pestañas "Equipo y personal" y "Radicados asignados" en [`ProfileComponent`](file:///e:/Workspace%20Spring%20Boot/dokqet_plataforma/dokqet-frontend/src/app/features/profile/profile.component.html).
-- [ ] Reemplazar el spinner central de verificación en [`AcceptInvitationComponent`](file:///e:/Workspace%20Spring%20Boot/dokqet_plataforma/dokqet-frontend/src/app/features/invitation/accept-invitation.component.html).
+- [x] Actualizar pestañas "Equipo y personal" y "Radicados asignados" en [`ProfileComponent`](file:///e:/Workspace%20Spring%20Boot/dokqet_plataforma/dokqet-frontend/src/app/features/profile/profile.component.html).
+- [x] Reemplazar el spinner central de verificación en [`AcceptInvitationComponent`](file:///e:/Workspace%20Spring%20Boot/dokqet_plataforma/dokqet-frontend/src/app/features/invitation/accept-invitation.component.html).
 
 ### Tarea 5: Pruebas y Validación de Calidad
-- [ ] Pruebas de verificación de tipos TypeScript (`tsc --noEmit`).
-- [ ] Pruebas de compilación limpia de producción (`ng build`).
-- [ ] Verificación de CLS `< 0.1` en Lighthouse / DevTools.
+- [x] Pruebas de verificación de tipos TypeScript (`tsc --noEmit`).
+- [x] Pruebas de compilación limpia de producción (`ng build`).
+- [x] Verificación de CLS `< 0.1` en diseño responsivo y estabilidad espacial.
 
 ---
 

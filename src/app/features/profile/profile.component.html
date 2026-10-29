@@ -728,10 +728,11 @@
 
         <app-card-content className="p-0">
           @if (loadingTeam()) {
-            <div class="py-16 flex flex-col items-center justify-center gap-3 text-muted-foreground">
-              <div class="size-7 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
-              <p class="text-xs font-medium">Cargando personal de la firma...</p>
-            </div>
+            <app-skeleton-table 
+              variant="team" 
+              [rows]="4" 
+              srText="Cargando personal de la firma...">
+            </app-skeleton-table>
           } @else if (members().length === 0) {
             <div class="p-8">
               <app-empty-state
@@ -917,9 +918,26 @@
         <!-- Contenido / Lista de Procesos -->
         <div class="flex-1 overflow-y-auto p-6 space-y-4">
           @if (loadingProcesses()) {
-            <div class="py-16 flex flex-col items-center justify-center gap-3 text-muted-foreground">
-              <div class="size-7 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
-              <p class="text-xs">Consultando radicados asignados...</p>
+            <div class="space-y-3" role="status" aria-live="polite" aria-busy="true">
+              <span class="sr-only">Consultando radicados asignados al profesional...</span>
+              @for (i of [1, 2, 3]; track i) {
+                <div class="rounded-xl border border-border bg-background p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div class="space-y-2 flex-1 min-w-0">
+                    <div class="flex flex-wrap items-center gap-2">
+                      <app-skeleton width="180px" height="1.125rem" rounded="rounded-md"></app-skeleton>
+                      <app-skeleton width="24px" height="24px" rounded="rounded"></app-skeleton>
+                    </div>
+                    <div class="space-y-1">
+                      <app-skeleton width="75%" height="0.875rem"></app-skeleton>
+                      <app-skeleton width="50%" height="0.75rem"></app-skeleton>
+                    </div>
+                  </div>
+                  <div class="flex sm:flex-col items-end gap-2 shrink-0">
+                    <app-skeleton width="80px" height="1.25rem" rounded="rounded-full"></app-skeleton>
+                    <app-skeleton width="110px" height="2rem" rounded="rounded-lg"></app-skeleton>
+                  </div>
+                </div>
+              }
             </div>
           } @else if (lawyerProcesses().length === 0) {
             <app-empty-state

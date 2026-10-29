@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { DocumentType, User } from '../models/user.model';
+import { DocumentType, User, UserUnlockResponse } from '../models/user.model';
 
 export interface UpdateProfilePayload {
   firstName: string;
@@ -36,5 +36,12 @@ export class UserService {
 
   changePassword(payload: ChangePasswordPayload): Observable<{ success: boolean; message: string }> {
     return this.http.put<{ success: boolean; message: string }>(`${this.API_URL}/me/password`, payload);
+  }
+
+  unlockUser(userId: string): Observable<{ success: boolean; data: UserUnlockResponse; message: string }> {
+    return this.http.post<{ success: boolean; data: UserUnlockResponse; message: string }>(
+      `${this.API_URL}/${userId}/unlock`,
+      {}
+    );
   }
 }

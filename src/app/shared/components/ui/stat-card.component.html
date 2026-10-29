@@ -1,17 +1,28 @@
 <div [class]="computedClass()">
   <div class="flex items-center justify-between gap-2">
     <div class="flex items-center gap-2 min-w-0">
-      <span [class]="'size-2 shrink-0 rounded-full ' + dotColor()" aria-hidden="true"></span>
-      <p class="text-xs font-medium text-muted-foreground truncate">{{ displayLabel() }}</p>
+      <span [class]="'size-2 shrink-0 rounded-full ' + (loading() ? 'bg-muted-foreground/30 animate-pulse' : dotColor())" aria-hidden="true"></span>
+      @if (loading()) {
+        <app-skeleton variant="text" width="110px" height="0.875rem"></app-skeleton>
+      } @else {
+        <p class="text-xs font-medium text-muted-foreground truncate">{{ displayLabel() }}</p>
+      }
     </div>
     <div class="hidden">
       <ng-content select="[icon]"></ng-content>
     </div>
   </div>
   <div>
-    <p class="text-2xl sm:text-3xl font-bold tracking-tight text-foreground tabular-nums leading-none">{{ value() }}</p>
-    @if (description()) {
-      <p class="text-[11px] text-muted-foreground mt-1.5 truncate">{{ description() }}</p>
+    @if (loading()) {
+      <app-skeleton variant="rounded" width="3.5rem" height="1.875rem" rounded="rounded-md"></app-skeleton>
+      @if (description()) {
+        <app-skeleton variant="text" width="60%" height="0.6875rem" className="mt-2"></app-skeleton>
+      }
+    } @else {
+      <p class="text-2xl sm:text-3xl font-bold tracking-tight text-foreground tabular-nums leading-none">{{ value() }}</p>
+      @if (description()) {
+        <p class="text-[11px] text-muted-foreground mt-1.5 truncate">{{ description() }}</p>
+      }
     }
   </div>
 </div>
