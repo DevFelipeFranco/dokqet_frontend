@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, OnInit, OnDestroy, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -209,7 +209,7 @@ export const CATALOG_DEFINITIONS: CatalogMetadata[] = [
   ],
   templateUrl: './catalogs-admin.component.html'
 })
-export class CatalogsAdminComponent implements OnInit {
+export class CatalogsAdminComponent implements OnInit, OnDestroy {
   private readonly fb = inject(FormBuilder);
   readonly catalogService = inject(CatalogService);
   readonly authService = inject(AuthService);
@@ -261,9 +261,17 @@ export class CatalogsAdminComponent implements OnInit {
   readonly items = signal<any[]>([]);
   readonly searchQuery = signal<string>('');
 
-  // Notificaciones
-  readonly successMessage = signal<string | null>(null);
-  readonly errorMessage = signal<string | null>(null);
+  // Notificación Toast flotante (cero layout shift, auto-dismiss de 4.5s)
+  readonly toast = signal<{
+    type: 'success' | 'error';
+    title: string;
+    message: string;
+  } | null>(null);
+  private toastTimeoutHandle: any = null;
+
+  // Compatibilidad hacia atrás
+  readonly successMessage = computed(() => this.toast()?.type === 'success' ? this.toast()!.message : null);
+  readonly errorMessage = computed(() => this.toast()?.type === 'error' ? this.toast()!.message : null);
 
   // Modal de Crear / Editar
   readonly showEditModal = signal<boolean>(false);
@@ -334,11 +342,39 @@ export class CatalogsAdminComponent implements OnInit {
     this.loadCatalog(this.activeCatalogKey());
   }
 
+  ngOnDestroy(): void {
+    this.clearToast();
+  }
+
+  showToast(message: string, isError: boolean = false, title?: string): void {
+    if (this.toastTimeoutHandle) {
+      clearTimeout(this.toastTimeoutHandle);
+      this.toastTimeoutHandle = null;
+    }
+
+    this.toast.set({
+      type: isError ? 'error' : 'success',
+      title: title || (isError ? 'Error en la operación' : 'Estado actualizado'),
+      message
+    });
+
+    this.toastTimeoutHandle = setTimeout(() => {
+      this.toast.set(null);
+    }, 4500);
+  }
+
+  clearToast(): void {
+    if (this.toastTimeoutHandle) {
+      clearTimeout(this.toastTimeoutHandle);
+      this.toastTimeoutHandle = null;
+    }
+    this.toast.set(null);
+  }
+
   selectCatalog(key: CatalogKey): void {
     this.activeCatalogKey.set(key);
     this.searchQuery.set('');
-    this.successMessage.set(null);
-    this.errorMessage.set(null);
+    this.clearToast();
     this.loadCatalog(key);
   }
 
@@ -361,7 +397,7 @@ export class CatalogsAdminComponent implements OnInit {
 
   loadCatalog(key: CatalogKey): void {
     this.loading.set(true);
-    this.errorMessage.set(null);
+    this.clearToast();
 
     const isSuper = this.authService.isSuperAdmin();
 
@@ -401,7 +437,7 @@ export class CatalogsAdminComponent implements OnInit {
       },
       error: (err) => {
         this.loading.set(false);
-        this.errorMessage.set(err.error?.message || 'Error al cargar los datos del catálogo.');
+        this.showToast(err.error?.message || 'Error al cargar los datos del catálogo.', true, 'Error de conexión');
       }
     });
   }
@@ -430,11 +466,11 @@ export class CatalogsAdminComponent implements OnInit {
       next: (updated) => {
         this.togglingStatus.set(null);
         this.items.update(list => list.map(i => i.id === id ? { ...i, isActive: newStatus } : i));
-        this.successMessage.set(`Estado de "${item.name}" actualizado a ${newStatus ? 'Activo' : 'Inactivo'}.`);
+        this.showToast(`Estado de "${item.name}" actualizado a ${newStatus ? 'Activo' : 'Inactivo'}.`, false, 'Estado actualizado');
       },
       error: (err) => {
         this.togglingStatus.set(null);
-        this.errorMessage.set(err.error?.message || 'Error al actualizar el estado del registro.');
+        this.showToast(err.error?.message || 'Error al actualizar el estado del registro.', true, 'Error al actualizar');
       }
     });
   }
@@ -514,8 +550,7 @@ export class CatalogsAdminComponent implements OnInit {
     }
 
     this.saving.set(true);
-    this.successMessage.set(null);
-    this.errorMessage.set(null);
+    this.clearToast();
 
     const val = this.editForm.getRawValue();
     const key = this.activeCatalogKey();
@@ -593,12 +628,12 @@ export class CatalogsAdminComponent implements OnInit {
       next: () => {
         this.saving.set(false);
         this.closeModal();
-        this.successMessage.set(`Registro ${isEdit ? 'actualizado' : 'creado'} exitosamente.`);
+        this.showToast(`Registro ${isEdit ? 'actualizado' : 'creado'} exitosamente.`, false, isEdit ? 'Registro actualizado' : 'Registro creado');
         this.loadCatalog(key);
       },
       error: (err) => {
         this.saving.set(false);
-        this.errorMessage.set(err.error?.message || 'Error al guardar el registro en el catálogo.');
+        this.showToast(err.error?.message || 'Error al guardar el registro en el catálogo.', true, 'Error al guardar');
       }
     });
   }

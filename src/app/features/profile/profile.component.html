@@ -580,7 +580,7 @@
                       formControlName="newPassword"
                       (keydown)="onKeydownCapsLock($event)"
                       (keyup)="onKeydownCapsLock($event)"
-                      placeholder="Mínimo 8 caracteres"
+                      placeholder="Mínimo 10 caracteres"
                       class="floating-input has-suffix"
                       [class.has-error]="passwordForm.get('newPassword')?.touched && passwordForm.get('newPassword')?.invalid"
                     />
@@ -607,7 +607,7 @@
                     </button>
                   </div>
                   <p class="floating-hint">
-                    Usa al menos 8 caracteres con números y símbolos para máxima protección.
+                    Usa al menos 10 caracteres con números y símbolos para máxima protección.
                   </p>
                 </div>
 

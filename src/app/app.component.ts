@@ -1,13 +1,16 @@
-import { Component, ElementRef, HostListener, ViewChild, computed, inject, signal } from '@angular/core';
+import { Component, ElementRef, HostListener, ViewChild, computed, effect, inject, signal, untracked } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { filter } from 'rxjs/operators';
 import { AuthService } from './core/auth/auth.service';
+import { SessionVigenciaService } from './core/auth/session-vigencia.service';
 import { OrganizationStore } from './core/state/organization.store';
 import { LayoutStore, SidebarTabFilter } from './core/state/layout.store';
 import { ThemeService } from './core/services/theme.service';
-import { LogoComponent, DropdownComponent } from './shared/components/ui';
+import { NotificationService } from './core/services/notification.service';
+import { SchedulerAdminService } from './core/services/scheduler-admin.service';
+import { LogoComponent, DropdownComponent, FormAlertComponent } from './shared/components/ui';
 import { OrganizationSwitcherComponent } from './shared/components/organization-switcher.component';
 import { extractFirstName, extractUserInitials } from './core/constants';
 
@@ -21,15 +24,19 @@ import { extractFirstName, extractUserInitials } from './core/constants';
     FormsModule,
     LogoComponent,
     DropdownComponent,
+    FormAlertComponent,
     OrganizationSwitcherComponent
   ],
   templateUrl: './app.component.html'
 })
 export class AppComponent {
   readonly authService = inject(AuthService);
+  readonly sessionVigenciaService = inject(SessionVigenciaService);
   readonly orgStore = inject(OrganizationStore);
   readonly layoutStore = inject(LayoutStore);
   readonly themeService = inject(ThemeService);
+  readonly notificationService = inject(NotificationService);
+  readonly schedulerAdminService = inject(SchedulerAdminService);
   private readonly router = inject(Router);
 
   @ViewChild('globalSearchInput') globalSearchInput?: ElementRef<HTMLInputElement>;
@@ -38,13 +45,30 @@ export class AppComponent {
   readonly currentUrl = signal<string>('/panel');
 
   constructor() {
-    this.currentUrl.set(this.router.url || '/panel');
+    const initialUrl = this.router.url || '/panel';
+    this.currentUrl.set(initialUrl);
+    if (initialUrl.startsWith('/admin')) {
+      this.layoutStore.adminExpanded.set(true);
+    }
+
     this.router.events
       .pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd))
       .subscribe((e) => {
-        this.currentUrl.set(e.urlAfterRedirects || e.url);
+        const url = e.urlAfterRedirects || e.url;
+        this.currentUrl.set(url);
+        if (url.startsWith('/admin')) {
+          this.layoutStore.adminExpanded.set(true);
+        }
         this.layoutStore.closeMobileMenu();
       });
+
+    effect(() => {
+      if (this.authService.isSuperAdmin()) {
+        untracked(() => {
+          this.schedulerAdminService.getOverview().subscribe({ error: () => {} });
+        });
+      }
+    });
   }
 
   /**
@@ -72,9 +96,20 @@ export class AppComponent {
     if (url.startsWith('/procesos/')) return 'Detalle del Expediente';
     if (url.startsWith('/organizaciones/nueva')) return 'Crear Firma Jurídica';
     if (url.startsWith('/organizacion')) return 'Organización y Equipo';
-    if (url.startsWith('/catalogos')) return 'Catálogos Maestros';
+    if (url.startsWith('/admin/usuarios')) return 'Gestión de Usuarios';
+    if (url.startsWith('/admin/organizaciones')) return 'Observabilidad de Organizaciones';
+    if (url.startsWith('/admin/scheduler')) return 'Cron & Scheduler';
+    if (url.startsWith('/admin/catalogos') || url.startsWith('/catalogos')) return 'Catálogos Maestros';
+    if (url.startsWith('/admin/acciones')) return 'Registro de Acciones';
     if (url.startsWith('/perfil')) return 'Mi Perfil y Seguridad';
     return 'Expedientes';
+  });
+
+  /**
+   * Determina si la ruta actual pertenece al área o submódulos de administración
+   */
+  readonly isAdminActive = computed(() => {
+    return this.currentUrl().startsWith('/admin');
   });
 
   /**

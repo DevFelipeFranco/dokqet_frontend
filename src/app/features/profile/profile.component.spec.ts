@@ -344,4 +344,84 @@ describe('ProfileComponent', () => {
       expect(component.verificationErrorMessage()).toBe('Fallo al enviar');
     });
   });
+
+  describe('HU-20: Blindaje de Perfil, Normalización NFC y Validación de Contraseña', () => {
+    it('saveProfile debe normalizar nombres a MAYÚSCULAS NFC conservando tildes', () => {
+      component.profileForm.patchValue({
+        firstName: 'carlos',
+        middleName: 'andrés',
+        lastName: 'gómez',
+        secondLastName: 'restrepo',
+        documentType: 'CC',
+        documentNumber: '10203040'
+      });
+
+      userService.updateProfile.and.returnValue(
+        of({ success: true, data: mockUser, message: 'Actualizado' })
+      );
+
+      component.saveProfile();
+
+      expect(userService.updateProfile).toHaveBeenCalledWith(jasmine.objectContaining({
+        firstName: 'CARLOS',
+        middleName: 'ANDRÉS',
+        lastName: 'GÓMEZ',
+        secondLastName: 'RESTREPO'
+      }));
+    });
+
+    it('saveProfile debe mostrar mensaje neutro ante HTTP 409 Conflict', () => {
+      component.profileForm.patchValue({
+        firstName: 'Carlos',
+        lastName: 'Gómez',
+        documentType: 'CC',
+        documentNumber: '10203040'
+      });
+
+      userService.updateProfile.and.returnValue(
+        throwError(() => ({
+          status: 409,
+          error: { detail: 'Conflicto de unicidad en documento' }
+        }))
+      );
+
+      component.saveProfile();
+
+      expect(component.profileError()).toBe('No fue posible actualizar los datos con la información ingresada.');
+    });
+
+    it('passwordForm debe requerir mínimo 10 caracteres para nueva contraseña', () => {
+      component.passwordForm.patchValue({
+        currentPassword: 'CurrentPassword123',
+        newPassword: 'short9', // 6 caracteres
+        confirmPassword: 'short9'
+      });
+
+      expect(component.passwordForm.valid).toBeFalse();
+      expect(component.passwordForm.get('newPassword')?.hasError('minlength')).toBeTrue();
+
+      component.passwordForm.patchValue({
+        newPassword: 'TenCharPass1', // 12 caracteres
+        confirmPassword: 'TenCharPass1'
+      });
+
+      expect(component.passwordForm.valid).toBeTrue();
+    });
+
+    it('submitPasswordChange debe notificar cierre de sesiones activas al actualizar contraseña', () => {
+      component.passwordForm.patchValue({
+        currentPassword: 'CurrentPassword123',
+        newPassword: 'NewPassword123!',
+        confirmPassword: 'NewPassword123!'
+      });
+
+      userService.changePassword.and.returnValue(
+        of({ success: true, message: 'OK' })
+      );
+
+      component.submitPasswordChange();
+
+      expect(component.passwordSuccess()).toContain('Por seguridad, tus demás sesiones activas han sido cerradas.');
+    });
+  });
 });

@@ -1,7 +1,7 @@
 import { Component, computed, input } from '@angular/core';
 import { SkeletonComponent } from './skeleton.component';
 
-export type SkeletonTableVariant = 'default' | 'processes' | 'actuaciones' | 'catalog' | 'team';
+export type SkeletonTableVariant = 'default' | 'processes' | 'actuaciones' | 'catalog' | 'team' | 'organizations';
 
 @Component({
   selector: 'app-skeleton-table',
@@ -44,6 +44,14 @@ export type SkeletonTableVariant = 'default' | 'processes' | 'actuaciones' | 'ca
                 <th scope="col" class="py-3 px-3">Rol en firma</th>
                 <th scope="col" class="py-3 px-3">Estado de acceso</th>
                 <th scope="col" class="py-3 pl-3 pr-4 text-right">Acciones de supervisión</th>
+              } @else if (variant() === 'organizations') {
+                <th scope="col" class="py-3 pl-4 pr-3">Organización</th>
+                <th scope="col" class="py-3 px-3">Tipo</th>
+                <th scope="col" class="py-3 px-3">NIT / DV</th>
+                <th scope="col" class="py-3 px-3">Personas vinculadas</th>
+                <th scope="col" class="py-3 px-3">Expedientes vigilados</th>
+                <th scope="col" class="py-3 px-3">Fecha registro</th>
+                <th scope="col" class="py-3 pl-3 pr-4 text-right">Acciones</th>
               } @else {
                 @if (hasCheckbox()) {
                   <th scope="col" class="w-11 py-3 pl-4 pr-2">
@@ -192,6 +200,38 @@ export type SkeletonTableVariant = 'default' | 'processes' | 'actuaciones' | 'ca
                   <app-skeleton width="60px" height="1.25rem" rounded="rounded-full"></app-skeleton>
                 </td>
                 <!-- Col 4: Acciones -->
+                <td class="py-3.5 pl-3 pr-4 text-right whitespace-nowrap">
+                  <app-skeleton width="70px" height="1.75rem" rounded="rounded-lg" className="ml-auto"></app-skeleton>
+                </td>
+              } @else if (variant() === 'organizations') {
+                <!-- Col 1: Organización -->
+                <td class="py-3.5 pl-4 pr-3">
+                  <div class="space-y-1">
+                    <app-skeleton [width]="cellWidth(r, 0, '160px')" height="0.95rem"></app-skeleton>
+                    <app-skeleton [width]="cellWidth(r, 1, '120px')" height="0.75rem"></app-skeleton>
+                  </div>
+                </td>
+                <!-- Col 2: Tipo -->
+                <td class="py-3.5 px-3 whitespace-nowrap">
+                  <app-skeleton width="80px" height="1.25rem" rounded="rounded-full"></app-skeleton>
+                </td>
+                <!-- Col 3: NIT / DV -->
+                <td class="py-3.5 px-3 whitespace-nowrap">
+                  <app-skeleton width="90px" height="0.875rem"></app-skeleton>
+                </td>
+                <!-- Col 4: Personas -->
+                <td class="py-3.5 px-3 whitespace-nowrap">
+                  <app-skeleton width="36px" height="0.875rem"></app-skeleton>
+                </td>
+                <!-- Col 5: Expedientes -->
+                <td class="py-3.5 px-3 whitespace-nowrap">
+                  <app-skeleton width="36px" height="0.875rem"></app-skeleton>
+                </td>
+                <!-- Col 6: Fecha -->
+                <td class="py-3.5 px-3 whitespace-nowrap">
+                  <app-skeleton width="75px" height="0.875rem"></app-skeleton>
+                </td>
+                <!-- Col 7: Acciones -->
                 <td class="py-3.5 pl-3 pr-4 text-right whitespace-nowrap">
                   <app-skeleton width="70px" height="1.75rem" rounded="rounded-lg" className="ml-auto"></app-skeleton>
                 </td>

@@ -1,0 +1,174 @@
+<div class="min-h-svh flex flex-col justify-center items-center px-4 py-12 sm:px-6 lg:px-8 bg-background text-foreground">
+  <div class="w-full max-w-md flex flex-col gap-8">
+
+    <!-- Header & Logo -->
+    <div class="flex flex-col items-center gap-2 text-center">
+      <a routerLink="/" aria-label="Ir a Dokqet">
+        <app-logo height="h-9"></app-logo>
+      </a>
+      <p class="text-xs text-muted-foreground uppercase tracking-wider font-semibold">
+        Plataforma de Vigilancia Judicial
+      </p>
+    </div>
+
+    <!-- Main Card -->
+    <app-card className="rounded-2xl border border-border shadow-sm p-2 sm:p-4">
+
+      <!-- 1. LOADING STATE -->
+      @if (state() === 'LOADING') {
+        <app-card-header className="text-center py-8">
+          <div class="mx-auto flex size-14 items-center justify-center rounded-2xl bg-muted text-muted-foreground mb-4">
+            <span class="size-6 animate-spin rounded-full border-2 border-primary border-t-transparent"></span>
+          </div>
+          <app-card-title className="text-xl font-bold tracking-tight text-foreground">
+            Verificando enlace de activación...
+          </app-card-title>
+          <app-card-description className="text-sm text-muted-foreground pt-1">
+            Por favor espera un momento mientras validamos tu identidad.
+          </app-card-description>
+        </app-card-header>
+      }
+
+      <!-- 2. ACTIVATED (SUCCESS) STATE -->
+      @if (state() === 'ACTIVATED') {
+        <app-card-header className="text-center pb-2">
+          <div class="mx-auto flex size-14 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 mb-3 border border-emerald-500/20">
+            <svg class="size-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <app-card-title className="text-2xl font-bold tracking-tight text-foreground">
+            ¡Tu cuenta quedó activada!
+          </app-card-title>
+          <app-card-description className="text-sm text-muted-foreground pt-1 leading-relaxed">
+            Hemos validado exitosamente tu dirección de correo electrónico profesional. Ya tienes acceso pleno para iniciar la vigilancia judicial de tus radicados.
+          </app-card-description>
+        </app-card-header>
+
+        <app-card-content className="pt-4 flex flex-col gap-3">
+          @if (invitationToken()) {
+            <div class="rounded-xl border border-primary/20 bg-primary/5 p-3 text-xs text-foreground/90 flex items-center gap-2">
+              <svg class="size-4 text-primary shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span>Tienes una invitación pendiente de aceptar para unirte a una firma legal. Al iniciar sesión serás guiado automáticamente.</span>
+            </div>
+          }
+        </app-card-content>
+
+        <app-card-footer className="flex flex-col gap-2 pt-2 border-t border-border/80">
+          <a
+            [routerLink]="['/iniciar-sesion']"
+            [queryParams]="getLoginQueryParams()"
+            class="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-primary text-primary-foreground font-semibold px-4 py-2.5 hover:bg-primary/90 transition-colors shadow-xs text-sm cursor-pointer">
+            <span>Iniciar sesión</span>
+            <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+            </svg>
+          </a>
+        </app-card-footer>
+      }
+
+      <!-- 3. EXPIRED STATE -->
+      @if (state() === 'EXPIRED') {
+        <app-card-header className="text-center pb-2">
+          <div class="mx-auto flex size-14 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400 mb-3 border border-amber-500/20">
+            <svg class="size-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <app-card-title className="text-2xl font-bold tracking-tight text-foreground">
+            El enlace venció
+          </app-card-title>
+          <app-card-description className="text-sm text-muted-foreground pt-1 leading-relaxed">
+            Por estrictas normas de seguridad jurídica, los enlaces de verificación expiran a las 24 horas. Puedes solicitar uno nuevo de inmediato.
+          </app-card-description>
+        </app-card-header>
+
+        <app-card-content className="pt-4 flex flex-col gap-3">
+          @if (resendSuccess()) {
+            <app-form-alert type="success">
+              <span>{{ resendSuccess() }}</span>
+            </app-form-alert>
+          }
+          @if (resendError()) {
+            <app-form-alert type="error">
+              <span>{{ resendError() }}</span>
+            </app-form-alert>
+          }
+
+          <div class="space-y-1.5">
+            <label for="resendEmailInput" class="text-xs font-semibold text-foreground">
+              Correo electrónico registrado
+            </label>
+            <input
+              id="resendEmailInput"
+              type="email"
+              [ngModel]="resendEmail()"
+              (ngModelChange)="resendEmail.set($event)"
+              placeholder="abogado@firma.co"
+              class="w-full rounded-xl border border-input bg-background px-3.5 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" />
+          </div>
+
+          <button
+            type="button"
+            (click)="submitResend()"
+            [disabled]="resending() || cooldownRemaining() > 0 || !resendEmail()"
+            class="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-primary text-primary-foreground font-semibold px-4 py-2 hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-xs text-xs sm:text-sm cursor-pointer">
+            @if (resending()) {
+              <span>Enviando...</span>
+            } @else if (cooldownRemaining() > 0) {
+              <span>Reenviar en {{ cooldownRemaining() }}s...</span>
+            } @else {
+              <span>Reenviar correo de activación</span>
+            }
+          </button>
+        </app-card-content>
+
+        <app-card-footer className="flex justify-center pt-2 border-t border-border/80">
+          <a
+            routerLink="/iniciar-sesion"
+            class="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 transition-colors">
+            <svg class="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            <span>Ir a iniciar sesión</span>
+          </a>
+        </app-card-footer>
+      }
+
+      <!-- 4. INVALID STATE -->
+      @if (state() === 'INVALID') {
+        <app-card-header className="text-center pb-2">
+          <div class="mx-auto flex size-14 items-center justify-center rounded-2xl bg-rose-500/10 text-rose-600 dark:text-rose-400 mb-3 border border-rose-500/20">
+            <svg class="size-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <app-card-title className="text-2xl font-bold tracking-tight text-foreground">
+            El enlace no es válido
+          </app-card-title>
+          <app-card-description className="text-sm text-muted-foreground pt-1 leading-relaxed">
+            El enlace de activación que intentas utilizar no es válido, ha sido alterado o ya cumplió su ciclo de uso único.
+          </app-card-description>
+        </app-card-header>
+
+        <app-card-content className="pt-2 text-center text-xs text-muted-foreground">
+          Si ya habías activado tu cuenta anteriormente, puedes ingresar con tu correo y contraseña habituales.
+        </app-card-content>
+
+        <app-card-footer className="flex flex-col gap-2 pt-2 border-t border-border/80">
+          <a
+            routerLink="/iniciar-sesion"
+            class="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-primary text-primary-foreground font-semibold px-4 py-2.5 hover:bg-primary/90 transition-colors shadow-xs text-sm cursor-pointer">
+            <span>Ir a iniciar sesión</span>
+            <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+            </svg>
+          </a>
+        </app-card-footer>
+      }
+
+    </app-card>
+  </div>
+</div>

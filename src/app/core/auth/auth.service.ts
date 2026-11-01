@@ -2,7 +2,7 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { Observable, catchError, firstValueFrom, of, tap } from 'rxjs';
-import { AuthResponse, OrganizationSummary, User } from '../models/user.model';
+import { AuthResponse, OrganizationSummary, SessionHeartbeatResponse, SignUpResponse, User, VerifyEmailResponse } from '../models/user.model';
 
 @Injectable({
   providedIn: 'root'
@@ -49,8 +49,9 @@ export class AuthService {
   readonly organizations = this.organizationsSignal.asReadonly();
 
   readonly isAuthenticated = computed(() => !!this.accessTokenSignal());
+  readonly isEmailVerified = computed(() => !!this.currentUserSignal()?.emailVerified);
   readonly isAdmin = computed(() => this.currentRoleSignal() === 'ADMIN');
-  readonly isSuperAdmin = computed(() => !!this.currentUserSignal()?.isSuperAdmin);
+  readonly isSuperAdmin = computed(() => this.currentRoleSignal() === 'SUPER_ADMIN' || !!this.currentUserSignal()?.isSuperAdmin);
 
   /**
    * Inicializador de autenticación ejecutado en el arranque de Angular (provideAppInitializer).
@@ -88,18 +89,21 @@ export class AuthService {
     );
   }
 
-  register(data: any): Observable<any> {
-    return this.http.post<{ success: boolean; data: AuthResponse }>(
+  /**
+   * Registra un nuevo usuario en Dokqet (HU-20).
+   * No guarda tokens de sesión ni realiza auto-login ya que la cuenta queda
+   * en estado pendiente de verificación de correo electrónico.
+   */
+  register(data: any): Observable<{ success: boolean; data: SignUpResponse; message?: string }> {
+    return this.http.post<{ success: boolean; data: SignUpResponse; message?: string }>(
       `${this.API_URL}/register`,
       data,
       { withCredentials: true }
-    ).pipe(
-      tap(res => {
-        if (res.success && res.data) {
-          this.setSession(res.data);
-        }
-      })
     );
+  }
+
+  signUp(data: any): Observable<{ success: boolean; data: SignUpResponse; message?: string }> {
+    return this.register(data);
   }
 
   /**
@@ -123,18 +127,41 @@ export class AuthService {
     );
   }
 
-  verifyEmail(token: string): Observable<any> {
-    return this.http.post<{ success: boolean; message: string }>(
-      `${this.API_URL}/verify-email?token=${encodeURIComponent(token)}`,
-      {},
+  /**
+   * Verificación idempotente de correo electrónico (HU-20).
+   * Devuelve estado ACTIVATED, EXPIRED o INVALID, y conserva el token de invitación si existe.
+   */
+  verifyEmail(token: string, invitationToken?: string): Observable<{ success: boolean; data: VerifyEmailResponse; message?: string }> {
+    const body: { token: string; invitationToken?: string } = { token };
+    if (invitationToken) {
+      body.invitationToken = invitationToken;
+    }
+
+    return this.http.post<{ success: boolean; data: VerifyEmailResponse; message?: string }>(
+      `${this.API_URL}/verify-email`,
+      body,
       { withCredentials: true }
     ).pipe(
-      tap(() => {
-        const current = this.currentUserSignal();
-        if (current) {
-          this.updateCurrentUser({ ...current, emailVerified: true });
+      tap(res => {
+        if (res.data?.status === 'ACTIVATED') {
+          const current = this.currentUserSignal();
+          if (current) {
+            this.updateCurrentUser({ ...current, emailVerified: true });
+          }
         }
       })
+    );
+  }
+
+  /**
+   * Heartbeat para mantener y validar la vigencia de sesión activa (HU-20).
+   * Actualiza lastActiveAt y evalúa inactividad / corte de las 3:00 a. m. COT en el backend.
+   */
+  sendHeartbeat(): Observable<{ success: boolean; data: SessionHeartbeatResponse }> {
+    return this.http.post<{ success: boolean; data: SessionHeartbeatResponse }>(
+      `${this.API_URL}/session/heartbeat`,
+      {},
+      { withCredentials: true }
     );
   }
 

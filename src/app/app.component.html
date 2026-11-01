@@ -157,11 +157,11 @@
           <div class="mx-auto h-px w-8 bg-border/80" aria-hidden="true"></div>
         }
 
-        <!-- SECTION: ADMINISTRACIÓN (SETTINGS) -->
+        <!-- SECTION: CONFIGURACIÓN (SETTINGS) -->
         <div>
           @if (!layoutStore.sidebarCollapsed()) {
             <p class="px-3 mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-              Administración
+              Configuración
             </p>
           }
 
@@ -187,32 +187,6 @@
               }
             </a>
 
-            <!-- Catálogos Maestros -->
-            <a
-              routerLink="/catalogos"
-              [title]="layoutStore.sidebarCollapsed() ? 'Catálogos' : ''"
-              [class]="'relative flex items-center rounded-xl text-xs sm:text-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ' + 
-                (layoutStore.sidebarCollapsed() 
-                  ? 'mx-auto size-10 justify-center ' 
-                  : 'w-full gap-3 px-3 py-2.5 ') + 
-                (isActive('/catalogos') 
-                  ? 'bg-card text-foreground font-semibold shadow-xs border border-border/90 [&>span>svg]:text-brand before:absolute before:left-0 before:top-2 before:bottom-2 before:w-1.5 before:rounded-r-full before:bg-brand' 
-                  : 'border border-transparent text-muted-foreground hover:bg-muted hover:text-foreground font-medium')">
-              <span class="flex size-5 shrink-0 items-center justify-center">
-                <svg class="size-[18px] shrink-0 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
-                </svg>
-              </span>
-              @if (!layoutStore.sidebarCollapsed()) {
-                <span class="flex-1 truncate text-left">Catálogos</span>
-                @if (authService.isSuperAdmin()) {
-                  <span class="ml-auto rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px] font-bold text-primary shrink-0">
-                    Admin
-                  </span>
-                }
-              }
-            </a>
-
             <!-- Mi Perfil y Seguridad -->
             <a
               routerLink="/perfil"
@@ -235,6 +209,159 @@
             </a>
           </nav>
         </div>
+
+        <!-- SECTION: SUPER ADMIN / GOBERNANZA (EXCLUSIVO SUPER_ADMIN) -->
+        @if (authService.isSuperAdmin()) {
+          @if (layoutStore.sidebarCollapsed()) {
+            <div class="mx-auto h-px w-8 bg-border/80" aria-hidden="true"></div>
+          }
+
+          <div>
+            @if (!layoutStore.sidebarCollapsed()) {
+              <div class="px-3 mb-2 flex items-center justify-between">
+                <p class="text-[11px] font-semibold uppercase tracking-wider text-primary">
+                  Super Admin
+                </p>
+                <span class="rounded-full bg-primary/10 px-1.5 py-0.5 text-[9px] font-bold text-primary">
+                  Área Técnica
+                </span>
+              </div>
+            }
+
+            <nav aria-label="Menú de Administración del Sistema" class="flex flex-col gap-1">
+              <!-- Módulo Padre: Administración del Sistema (Desplegable) -->
+              <button
+                type="button"
+                (click)="layoutStore.toggleAdminMenu()"
+                [attr.aria-expanded]="layoutStore.adminExpanded()"
+                aria-controls="admin-submodules-menu"
+                [title]="layoutStore.sidebarCollapsed() ? 'Administración del Sistema' : (layoutStore.adminExpanded() ? 'Contraer submódulos de administración' : 'Desplegar submódulos de administración')"
+                [class]="'group relative flex items-center rounded-xl text-xs sm:text-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer ' + 
+                  (layoutStore.sidebarCollapsed() 
+                    ? 'mx-auto size-10 justify-center ' 
+                    : 'w-full justify-between px-3 py-2.5 ') + 
+                  (isAdminActive() 
+                    ? 'bg-card text-foreground font-semibold shadow-xs border border-border/90 [&>div>span>svg]:text-primary ' 
+                    : 'border border-transparent text-muted-foreground hover:bg-muted hover:text-foreground font-medium')">
+                
+                <div class="flex items-center gap-3 min-w-0">
+                  <span class="flex size-5 shrink-0 items-center justify-center">
+                    <svg class="size-[18px] shrink-0 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                    </svg>
+                  </span>
+                  @if (!layoutStore.sidebarCollapsed()) {
+                    <span class="truncate text-left">Administración del Sistema</span>
+                  }
+                </div>
+
+                @if (!layoutStore.sidebarCollapsed()) {
+                  <div class="flex items-center gap-1.5 shrink-0 ml-1">
+                    @if (schedulerAdminService.alertCount() > 0 && !layoutStore.adminExpanded()) {
+                      <span class="size-2 rounded-full bg-destructive animate-pulse" title="Hay alertas activas en el sistema"></span>
+                    }
+                    <svg
+                      class="size-4 shrink-0 text-muted-foreground transition-transform duration-200 group-hover:text-foreground"
+                      [class.rotate-180]="layoutStore.adminExpanded()"
+                      fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
+                } @else if (schedulerAdminService.alertCount() > 0) {
+                  <span class="absolute top-1.5 right-1.5 size-2 rounded-full bg-destructive ring-2 ring-sidebar" aria-hidden="true"></span>
+                }
+              </button>
+
+              <!-- Submódulos Desplegables -->
+              @if (!layoutStore.sidebarCollapsed() && layoutStore.adminExpanded()) {
+                <div 
+                  id="admin-submodules-menu"
+                  class="mt-1 ml-4 pl-3 flex flex-col gap-1 border-l-2 border-primary/20 transition-all duration-200">
+                  
+                  <!-- Submódulo 1: Usuarios -->
+                  <a
+                    routerLink="/admin/usuarios"
+                    [class]="'relative flex items-center rounded-lg text-xs sm:text-[13px] transition-all px-2.5 py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ' + 
+                      (isActive('/admin/usuarios') 
+                        ? 'bg-card text-foreground font-semibold shadow-xs border border-border/90 [&>span>svg]:text-primary before:absolute before:left-0 before:top-1.5 before:bottom-1.5 before:w-1 before:rounded-r-full before:bg-primary' 
+                        : 'border border-transparent text-muted-foreground hover:bg-muted hover:text-foreground font-medium')">
+                    <span class="flex size-4 shrink-0 items-center justify-center mr-2">
+                      <svg class="size-4 shrink-0 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                      </svg>
+                    </span>
+                    <span class="flex-1 truncate text-left">Usuarios</span>
+                  </a>
+
+                  <!-- Submódulo 2: Organizaciones -->
+                  <a
+                    routerLink="/admin/organizaciones"
+                    [class]="'relative flex items-center rounded-lg text-xs sm:text-[13px] transition-all px-2.5 py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ' + 
+                      (isActive('/admin/organizaciones') 
+                        ? 'bg-card text-foreground font-semibold shadow-xs border border-border/90 [&>span>svg]:text-primary before:absolute before:left-0 before:top-1.5 before:bottom-1.5 before:w-1 before:rounded-r-full before:bg-primary' 
+                        : 'border border-transparent text-muted-foreground hover:bg-muted hover:text-foreground font-medium')">
+                    <span class="flex size-4 shrink-0 items-center justify-center mr-2">
+                      <svg class="size-4 shrink-0 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                      </svg>
+                    </span>
+                    <span class="flex-1 truncate text-left">Organizaciones</span>
+                  </a>
+
+                  <!-- Submódulo 3: Catálogos Maestros -->
+                  <a
+                    routerLink="/admin/catalogos"
+                    [class]="'relative flex items-center rounded-lg text-xs sm:text-[13px] transition-all px-2.5 py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ' + 
+                      (isActive('/admin/catalogos') 
+                        ? 'bg-card text-foreground font-semibold shadow-xs border border-border/90 [&>span>svg]:text-primary before:absolute before:left-0 before:top-1.5 before:bottom-1.5 before:w-1 before:rounded-r-full before:bg-primary' 
+                        : 'border border-transparent text-muted-foreground hover:bg-muted hover:text-foreground font-medium')">
+                    <span class="flex size-4 shrink-0 items-center justify-center mr-2">
+                      <svg class="size-4 shrink-0 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                      </svg>
+                    </span>
+                    <span class="flex-1 truncate text-left">Catálogos Maestros</span>
+                  </a>
+
+                  <!-- Submódulo 4: Cron & Scheduler -->
+                  <a
+                    routerLink="/admin/scheduler"
+                    [class]="'relative flex items-center rounded-lg text-xs sm:text-[13px] transition-all px-2.5 py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ' + 
+                      (isActive('/admin/scheduler') 
+                        ? 'bg-card text-foreground font-semibold shadow-xs border border-border/90 [&>span>svg]:text-primary before:absolute before:left-0 before:top-1.5 before:bottom-1.5 before:w-1 before:rounded-r-full before:bg-primary' 
+                        : 'border border-transparent text-muted-foreground hover:bg-muted hover:text-foreground font-medium')">
+                    <span class="flex size-4 shrink-0 items-center justify-center mr-2">
+                      <svg class="size-4 shrink-0 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </span>
+                    <span class="flex-1 truncate text-left">Cron &amp; Scheduler</span>
+                    @if (schedulerAdminService.alertCount() > 0) {
+                      <span class="rounded-full bg-destructive/15 px-1.5 py-0.5 text-[9px] font-bold text-destructive tabular-nums">
+                        {{ schedulerAdminService.alertCount() }}
+                      </span>
+                    }
+                  </a>
+
+                  <!-- Submódulo 5: Registro de Acciones -->
+                  <a
+                    routerLink="/admin/acciones"
+                    [class]="'relative flex items-center rounded-lg text-xs sm:text-[13px] transition-all px-2.5 py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ' + 
+                      (isActive('/admin/acciones') 
+                        ? 'bg-card text-foreground font-semibold shadow-xs border border-border/90 [&>span>svg]:text-primary before:absolute before:left-0 before:top-1.5 before:bottom-1.5 before:w-1 before:rounded-r-full before:bg-primary' 
+                        : 'border border-transparent text-muted-foreground hover:bg-muted hover:text-foreground font-medium')">
+                    <span class="flex size-4 shrink-0 items-center justify-center mr-2">
+                      <svg class="size-4 shrink-0 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                      </svg>
+                    </span>
+                    <span class="flex-1 truncate text-left">Registro de acciones</span>
+                  </a>
+                </div>
+              }
+            </nav>
+          </div>
+        }
       </div>
 
       <!-- 4. Sidebar Bottom Area (Dark Mode Switch + Contextual Workspace Card) -->
@@ -422,12 +549,17 @@
             <button
               dropdown-trigger
               type="button"
-              aria-label="Menú de cuenta del abogado"
+              aria-label="Menú de cuenta del usuario"
               class="flex items-center gap-2 rounded-full border border-border bg-card p-1 pr-2.5 text-xs font-medium text-foreground shadow-2xs hover:bg-muted transition-colors cursor-pointer select-none">
               <span class="flex size-7 items-center justify-center rounded-full bg-primary text-primary-foreground text-[11px] font-bold">
                 {{ userInitials() }}
               </span>
               <span class="hidden xl:inline truncate max-w-[110px] font-semibold">{{ userFirstName() }}</span>
+              @if (authService.isSuperAdmin()) {
+                <span class="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary border border-primary/20">
+                  Super Admin
+                </span>
+              }
               <svg class="size-3.5 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
               </svg>
@@ -436,8 +568,79 @@
             <div dropdown-content class="w-56 flex flex-col py-1">
               <div class="px-3 py-2 border-b border-border/60">
                 <p class="text-xs font-semibold text-foreground truncate">{{ authService.currentUser()?.name || userFirstName() }}</p>
-                <p class="text-[11px] text-muted-foreground truncate">{{ authService.currentUser()?.email || (authService.isAdmin() ? 'Administrador' : 'Abogado litigante') }}</p>
+                <p class="text-[11px] text-muted-foreground truncate">{{ authService.currentUser()?.email }}</p>
+                <div class="mt-1.5">
+                  @if (authService.isSuperAdmin()) {
+                    <span class="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">
+                      Super Admin
+                    </span>
+                  } @else if (authService.isAdmin()) {
+                    <span class="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-foreground">
+                      Administrador
+                    </span>
+                  } @else {
+                    <span class="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-foreground">
+                      Abogado litigante
+                    </span>
+                  }
+                </div>
               </div>
+
+              @if (authService.isSuperAdmin()) {
+                <a
+                  routerLink="/admin/usuarios"
+                  class="flex items-center gap-2.5 px-3 py-2 text-xs sm:text-sm text-foreground hover:bg-muted rounded-lg transition-colors mt-1">
+                  <svg class="size-4 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                  </svg>
+                  <span class="font-medium">Usuarios</span>
+                </a>
+
+                <a
+                  routerLink="/admin/organizaciones"
+                  class="flex items-center gap-2.5 px-3 py-2 text-xs sm:text-sm text-foreground hover:bg-muted rounded-lg transition-colors">
+                  <svg class="size-4 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                  </svg>
+                  <span class="font-medium">Organizaciones</span>
+                </a>
+
+                <a
+                  routerLink="/admin/catalogos"
+                  class="flex items-center gap-2.5 px-3 py-2 text-xs sm:text-sm text-foreground hover:bg-muted rounded-lg transition-colors">
+                  <svg class="size-4 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                  </svg>
+                  <span class="font-medium">Catálogos Maestros</span>
+                </a>
+
+                <a
+                  routerLink="/admin/scheduler"
+                  class="flex items-center justify-between gap-2.5 px-3 py-2 text-xs sm:text-sm text-foreground hover:bg-muted rounded-lg transition-colors">
+                  <span class="flex items-center gap-2.5">
+                    <svg class="size-4 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span class="font-medium">Cron &amp; Scheduler</span>
+                  </span>
+                  @if (schedulerAdminService.alertCount() > 0) {
+                    <span class="rounded-full bg-destructive/15 px-1.5 py-0.5 text-[10px] font-bold text-destructive tabular-nums">
+                      {{ schedulerAdminService.alertCount() }}
+                    </span>
+                  }
+                </a>
+
+                <a
+                  routerLink="/admin/acciones"
+                  class="flex items-center gap-2.5 px-3 py-2 text-xs sm:text-sm text-foreground hover:bg-muted rounded-lg transition-colors">
+                  <svg class="size-4 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                  </svg>
+                  <span class="font-medium">Registro de acciones</span>
+                </a>
+
+                <div class="my-1 border-t border-border/60"></div>
+              }
 
               <a
                 routerLink="/perfil"
@@ -475,6 +678,27 @@
 
       <!-- Main Content Canvas -->
       <main class="flex-1 w-full max-w-[1440px] mx-auto px-4 pb-10 pt-2 sm:px-6 lg:px-8">
+        @if (notificationService.alert(); as alert) {
+          <div class="mb-4">
+            <app-form-alert [type]="alert.type" className="shadow-xs animate-in fade-in slide-in-from-top-2 duration-200">
+              <div class="flex items-center justify-between w-full">
+                <div class="flex flex-col">
+                  @if (alert.title) {
+                    <span class="font-semibold text-xs sm:text-sm">{{ alert.title }}</span>
+                  }
+                  <span class="text-xs sm:text-sm font-medium">{{ alert.message }}</span>
+                </div>
+                <button
+                  type="button"
+                  (click)="notificationService.clear()"
+                  class="ml-3 text-muted-foreground hover:text-foreground text-sm p-1 rounded-md transition-colors cursor-pointer"
+                  aria-label="Cerrar notificación">
+                  ✕
+                </button>
+              </div>
+            </app-form-alert>
+          </div>
+        }
         <router-outlet />
       </main>
     </div>

@@ -7,6 +7,10 @@ export const authGuard: CanActivateFn = () => {
   const router = inject(Router);
 
   if (authService.isAuthenticated()) {
+    const user = authService.currentUser();
+    if (user && user.emailVerified === false) {
+      return router.parseUrl(`/activacion-pendiente?email=${encodeURIComponent(user.email)}`);
+    }
     return true;
   }
 

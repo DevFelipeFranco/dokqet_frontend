@@ -30,8 +30,17 @@ export const routes: Routes = [
   },
   {
     path: 'verificar-correo',
-    title: 'Verificación de Correo · Dokqet',
-    loadComponent: () => import('./features/auth/verify-email/verify-email.component').then(m => m.VerifyEmailComponent)
+    redirectTo: 'cuenta-activada'
+  },
+  {
+    path: 'cuenta-activada',
+    title: 'Activación de Cuenta · Dokqet',
+    loadComponent: () => import('./features/auth/cuenta-activada/cuenta-activada.component').then(m => m.CuentaActivadaComponent)
+  },
+  {
+    path: 'activacion-pendiente',
+    title: 'Activación Pendiente · Dokqet',
+    loadComponent: () => import('./features/auth/pending-activation/pending-activation.component').then(m => m.PendingActivationComponent)
   },
   {
     path: 'panel',
@@ -76,13 +85,43 @@ export const routes: Routes = [
   },
   {
     path: 'catalogos',
-    title: 'Catálogos y Tablas Maestras · Dokqet',
-    canActivate: [authGuard],
-    loadComponent: () => import('./features/admin/catalogs/catalogs-admin.component').then(m => m.CatalogsAdminComponent)
+    redirectTo: 'admin/catalogos'
   },
   {
     path: 'admin/catalogos',
-    redirectTo: 'catalogos'
+    title: 'Catálogos Maestros · Dokqet',
+    canActivate: [authGuard, superAdminGuard],
+    loadComponent: () => import('./features/admin/catalogs/catalogs-admin.component').then(m => m.CatalogsAdminComponent)
+  },
+  {
+    path: 'admin/organizaciones',
+    title: 'Observabilidad de Organizaciones · Dokqet',
+    canActivate: [authGuard, superAdminGuard],
+    loadComponent: () => import('./features/admin/organizations/organizations-admin.component').then(m => m.OrganizationsAdminComponent)
+  },
+  {
+    path: 'admin/usuarios',
+    title: 'Gestión de Usuarios · Dokqet',
+    canActivate: [authGuard, superAdminGuard],
+    loadComponent: () => import('./features/admin/users/admin-users.component').then(m => m.AdminUsersComponent)
+  },
+  {
+    path: 'admin/usuarios/:id',
+    title: 'Ficha de Usuario · Dokqet',
+    canActivate: [authGuard, superAdminGuard],
+    loadComponent: () => import('./features/admin/users/detail/admin-user-detail.component').then(m => m.AdminUserDetailComponent)
+  },
+  {
+    path: 'admin/acciones',
+    title: 'Registro de Acciones · Dokqet',
+    canActivate: [authGuard, superAdminGuard],
+    loadComponent: () => import('./features/admin/actions/admin-actions.component').then(m => m.AdminActionsComponent)
+  },
+  {
+    path: 'admin/scheduler',
+    title: 'Cron & Scheduler · Dokqet',
+    canActivate: [authGuard, superAdminGuard],
+    loadComponent: () => import('./features/admin/scheduler/scheduler-admin.component').then(m => m.SchedulerAdminComponent)
   },
   {
     path: '**',

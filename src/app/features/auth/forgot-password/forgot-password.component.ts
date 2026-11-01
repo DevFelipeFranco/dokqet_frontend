@@ -3,6 +3,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../../core/auth/auth.service';
+import { parseHttpAuthError } from '../../../core/utils/http-error.utils';
 import {
   CardComponent,
   CardHeaderComponent,
@@ -72,7 +73,12 @@ export class ForgotPasswordComponent implements OnInit {
       },
       error: (err) => {
         this.loading.set(false);
-        this.errorMessage.set(err.error?.message || 'Error al procesar la solicitud.');
+        const parsed = parseHttpAuthError(err);
+        if (parsed.isConnectionOrServerError) {
+          this.errorMessage.set(parsed.message);
+        } else {
+          this.errorMessage.set(err.error?.message || 'Error al procesar la solicitud.');
+        }
       }
     });
   }

@@ -3,7 +3,7 @@
     class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs transition-opacity animate-in fade-in"
     (click)="onBackdropClick($event)">
     <div 
-      class="relative w-full max-w-lg rounded-xl border border-border bg-card p-6 text-card-foreground shadow-xl transition-all zoom-in-95 duration-150"
+      [class]="'relative w-full rounded-xl border border-border bg-card p-6 text-card-foreground shadow-xl transition-all zoom-in-95 duration-150 ' + maxWidth()"
       role="dialog" 
       aria-modal="true"
       (click)="$event.stopPropagation()">
@@ -18,14 +18,16 @@
         <ng-content></ng-content>
       </div>
 
-      <div class="mt-4 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-        <app-button variant="outline" (buttonClick)="onCancel()">
-          {{ cancelText() }}
-        </app-button>
-        <app-button [variant]="confirmVariant()" (buttonClick)="onConfirm()">
-          {{ confirmText() }}
-        </app-button>
-      </div>
+      @if (showFooter()) {
+        <div class="mt-4 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <app-button variant="outline" (buttonClick)="onCancel()">
+            {{ cancelText() }}
+          </app-button>
+          <app-button [variant]="confirmVariant()" (buttonClick)="onConfirm()">
+            {{ confirmText() }}
+          </app-button>
+        </div>
+      }
     </div>
   </div>
 }

@@ -5,6 +5,7 @@ import { CommonModule } from '@angular/common';
 import { AuthService } from '../../../core/auth/auth.service';
 import { CatalogService } from '../../../core/services/catalog.service';
 import { ConsentTypeDto, DocumentTypeDto, GenderDto } from '../../../core/models/catalog.model';
+import { parseHttpAuthError } from '../../../core/utils/http-error.utils';
 import {
   CardComponent,
   CardHeaderComponent,
@@ -157,14 +158,21 @@ export class SignUpComponent implements OnInit {
     };
 
     this.authService.register(registerPayload).subscribe({
-      next: () => {
+      next: (res) => {
         this.loading.set(false);
-        const returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/panel';
-        this.router.navigateByUrl(returnUrl);
+        const email = res?.data?.email || registerPayload.email || '';
+        this.router.navigate(['/activacion-pendiente'], {
+          queryParams: { email }
+        });
       },
       error: (err) => {
         this.loading.set(false);
-        this.errorMessage.set(err.error?.message || 'Error al crear la cuenta. Verifica los datos.');
+        const parsed = parseHttpAuthError(err);
+        if (parsed.isConnectionOrServerError) {
+          this.errorMessage.set(parsed.message);
+        } else {
+          this.errorMessage.set(err.error?.message || 'Error al crear la cuenta. Verifica los datos.');
+        }
       }
     });
   }

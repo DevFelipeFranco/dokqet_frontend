@@ -114,6 +114,87 @@
           </p>
         </div>
 
+        <!-- Session Inactive Notice (HU-20) -->
+        @if (sessionInactiveNotice(); as inactiveMsg) {
+          <div class="mb-4 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3.5 text-xs text-amber-900 dark:text-amber-200 flex items-start gap-2.5 shadow-xs">
+            <svg class="size-4 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span>{{ inactiveMsg }}</span>
+          </div>
+        }
+
+        <!-- Account Suspended Warning Banner (HTTP 403 ACCOUNT_SUSPENDED - HU-21 / US-020) -->
+        @if (accountSuspendedNotice(); as suspendedMsg) {
+          <div class="mb-5 rounded-xl border border-rose-500/40 bg-rose-500/10 dark:bg-rose-950/25 p-4 flex items-start gap-3 shadow-xs">
+            <div class="size-8 rounded-lg bg-rose-500/20 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0 mt-0.5">
+              <svg class="size-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+              </svg>
+            </div>
+            <div class="flex-1 space-y-1">
+              <h3 class="text-sm font-semibold text-rose-900 dark:text-rose-200">
+                Cuenta suspendida
+              </h3>
+              <p class="text-xs text-rose-900/90 dark:text-rose-200/90 leading-relaxed">
+                {{ suspendedMsg }}
+              </p>
+            </div>
+          </div>
+        }
+
+        <!-- Email Not Verified Warning Banner (HTTP 403 EMAIL_NOT_VERIFIED - HU-20) -->
+        @if (emailNotVerified()) {
+          <div class="mb-5 rounded-xl border border-amber-500/40 bg-amber-500/10 dark:bg-amber-950/25 p-4 flex flex-col gap-3 shadow-xs">
+            <div class="flex items-start gap-3">
+              <div class="size-8 rounded-lg bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 mt-0.5">
+                <svg class="size-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              </div>
+              <div class="flex-1 space-y-1">
+                <h3 class="text-sm font-semibold text-amber-900 dark:text-amber-200">
+                  Tu cuenta aún no ha sido activada
+                </h3>
+                <p class="text-xs text-amber-900/90 dark:text-amber-200/90 leading-relaxed">
+                  Hemos enviado un correo de verificación a tu bandeja de entrada. Debes confirmar tu dirección antes de acceder a la plataforma.
+                </p>
+                @if (resendSuccess()) {
+                  <p class="text-[11px] font-medium text-emerald-800 dark:text-emerald-300 pt-1">
+                    {{ resendSuccess() }}
+                  </p>
+                }
+                @if (resendError()) {
+                  <p class="text-[11px] font-medium text-rose-800 dark:text-rose-300 pt-1">
+                    {{ resendError() }}
+                  </p>
+                }
+              </div>
+            </div>
+
+            <!-- Resend Action with 60s cooldown -->
+            <div class="pt-2 border-t border-amber-500/20 flex flex-col sm:flex-row items-center justify-between gap-2">
+              <span class="text-[11px] text-amber-800/80 dark:text-amber-300/80 text-center sm:text-left">
+                ¿No encuentras el correo? Revisa spam o reenvía el enlace.
+              </span>
+              <button
+                type="button"
+                (click)="resendVerification()"
+                [disabled]="resendingVerification() || resendCooldown() > 0"
+                class="inline-flex items-center gap-1.5 rounded-lg border border-amber-500/50 bg-background px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer shadow-2xs">
+                @if (resendingVerification()) {
+                  <span class="size-3 animate-spin rounded-full border-2 border-primary border-t-transparent"></span>
+                  <span>Enviando...</span>
+                } @else if (resendCooldown() > 0) {
+                  <span>Reenviar en {{ resendCooldown() }}s...</span>
+                } @else {
+                  <span>Reenviar correo de verificación</span>
+                }
+              </button>
+            </div>
+          </div>
+        }
+
         <!-- Account Unlocked Notice -->
         @if (accountUnlockedNotice()) {
           <div class="mb-4 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3.5 text-xs text-emerald-800 dark:text-emerald-300 flex items-start gap-2.5">
@@ -165,6 +246,59 @@
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
                 </svg>
               </a>
+            </div>
+          </div>
+        }
+
+        <!-- Connection / Backend Down Alert -->
+        @if (connectionError(); as connErr) {
+          <div class="mb-5 rounded-xl border border-amber-500/40 bg-amber-500/10 dark:bg-amber-950/25 p-4 flex flex-col gap-3 shadow-xs">
+            <div class="flex items-start gap-3">
+              <div class="size-8 rounded-lg bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 mt-0.5">
+                <svg class="size-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636a9 9 0 010 12.728m0 0l-2.829-2.829m2.829 2.829L21 21M15.536 8.464a5 5 0 010 7.072m0 0l-2.829-2.829m-4.243 4.243a9 9 0 01-2.829-2.829m0 0L3 21m2.636-15.364a9 9 0 0112.728 0M8.464 8.464a5 5 0 017.072 0" />
+                </svg>
+              </div>
+              <div class="flex-1 space-y-1">
+                <div class="flex items-center justify-between gap-2">
+                  <h3 class="text-sm font-semibold text-amber-900 dark:text-amber-200">
+                    {{ connErr.title }}
+                  </h3>
+                  <span class="inline-flex items-center gap-1 rounded-md bg-amber-500/20 px-2 py-0.5 font-mono text-[10px] font-semibold text-amber-800 dark:text-amber-300">
+                    {{ connErr.status === 0 ? 'Sin conexión' : 'HTTP ' + connErr.status }}
+                  </span>
+                </div>
+                <p class="text-xs text-amber-900/90 dark:text-amber-200/90 leading-relaxed">
+                  {{ connErr.message }}
+                </p>
+                @if (connErr.advice) {
+                  <p class="text-[11px] font-medium text-amber-800 dark:text-amber-300 pt-1.5 border-t border-amber-500/20">
+                    <strong class="font-semibold">Nota:</strong> {{ connErr.advice }}
+                  </p>
+                }
+              </div>
+            </div>
+
+            <!-- Retry button -->
+            <div class="pt-2 border-t border-amber-500/20 flex flex-col sm:flex-row items-center justify-between gap-2">
+              <span class="text-[11px] text-amber-800/80 dark:text-amber-300/80 text-center sm:text-left">
+                Puedes reintentar sin necesidad de reescribir tus datos.
+              </span>
+              <button
+                type="button"
+                (click)="onSubmit()"
+                [disabled]="loading()"
+                class="inline-flex items-center gap-1.5 rounded-lg border border-amber-500/50 bg-background px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring transition-colors cursor-pointer shadow-2xs">
+                @if (loading()) {
+                  <span class="size-3 animate-spin rounded-full border-2 border-primary border-t-transparent"></span>
+                  <span>Conectando...</span>
+                } @else {
+                  <svg class="size-3.5 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  <span>Reintentar conexión</span>
+                }
+              </button>
             </div>
           </div>
         }
@@ -277,8 +411,8 @@
             </div>
           }
 
-          <!-- Generic Error Alert if failure and not remaining attempts -->
-          @if (!lockedInfo() && warningAttempts() === null && errorMessage()) {
+          <!-- Generic Error Alert if failure and not remaining attempts and not connection error -->
+          @if (!lockedInfo() && warningAttempts() === null && !connectionError() && errorMessage()) {
             <app-form-alert type="error">
               {{ errorMessage() }}
             </app-form-alert>

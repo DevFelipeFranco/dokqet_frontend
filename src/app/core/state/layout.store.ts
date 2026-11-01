@@ -21,6 +21,9 @@ export class LayoutStore {
   /** Controla la expansión del submenú de Configuración en el Sidebar */
   readonly settingsExpanded = signal<boolean>(true);
 
+  /** Controla la expansión del submenú de Administración (Super Admin) en el Sidebar */
+  readonly adminExpanded = signal<boolean>(true);
+
   /** Término de búsqueda sincronizado desde la barra superior (Ctrl+K / ⌘K) */
   readonly globalSearchQuery = signal<string>('');
 
@@ -76,6 +79,18 @@ export class LayoutStore {
       return;
     }
     this.settingsExpanded.update(v => !v);
+  }
+
+  /**
+   * Alterna el acordeón de Administración del Sistema en el menú lateral
+   */
+  toggleAdminMenu(): void {
+    if (this.sidebarCollapsed()) {
+      this.sidebarCollapsed.set(false);
+      this.adminExpanded.set(true);
+      return;
+    }
+    this.adminExpanded.update(v => !v);
   }
 
   /**

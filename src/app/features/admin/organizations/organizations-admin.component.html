@@ -1,0 +1,379 @@
+<div class="space-y-6">
+  <!-- 1. Breadcrumbs de Navegación -->
+  <app-breadcrumbs [items]="breadcrumbs"></app-breadcrumbs>
+
+  <!-- 2. Cabecera Principal de Observabilidad -->
+  <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div>
+      <div class="flex items-center gap-2.5">
+        <h1 class="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+          Observabilidad de Organizaciones
+        </h1>
+        <span class="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary border border-primary/20">
+          Super Admin
+        </span>
+      </div>
+      <p class="mt-1 text-xs sm:text-sm text-muted-foreground">
+        Supervisión técnica de firmas jurídicas, métricas consolidadas e inspección de conformación de equipos.
+      </p>
+    </div>
+
+    <div class="flex items-center gap-2">
+      <app-button variant="outline" size="sm" (buttonClick)="refreshAll()" [title]="'Actualizar métricas y listado'">
+        <svg class="size-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+        </svg>
+        <span>Actualizar</span>
+      </app-button>
+    </div>
+  </div>
+
+  <!-- 3. Tarjetas de Resumen (Stat Cards / Métricas de Alto Rendimiento) -->
+  @if (loadingOverview()) {
+    <app-skeleton-card-grid [count]="4" cols="grid-cols-1 sm:grid-cols-2 lg:grid-cols-4"></app-skeleton-card-grid>
+  } @else {
+    @if (overviewError()) {
+      <app-form-alert type="error">
+        <div class="flex items-center justify-between w-full">
+          <span>{{ overviewError() }}</span>
+          <app-button variant="outline" size="sm" (buttonClick)="loadOverview()">Reintentar</app-button>
+        </div>
+      </app-form-alert>
+    }
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+      <!-- Total Organizaciones -->
+      <app-stat-card
+        title="Total Organizaciones"
+        [value]="overview()?.totalOrganizations ?? 0"
+        [description]="'Colectivas: ' + (overview()?.totalCollectiveOrganizations ?? 0) + ' · Personales: ' + (overview()?.totalPersonalOrganizations ?? 0)"
+        dotColor="bg-blue-600 dark:bg-blue-400">
+      </app-stat-card>
+
+      <!-- Firmas Colectivas -->
+      <app-stat-card
+        title="Firmas Colectivas"
+        [value]="overview()?.totalCollectiveOrganizations ?? 0"
+        [description]="(overview()?.totalPersonalOrganizations ?? 0) + ' espacios personales'"
+        dotColor="bg-emerald-600 dark:bg-emerald-400">
+      </app-stat-card>
+
+      <!-- Total Usuarios Registrados -->
+      <app-stat-card
+        title="Total Litigantes / Usuarios"
+        [value]="overview()?.totalUsers ?? 0"
+        description="Litigantes y administradores en firmas"
+        dotColor="bg-amber-600 dark:bg-amber-400">
+      </app-stat-card>
+
+      <!-- Total Procesos Judiciales -->
+      <app-stat-card
+        title="Total Expedientes Vigilados"
+        [value]="overview()?.totalProcesses ?? 0"
+        description="Procesos bajo monitoreo activo"
+        dotColor="bg-violet-600 dark:bg-violet-400">
+      </app-stat-card>
+    </div>
+  }
+
+  <!-- 4. Contenedor de la Tabla Interactiva de Organizaciones -->
+  <div class="rounded-2xl border border-border bg-card shadow-xs overflow-hidden">
+    <!-- Barra de control y búsqueda -->
+    <div class="p-4 sm:p-5 border-b border-border flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div>
+        <h2 class="text-base sm:text-lg font-semibold text-foreground">
+          Firmas Jurídicas y Organizaciones
+        </h2>
+        <p class="text-xs text-muted-foreground mt-0.5">
+          Listado integral multi-tenancy con conteo de personas vinculadas y expedientes vigilados.
+        </p>
+      </div>
+
+      <!-- Buscador dinámico -->
+      <div class="relative w-full sm:w-80">
+        <svg class="size-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+        <input
+          type="text"
+          [ngModel]="searchQuery()"
+          (ngModelChange)="onSearchChange($event)"
+          placeholder="Buscar por nombre, NIT o razón..."
+          aria-label="Buscar organizaciones por nombre comercial, razón social o NIT"
+          class="h-9 w-full rounded-xl border border-border bg-background pl-9 pr-9 text-xs sm:text-sm text-foreground placeholder:text-muted-foreground shadow-2xs outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30 transition-all" />
+        @if (searchQuery()) {
+          <button
+            type="button"
+            (click)="clearSearch()"
+            aria-label="Limpiar búsqueda"
+            class="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground text-xs p-1 cursor-pointer">
+            ✕
+          </button>
+        }
+      </div>
+    </div>
+
+    <!-- Error de organizaciones si ocurre -->
+    @if (organizationsError()) {
+      <div class="p-4 sm:p-5">
+        <app-form-alert type="error">
+          <div class="flex items-center justify-between w-full">
+            <span>{{ organizationsError() }}</span>
+            <app-button variant="outline" size="sm" (buttonClick)="loadOrganizations()">Reintentar</app-button>
+          </div>
+        </app-form-alert>
+      </div>
+    }
+
+    <!-- Estado de Carga con Skeleton -->
+    @if (loadingOrganizations()) {
+      <div class="p-4 sm:p-5">
+        <app-skeleton-table variant="organizations" [rows]="5"></app-skeleton-table>
+      </div>
+    } @else {
+      <!-- Estado Vacío -->
+      @if (organizations().length === 0) {
+        <div class="p-8">
+          <app-empty-state
+            [title]="searchQuery() ? 'Sin resultados de búsqueda' : 'No hay organizaciones registradas'"
+            [description]="searchQuery() ? 'No se encontraron organizaciones que coincidan con «' + searchQuery() + '».' : 'Aún no se han creado organizaciones en la plataforma Dokqet.'"
+            [actionLabel]="searchQuery() ? 'Limpiar filtro de búsqueda' : ''"
+            (actionClick)="clearSearch()">
+          </app-empty-state>
+        </div>
+      } @else {
+        <!-- Tabla interactiva de organizaciones -->
+        <div class="overflow-x-auto">
+          <table class="w-full border-collapse text-left text-xs sm:text-sm" aria-label="Tabla de organizaciones del sistema">
+            <thead>
+              <tr class="border-b border-border bg-muted/40 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider select-none">
+                <th scope="col" class="py-3.5 pl-5 pr-3">Organización</th>
+                <th scope="col" class="py-3.5 px-3">Tipo</th>
+                <th scope="col" class="py-3.5 px-3">NIT / DV</th>
+                <th scope="col" class="py-3.5 px-3">Personas vinculadas</th>
+                <th scope="col" class="py-3.5 px-3">Expedientes vigilados</th>
+                <th scope="col" class="py-3.5 px-3">Fecha registro</th>
+                <th scope="col" class="py-3.5 pl-3 pr-5 text-right">Acciones</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-border/60 bg-card">
+              @for (org of organizations(); track org.id) {
+                <tr class="hover:bg-muted/30 transition-colors">
+                  <!-- Organización (Nombre comercial y Razón social) -->
+                  <td class="py-3.5 pl-5 pr-3">
+                    <div class="flex flex-col">
+                      <span class="font-semibold text-foreground truncate max-w-xs sm:max-w-sm">
+                        {{ org.name }}
+                      </span>
+                      @if (org.legalName && org.legalName !== org.name) {
+                        <span class="text-[11px] text-muted-foreground truncate max-w-xs">
+                          {{ org.legalName }}
+                        </span>
+                      }
+                    </div>
+                  </td>
+
+                  <!-- Tipo: Firma Jurídica vs Persona Natural -->
+                  <td class="py-3.5 px-3 whitespace-nowrap">
+                    @if (org.personType === 'JURIDICA') {
+                      <app-badge variant="brand">Firma Jurídica</app-badge>
+                    } @else {
+                      <app-badge variant="secondary">Persona Natural</app-badge>
+                    }
+                    @if (org.isPersonal) {
+                      <span class="ml-1 text-[10px] text-muted-foreground">(Personal)</span>
+                    }
+                  </td>
+
+                  <!-- NIT / DV -->
+                  <td class="py-3.5 px-3 whitespace-nowrap font-mono text-xs">
+                    {{ formatNit(org) }}
+                  </td>
+
+                  <!-- Personas Vinculadas -->
+                  <td class="py-3.5 px-3 whitespace-nowrap">
+                    <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-muted text-xs font-semibold tabular-nums text-foreground">
+                      <svg class="size-3.5 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                      </svg>
+                      <span>{{ org.membersCount }}</span>
+                      @if (org.activeMembersCount !== org.membersCount) {
+                        <span class="text-[10px] text-muted-foreground font-normal">({{ org.activeMembersCount }} act.)</span>
+                      }
+                    </div>
+                  </td>
+
+                  <!-- Expedientes Vigilados -->
+                  <td class="py-3.5 px-3 whitespace-nowrap">
+                    <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-primary/10 text-xs font-semibold tabular-nums text-primary">
+                      <svg class="size-3.5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                      </svg>
+                      <span>{{ org.processesCount }}</span>
+                    </div>
+                  </td>
+
+                  <!-- Fecha de Registro -->
+                  <td class="py-3.5 px-3 whitespace-nowrap text-muted-foreground text-xs tabular-nums">
+                    {{ org.createdAt | date:'dd/MM/yyyy' }}
+                  </td>
+
+                  <!-- Acciones: Inspeccionar Equipo -->
+                  <td class="py-3.5 pl-3 pr-5 text-right whitespace-nowrap">
+                    <app-button
+                      variant="outline"
+                      size="sm"
+                      (buttonClick)="openMembersModal(org)"
+                      [title]="'Inspeccionar quién conforma ' + org.name"
+                      aria-label="Ver equipo de la firma">
+                      <svg class="size-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                      </svg>
+                      <span>Ver equipo</span>
+                    </app-button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Paginación dinámica -->
+        <div class="p-4 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted-foreground">
+          <div>
+            Mostrando 
+            <span class="font-semibold text-foreground tabular-nums">{{ (currentPage() * pageSize()) + 1 }}</span>
+            a
+            <span class="font-semibold text-foreground tabular-nums">{{ ((currentPage() + 1) * pageSize() > totalElements()) ? totalElements() : ((currentPage() + 1) * pageSize()) }}</span>
+            de
+            <span class="font-semibold text-foreground tabular-nums">{{ totalElements() }}</span>
+            organizaciones
+          </div>
+
+          <div class="flex items-center gap-2">
+            <span class="tabular-nums">Página {{ currentPage() + 1 }} de {{ totalPages() || 1 }}</span>
+
+            <app-button
+              variant="outline"
+              size="sm"
+              [disabled]="currentPage() === 0"
+              (buttonClick)="goToPage(currentPage() - 1)"
+              aria-label="Ir a página anterior">
+              Anterior
+            </app-button>
+
+            <app-button
+              variant="outline"
+              size="sm"
+              [disabled]="currentPage() >= totalPages() - 1"
+              (buttonClick)="goToPage(currentPage() + 1)"
+              aria-label="Ir a página siguiente">
+              Siguiente
+            </app-button>
+          </div>
+        </div>
+      }
+    }
+  </div>
+
+  <!-- 5. Modal de Inspección de Integrantes de la Organización -->
+  <app-modal
+    [isOpen]="isMembersModalOpen()"
+    [maxWidth]="'max-w-4xl'"
+    [showFooter]="false"
+    [title]="'Equipo de ' + (selectedOrg()?.name || 'la organización')"
+    [description]="(selectedOrg()?.legalName || selectedOrg()?.name || '') + (selectedOrg()?.isPersonal ? ' · Espacio Personal' : ' · Firma Jurídica')"
+    (cancelled)="closeMembersModal()">
+
+    <div class="space-y-4">
+      @if (loadingMembers()) {
+        <div class="space-y-3 py-4">
+          <app-skeleton width="100%" height="40px" rounded="rounded-lg"></app-skeleton>
+          <app-skeleton width="100%" height="40px" rounded="rounded-lg"></app-skeleton>
+          <app-skeleton width="100%" height="40px" rounded="rounded-lg"></app-skeleton>
+        </div>
+      } @else {
+        @if (membersError()) {
+          <app-form-alert type="error">
+            <span>{{ membersError() }}</span>
+          </app-form-alert>
+        }
+
+        @if (members().length === 0) {
+          <div class="py-8 text-center text-muted-foreground text-xs sm:text-sm">
+            No se encontraron integrantes vinculados a esta organización.
+          </div>
+        } @else {
+          <div class="overflow-x-auto rounded-xl border border-border">
+            <table class="w-full border-collapse text-left text-xs sm:text-sm" aria-label="Integrantes de la organización">
+              <thead>
+                <tr class="border-b border-border bg-muted/40 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider select-none">
+                  <th scope="col" class="py-3 pl-4 pr-3">Nombre completo</th>
+                  <th scope="col" class="py-3 px-3">Correo electrónico</th>
+                  <th scope="col" class="py-3 px-3">Rol en firma</th>
+                  <th scope="col" class="py-3 px-3">Estado membresía</th>
+                  <th scope="col" class="py-3 pl-3 pr-4">Último ingreso</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-border/60 bg-card">
+                @for (member of members(); track member.membershipId) {
+                  <tr class="hover:bg-muted/20 transition-colors">
+                    <!-- Nombre y Documento -->
+                    <td class="py-3 pl-4 pr-3">
+                      <div class="flex flex-col">
+                        <span class="font-semibold text-foreground">{{ member.fullName }}</span>
+                        <span class="text-[11px] text-muted-foreground font-mono">
+                          {{ member.documentType }} {{ member.documentNumber }}
+                        </span>
+                      </div>
+                    </td>
+
+                    <!-- Correo electrónico -->
+                    <td class="py-3 px-3 font-mono text-xs text-muted-foreground">
+                      {{ member.email }}
+                    </td>
+
+                    <!-- Rol en firma -->
+                    <td class="py-3 px-3 whitespace-nowrap">
+                      <app-badge [variant]="getRoleVariant(member.role)">
+                        {{ getRoleLabel(member.role) }}
+                      </app-badge>
+                    </td>
+
+                    <!-- Estado membresía -->
+                    <td class="py-3 px-3 whitespace-nowrap">
+                      @if (member.status === 'ACTIVE') {
+                        <app-badge variant="success" [hasDot]="true">Activo</app-badge>
+                      } @else {
+                        <app-badge variant="destructive" [hasDot]="true">Suspendido</app-badge>
+                      }
+                    </td>
+
+                    <!-- Último ingreso / Fecha vinculación -->
+                    <td class="py-3 pl-3 pr-4 text-xs tabular-nums text-muted-foreground">
+                      @if (member.lastUsedAt) {
+                        <span>{{ member.lastUsedAt | date:'dd/MM/yyyy HH:mm' }}</span>
+                      } @else {
+                        <span class="italic text-muted-foreground/80">Sin actividad registrada</span>
+                      }
+                      <span class="block text-[10px] text-muted-foreground/70">
+                        Vinculado: {{ member.joinedAt | date:'dd/MM/yyyy' }}
+                      </span>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      }
+
+      <!-- Botón de Cierre -->
+      <div class="flex justify-end pt-2">
+        <app-button variant="outline" (buttonClick)="closeMembersModal()">
+          Cerrar
+        </app-button>
+      </div>
+    </div>
+  </app-modal>
+</div>

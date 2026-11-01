@@ -1,0 +1,217 @@
+<div class="space-y-6">
+  <!-- Breadcrumbs -->
+  <app-breadcrumbs [items]="breadcrumbs"></app-breadcrumbs>
+
+  <!-- Page Header -->
+  <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+    <div>
+      <h1 class="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+        Gestión de Usuarios y Cuentas
+      </h1>
+      <p class="text-sm text-muted-foreground mt-1">
+        Búsqueda insensible a tildes, suspensión y reactivación de cuentas, gestión de administradores y soporte técnico.
+      </p>
+    </div>
+    <div class="flex items-center gap-2">
+      <span class="inline-flex items-center rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary border border-primary/20">
+        {{ totalElements() }} cuentas registradas
+      </span>
+    </div>
+  </div>
+
+  <!-- Filter & Search Toolbar -->
+  <div class="flex flex-col gap-4 rounded-xl border border-border bg-card p-4 shadow-2xs">
+    <div class="flex flex-col md:flex-row items-stretch md:items-center gap-3 justify-between">
+      <!-- Search Input with unaccent note -->
+      <div class="relative flex-1 max-w-lg">
+        <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+          <svg class="size-4 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+        </div>
+        <input
+          type="text"
+          [ngModel]="searchQuery()"
+          (ngModelChange)="onSearchInput($event)"
+          placeholder="Buscar por nombre, apellido o correo (ej. Gómez, Perez)..."
+          class="w-full rounded-lg border border-input bg-background pl-9 pr-9 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-colors"
+          aria-label="Buscar usuarios por nombre o correo" />
+        @if (searchQuery()) {
+          <button
+            type="button"
+            (click)="clearSearch()"
+            class="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground hover:text-foreground cursor-pointer"
+            aria-label="Limpiar búsqueda">
+            <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        }
+      </div>
+
+      <!-- Quick Status Filter Pills -->
+      <div class="flex items-center gap-1 overflow-x-auto pb-1 md:pb-0" role="tablist" aria-label="Filtro por estado de cuenta">
+        @for (opt of statusOptions; track opt.value) {
+          <button
+            type="button"
+            (click)="setStatusFilter(opt.value)"
+            [class]="'px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors whitespace-nowrap cursor-pointer ' +
+              (selectedStatus() === opt.value
+                ? 'bg-primary text-primary-foreground shadow-2xs'
+                : 'bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground')">
+            {{ opt.label }}
+          </button>
+        }
+      </div>
+    </div>
+  </div>
+
+  <!-- Error Alert -->
+  @if (errorMessage(); as err) {
+    <app-form-alert type="error">
+      <span>{{ err }}</span>
+    </app-form-alert>
+  }
+
+  <!-- Users Table Section -->
+  <div class="rounded-xl border border-border bg-card shadow-2xs overflow-hidden">
+    @if (loading()) {
+      <div class="p-6">
+        <app-skeleton-table [rows]="8" [columns]="6"></app-skeleton-table>
+      </div>
+    } @else if (users().length === 0) {
+      <app-empty-state
+        title="No se encontraron usuarios"
+        [description]="searchQuery() ? 'No hay resultados que coincidan con «' + searchQuery() + '» en el filtro seleccionado.' : 'No hay usuarios registrados con el estado seleccionado.'"
+        icon="users">
+        @if (searchQuery()) {
+          <app-button variant="outline" (buttonClick)="clearSearch()">
+            Limpiar búsqueda
+          </app-button>
+        }
+      </app-empty-state>
+    } @else {
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse" aria-label="Tabla de usuarios de la plataforma">
+          <thead>
+            <tr class="border-b border-border bg-muted/40 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              <th scope="col" class="py-3 px-4">Usuario</th>
+              <th scope="col" class="py-3 px-4">Documento</th>
+              <th scope="col" class="py-3 px-4">Rol Plataforma</th>
+              <th scope="col" class="py-3 px-4">Estado Cuenta</th>
+              <th scope="col" class="py-3 px-4">Último Acceso</th>
+              <th scope="col" class="py-3 px-4 text-right">Acciones</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-border/60 text-sm">
+            @for (u of users(); track u.id) {
+              <tr class="hover:bg-muted/30 transition-colors">
+                <!-- User name, avatar & email -->
+                <td class="py-3.5 px-4">
+                  <div class="flex items-center gap-3">
+                    <div class="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-bold border border-primary/20">
+                      {{ getUserInitials(u) }}
+                    </div>
+                    <div class="min-w-0">
+                      <div class="flex items-center gap-2">
+                        <a
+                          [routerLink]="['/admin/usuarios', u.id]"
+                          class="font-medium text-foreground hover:text-primary transition-colors hover:underline truncate">
+                          {{ u.name || (u.firstName + ' ' + u.lastName) }}
+                        </a>
+                      </div>
+                      <p class="text-xs text-muted-foreground truncate">{{ u.email }}</p>
+                    </div>
+                  </div>
+                </td>
+
+                <!-- Document -->
+                <td class="py-3.5 px-4 text-xs font-mono text-muted-foreground whitespace-nowrap">
+                  {{ u.documentType }} {{ u.documentNumber }}
+                </td>
+
+                <!-- Platform Role -->
+                <td class="py-3.5 px-4 whitespace-nowrap">
+                  @if (u.isSuperAdmin) {
+                    <span class="inline-flex items-center gap-1 rounded-full bg-purple-500/10 px-2 py-0.5 text-xs font-semibold text-purple-700 dark:text-purple-300 border border-purple-500/20">
+                      <svg class="size-3 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                      </svg>
+                      SUPER ADMIN
+                    </span>
+                  } @else {
+                    <span class="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                      USUARIO
+                    </span>
+                  }
+                </td>
+
+                <!-- Account Status Badge -->
+                <td class="py-3.5 px-4 whitespace-nowrap">
+                  @let badge = getUserStatusBadge(u);
+                  <app-badge [variant]="badge.variant">
+                    {{ badge.label }}
+                  </app-badge>
+                </td>
+
+                <!-- Last Sign In -->
+                <td class="py-3.5 px-4 text-xs text-muted-foreground whitespace-nowrap">
+                  @if (u.lastSignInAt) {
+                    <span>{{ u.lastSignInAt | dokqetDate:'datetime' }}</span>
+                  } @else {
+                    <span class="italic text-muted-foreground/70">Sin registros de acceso</span>
+                  }
+                </td>
+
+                <!-- Actions -->
+                <td class="py-3.5 px-4 text-right whitespace-nowrap">
+                  <a
+                    [routerLink]="['/admin/usuarios', u.id]"
+                    class="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-2.5 py-1 text-xs font-medium text-foreground hover:bg-muted hover:border-border/80 transition-colors cursor-pointer shadow-2xs">
+                    <span>Ficha de soporte</span>
+                    <svg class="size-3 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                    </svg>
+                  </a>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination Toolbar -->
+      <div class="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-border px-4 py-3 bg-muted/20">
+        <span class="text-xs text-muted-foreground">
+          Mostrando página <span class="font-semibold text-foreground">{{ currentPage() + 1 }}</span> de
+          <span class="font-semibold text-foreground">{{ totalPages() || 1 }}</span>
+          ({{ totalElements() }} resultados en total)
+        </span>
+
+        <div class="flex items-center gap-2">
+          <button
+            type="button"
+            (click)="previousPage()"
+            [disabled]="currentPage() === 0"
+            class="inline-flex items-center gap-1 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer shadow-2xs">
+            <svg class="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+            </svg>
+            <span>Anterior</span>
+          </button>
+
+          <button
+            type="button"
+            (click)="nextPage()"
+            [disabled]="currentPage() >= totalPages() - 1"
+            class="inline-flex items-center gap-1 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer shadow-2xs">
+            <span>Siguiente</span>
+            <svg class="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        </div>
+      </div>
+    }
+  </div>
+</div>

@@ -1,0 +1,682 @@
+<div class="space-y-6">
+  <!-- Breadcrumbs -->
+  <app-breadcrumbs [items]="breadcrumbs()"></app-breadcrumbs>
+
+  <!-- Loading Skeleton -->
+  @if (loading()) {
+    <div class="space-y-6">
+      <div class="flex items-center justify-between">
+        <app-skeleton width="280px" height="32px"></app-skeleton>
+        <app-skeleton width="180px" height="36px"></app-skeleton>
+      </div>
+      <div class="rounded-xl border border-border bg-card p-6 space-y-4">
+        <app-skeleton width="100%" height="120px"></app-skeleton>
+      </div>
+    </div>
+  }
+
+  <!-- Error Alert -->
+  @if (errorMessage(); as err) {
+    <app-form-alert type="error">
+      <span>{{ err }}</span>
+    </app-form-alert>
+    <div class="flex items-center gap-2">
+      <a
+        routerLink="/admin/usuarios"
+        class="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors cursor-pointer shadow-2xs">
+        <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+        </svg>
+        <span>Volver a la lista de usuarios</span>
+      </a>
+    </div>
+  }
+
+  <!-- User Detail Content -->
+  @if (!loading() && user(); as u) {
+    <!-- Header with User Profile Summary -->
+    <div class="flex flex-col gap-4 rounded-xl border border-border bg-card p-6 shadow-2xs">
+      <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <!-- Avatar and Identity -->
+        <div class="flex items-start sm:items-center gap-4">
+          <div class="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary text-xl font-bold border border-primary/20 shadow-xs">
+            {{ getUserInitials() }}
+          </div>
+          <div class="space-y-1 min-w-0">
+            <div class="flex flex-wrap items-center gap-2">
+              <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-foreground truncate">
+                {{ u.name || (u.firstName + ' ' + u.lastName) }}
+              </h1>
+
+              <!-- Role Badge -->
+              @if (u.isSuperAdmin) {
+                <span class="inline-flex items-center gap-1 rounded-full bg-purple-500/10 px-2.5 py-0.5 text-xs font-bold text-purple-700 dark:text-purple-300 border border-purple-500/25">
+                  <svg class="size-3 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                  </svg>
+                  SUPER ADMIN
+                </span>
+              }
+
+              <!-- Status Badge -->
+              @let statusBadge = getUserStatusBadge();
+              <app-badge [variant]="statusBadge.variant">
+                {{ statusBadge.label }}
+              </app-badge>
+
+              <!-- Open Sessions Count Badge (RN-HU21-02) -->
+              @if (u.openSessionsCount === 0) {
+                <span class="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
+                  <span class="size-1.5 rounded-full bg-muted-foreground/50"></span>
+                  0 sesiones abiertas
+                </span>
+              } @else {
+                <span class="inline-flex items-center gap-1.5 rounded-full bg-blue-500/10 px-2.5 py-0.5 text-xs font-semibold text-blue-700 dark:text-blue-300 border border-blue-500/20">
+                  <span class="size-2 rounded-full bg-blue-500 animate-pulse"></span>
+                  {{ u.openSessionsCount }} {{ u.openSessionsCount === 1 ? 'sesión abierta' : 'sesiones abiertas' }}
+                </span>
+              }
+            </div>
+
+            <p class="text-sm text-muted-foreground flex items-center gap-2">
+              <span>{{ u.email }}</span>
+              <span>·</span>
+              <span class="font-mono">{{ u.documentType }} {{ u.documentNumber }}</span>
+            </p>
+          </div>
+        </div>
+
+        <!-- Back to list action -->
+        <div class="flex items-center gap-2 shrink-0">
+          <a
+            routerLink="/admin/usuarios"
+            class="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted transition-colors cursor-pointer shadow-2xs">
+            <svg class="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            <span>Volver a la lista</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- Action Toolbar (RN-HU21-03, RN-HU21-04, RN-HU21-05) -->
+      <div class="pt-4 border-t border-border flex flex-wrap items-center gap-2.5">
+        <!-- Suspend / Reactivate Button -->
+        @if (!u.isSuspended) {
+          <div class="relative inline-block">
+            <button
+              type="button"
+              (click)="openSuspendModal()"
+              [disabled]="!canSuspend()"
+              [title]="cannotSuspendTooltip() || ''"
+              class="inline-flex items-center gap-1.5 rounded-lg border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-xs font-semibold text-rose-700 dark:text-rose-300 hover:bg-rose-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer shadow-2xs">
+              <svg class="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+              </svg>
+              <span>Suspender cuenta</span>
+            </button>
+          </div>
+        } @else {
+          <button
+            type="button"
+            (click)="openReactivateModal()"
+            class="inline-flex items-center gap-1.5 rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-xs font-semibold text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/20 transition-colors cursor-pointer shadow-2xs">
+            <svg class="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span>Reactivar cuenta</span>
+          </button>
+        }
+
+        <!-- Unlock Account Button (HU-23 / US-028) -->
+        <div class="relative inline-block">
+          <button
+            type="button"
+            (click)="openUnlockModal()"
+            [disabled]="!canUnlock()"
+            [title]="cannotUnlockTooltip() || ''"
+            class="inline-flex items-center gap-1.5 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs font-semibold text-amber-700 dark:text-amber-300 hover:bg-amber-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer shadow-2xs">
+            <svg class="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
+            </svg>
+            <span>Desbloquear cuenta</span>
+          </button>
+        </div>
+
+        <!-- Super Admin Role Grant / Revoke Button (RN-HU21-04) -->
+        @if (!u.isSuperAdmin) {
+          <button
+            type="button"
+            (click)="openSuperAdminRoleModal(true)"
+            [disabled]="u.isSuspended || !u.emailVerified"
+            [title]="u.isSuspended ? 'No puedes nombrar a un usuario suspendido' : (!u.emailVerified ? 'El usuario debe tener el correo verificado' : '')"
+            class="inline-flex items-center gap-1.5 rounded-lg border border-purple-500/40 bg-purple-500/10 px-3 py-2 text-xs font-semibold text-purple-700 dark:text-purple-300 hover:bg-purple-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer shadow-2xs">
+            <svg class="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+            </svg>
+            <span>Nombrar Super Admin</span>
+          </button>
+        } @else {
+          <button
+            type="button"
+            (click)="openSuperAdminRoleModal(false)"
+            [disabled]="!canRevokeSuperAdmin()"
+            [title]="isSelf() ? 'No puedes quitarte el rol de administrador a ti mismo' : ''"
+            class="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-2 text-xs font-semibold text-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer shadow-2xs">
+            <svg class="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span>Quitar Super Admin</span>
+          </button>
+        }
+
+        <!-- Support: Send Password Reset Link (RN-HU21-05) -->
+        @if (u.emailVerified && !u.isSuspended) {
+          <button
+            type="button"
+            (click)="sendPasswordResetLink()"
+            [disabled]="sendingResetLink()"
+            class="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-2 text-xs font-medium text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer shadow-2xs">
+            @if (sendingResetLink()) {
+              <span class="size-3 animate-spin rounded-full border-2 border-primary border-t-transparent"></span>
+              <span>Enviando enlace...</span>
+            } @else {
+              <svg class="size-3.5 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+              </svg>
+              <span>Enviar enlace para restablecer contraseña</span>
+            }
+          </button>
+        }
+
+        <!-- Support: Resend Verification Email (RN-HU21-05) -->
+        @if (!u.emailVerified && !u.isSuspended) {
+          <button
+            type="button"
+            (click)="resendVerificationLink()"
+            [disabled]="resendingVerification()"
+            class="inline-flex items-center gap-1.5 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs font-semibold text-amber-800 dark:text-amber-200 hover:bg-amber-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer shadow-2xs">
+            @if (resendingVerification()) {
+              <span class="size-3 animate-spin rounded-full border-2 border-primary border-t-transparent"></span>
+              <span>Reenviando...</span>
+            } @else {
+              <svg class="size-3.5 text-amber-600 dark:text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+              <span>Reenviar correo de activación</span>
+            }
+          </button>
+        }
+      </div>
+    </div>
+
+    <!-- Technical Details Grid -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <!-- Last Sign In -->
+      <div class="rounded-xl border border-border bg-card p-4 shadow-2xs space-y-1">
+        <p class="text-xs font-medium text-muted-foreground">Último Inicio de Sesión</p>
+        <p class="text-sm font-semibold text-foreground">
+          @if (u.lastSignInAt) {
+            {{ u.lastSignInAt | dokqetDate:'datetime' }}
+          } @else {
+            <span class="italic text-muted-foreground/70 font-normal">Sin registros de acceso</span>
+          }
+        </p>
+      </div>
+
+      <!-- Registration Date -->
+      <div class="rounded-xl border border-border bg-card p-4 shadow-2xs space-y-1">
+        <p class="text-xs font-medium text-muted-foreground">Fecha de Creación</p>
+        <p class="text-sm font-semibold text-foreground">
+          {{ u.createdAt | dokqetDate:'date' }}
+        </p>
+      </div>
+
+      <!-- Suspension Status -->
+      <div class="rounded-xl border border-border bg-card p-4 shadow-2xs space-y-1">
+        <p class="text-xs font-medium text-muted-foreground">Estado de Suspensión</p>
+        <p class="text-sm font-semibold text-foreground">
+          @if (u.isSuspended) {
+            <span class="text-rose-600 dark:text-rose-400">Suspendida ({{ u.suspendedAt | dokqetDate:'date' }})</span>
+          } @else {
+            <span class="text-emerald-600 dark:text-emerald-400">Sin restricciones</span>
+          }
+        </p>
+      </div>
+
+      <!-- Security Lock Status -->
+      <div class="rounded-xl border border-border bg-card p-4 shadow-2xs space-y-1">
+        <p class="text-xs font-medium text-muted-foreground">Bloqueo por Contraseña</p>
+        <p class="text-sm font-semibold text-foreground">
+          @if (u.isAccountLocked) {
+            <span class="text-rose-600 dark:text-rose-400">Bloqueada preventivamente</span>
+          } @else {
+            <span class="text-muted-foreground font-normal">Normal (0 fallos)</span>
+          }
+        </p>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs Section -->
+    <div class="rounded-xl border border-border bg-card shadow-2xs overflow-hidden">
+      <!-- Tab Headers -->
+      <div class="border-b border-border bg-muted/30 px-4 flex items-center gap-2 overflow-x-auto">
+        <button
+          type="button"
+          (click)="activeTab.set('organizations')"
+          [class]="'py-3 px-3 text-xs sm:text-sm font-semibold border-b-2 transition-colors whitespace-nowrap cursor-pointer ' +
+            (activeTab() === 'organizations'
+              ? 'border-primary text-primary'
+              : 'border-transparent text-muted-foreground hover:text-foreground')">
+          Firmas y Organizaciones ({{ u.organizations.length || 0 }})
+        </button>
+
+        <button
+          type="button"
+          (click)="activeTab.set('consents')"
+          [class]="'py-3 px-3 text-xs sm:text-sm font-semibold border-b-2 transition-colors whitespace-nowrap cursor-pointer ' +
+            (activeTab() === 'consents'
+              ? 'border-primary text-primary'
+              : 'border-transparent text-muted-foreground hover:text-foreground')">
+          Consentimientos Ley 1581 ({{ u.consents.length || 0 }})
+        </button>
+
+        <button
+          type="button"
+          (click)="activeTab.set('actions')"
+          [class]="'py-3 px-3 text-xs sm:text-sm font-semibold border-b-2 transition-colors whitespace-nowrap cursor-pointer ' +
+            (activeTab() === 'actions'
+              ? 'border-primary text-primary'
+              : 'border-transparent text-muted-foreground hover:text-foreground')">
+          Historial de Auditoría ({{ u.adminActions.length || 0 }})
+        </button>
+      </div>
+
+      <!-- Tab 1: Organizations Content -->
+      @if (activeTab() === 'organizations') {
+        @if (!u.organizations || u.organizations.length === 0) {
+          <div class="p-8">
+            <app-empty-state
+              title="Sin organizaciones vinculadas"
+              description="Este usuario no pertenece actualmente a ninguna firma u organización colectiva."
+              icon="folder">
+            </app-empty-state>
+          </div>
+        } @else {
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse" aria-label="Organizaciones del usuario">
+              <thead>
+                <tr class="border-b border-border bg-muted/40 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  <th scope="col" class="py-3 px-4">Organización</th>
+                  <th scope="col" class="py-3 px-4">Tipo</th>
+                  <th scope="col" class="py-3 px-4">Rol</th>
+                  <th scope="col" class="py-3 px-4">Estado</th>
+                  <th scope="col" class="py-3 px-4">Fecha de Ingreso</th>
+                  <th scope="col" class="py-3 px-4">Último Acceso</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-border/60 text-sm">
+                @for (org of u.organizations; track org.membershipId) {
+                  <tr class="hover:bg-muted/30 transition-colors">
+                    <td class="py-3.5 px-4 font-medium text-foreground">
+                      <div class="flex items-center gap-2">
+                        <span>{{ org.organizationName }}</span>
+                        @if (org.isPersonal) {
+                          <span class="rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                            Personal
+                          </span>
+                        }
+                      </div>
+                    </td>
+                    <td class="py-3.5 px-4 text-xs text-muted-foreground">
+                      {{ org.personType === 'JURIDICA' ? 'Persona Jurídica' : 'Persona Natural' }}
+                    </td>
+                    <td class="py-3.5 px-4 whitespace-nowrap">
+                      <span class="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
+                        {{ org.role }}
+                      </span>
+                    </td>
+                    <td class="py-3.5 px-4 whitespace-nowrap">
+                      @if (org.membershipStatus === 'ACTIVE' || org.status === 'ACTIVE') {
+                        <span class="inline-flex items-center rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:text-emerald-300">
+                          ACTIVA
+                        </span>
+                      } @else {
+                        <span class="inline-flex items-center rounded-full bg-rose-500/10 px-2 py-0.5 text-xs font-medium text-rose-700 dark:text-rose-300">
+                          SUSPENDIDA
+                        </span>
+                      }
+                    </td>
+                    <td class="py-3.5 px-4 text-xs text-muted-foreground whitespace-nowrap">
+                      {{ org.joinedAt | dokqetDate:'date' }}
+                    </td>
+                    <td class="py-3.5 px-4 text-xs text-muted-foreground whitespace-nowrap">
+                      @if (org.lastUsedAt) {
+                        {{ org.lastUsedAt | dokqetDate:'datetime' }}
+                      } @else {
+                        <span class="italic text-muted-foreground/70">Nunca</span>
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      }
+
+      <!-- Tab 2: Consents Content (Ley 1581 Habeas Data) -->
+      @if (activeTab() === 'consents') {
+        @if (!u.consents || u.consents.length === 0) {
+          <div class="p-8">
+            <app-empty-state
+              title="Sin registros de consentimientos"
+              description="No hay registros históricos de aceptación de términos o políticas de privacidad para este usuario."
+              icon="document">
+            </app-empty-state>
+          </div>
+        } @else {
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse" aria-label="Consentimientos Ley 1581">
+              <thead>
+                <tr class="border-b border-border bg-muted/40 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  <th scope="col" class="py-3 px-4">Tipo de Consentimiento</th>
+                  <th scope="col" class="py-3 px-4">Versión</th>
+                  <th scope="col" class="py-3 px-4">Fecha de Aceptación</th>
+                  <th scope="col" class="py-3 px-4">Dirección IP de Captura</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-border/60 text-sm">
+                @for (c of u.consents; track c.id) {
+                  <tr class="hover:bg-muted/30 transition-colors">
+                    <td class="py-3.5 px-4 font-medium text-foreground">
+                      @if (c.type === 'TERMS') {
+                        <span>Términos y Condiciones del Servicio</span>
+                      } @else if (c.type === 'PRIVACY') {
+                        <span>Política de Tratamiento de Datos (Ley 1581)</span>
+                      } @else {
+                        <span>{{ c.type }}</span>
+                      }
+                    </td>
+                    <td class="py-3.5 px-4 text-xs font-mono text-muted-foreground">
+                      v{{ c.version }}
+                    </td>
+                    <td class="py-3.5 px-4 text-xs text-muted-foreground whitespace-nowrap">
+                      {{ c.acceptedAt | dokqetDate:'datetime' }}
+                    </td>
+                    <td class="py-3.5 px-4 text-xs font-mono text-muted-foreground whitespace-nowrap">
+                      {{ c.ipAddress || 'No capturada' }}
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      }
+
+      <!-- Tab 3: Admin Actions History -->
+      @if (activeTab() === 'actions') {
+        @if (!u.adminActions || u.adminActions.length === 0) {
+          <div class="p-8">
+            <app-empty-state
+              title="Sin acciones previas registradas"
+              description="No se han registrado intervenciones de soporte técnico o gobernanza sobre esta cuenta."
+              icon="clock">
+            </app-empty-state>
+          </div>
+        } @else {
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse" aria-label="Historial de acciones sobre el usuario">
+              <thead>
+                <tr class="border-b border-border bg-muted/40 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  <th scope="col" class="py-3 px-4">Acción</th>
+                  <th scope="col" class="py-3 px-4">Fecha y Hora (COT)</th>
+                  <th scope="col" class="py-3 px-4">Ejecutado por</th>
+                  <th scope="col" class="py-3 px-4">Motivo / Detalle</th>
+                  <th scope="col" class="py-3 px-4">Canal</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-border/60 text-sm">
+                @for (act of u.adminActions; track act.id) {
+                  <tr class="hover:bg-muted/30 transition-colors">
+                    <td class="py-3.5 px-4 whitespace-nowrap">
+                      @let b = getActionBadge(act.type);
+                      <app-badge [variant]="b.variant">
+                        {{ b.label }}
+                      </app-badge>
+                    </td>
+                    <td class="py-3.5 px-4 text-xs text-muted-foreground whitespace-nowrap">
+                      {{ act.createdAt | dokqetDate:'datetime' }}
+                    </td>
+                    <td class="py-3.5 px-4 text-xs text-foreground truncate max-w-[200px]">
+                      {{ act.actorEmail || 'Administrador' }}
+                    </td>
+                    <td class="py-3.5 px-4 text-xs text-foreground max-w-sm">
+                      {{ act.reason || 'Sin motivo adicional' }}
+                    </td>
+                    <td class="py-3.5 px-4 whitespace-nowrap">
+                      @if (act.viaCommand) {
+                        <span class="inline-flex items-center rounded bg-muted px-2 py-0.5 text-[10px] font-mono font-medium text-muted-foreground">
+                          CLI / Comando
+                        </span>
+                      } @else {
+                        <span class="inline-flex items-center rounded bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
+                          Consola Web
+                        </span>
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      }
+    </div>
+  }
+
+  <!-- Modal: Suspensión de Cuenta (RN-HU21-03) -->
+  <app-modal
+    [isOpen]="isSuspendModalOpen()"
+    (isOpenChange)="isSuspendModalOpen.set($event)"
+    title="Suspender cuenta de usuario"
+    confirmText="Confirmar suspensión"
+    confirmVariant="destructive"
+    (confirmed)="confirmSuspend()"
+    (cancelled)="isSuspendModalOpen.set(false)">
+    <div class="space-y-4">
+      <div class="rounded-lg border border-rose-500/30 bg-rose-500/10 p-3.5 text-xs text-rose-900 dark:text-rose-200">
+        <p class="font-semibold">⚠️ Advertencia de seguridad:</p>
+        <p class="mt-1">
+          Al suspender esta cuenta se revocarán inmediatamente todas las sesiones activas en el navegador ({{ user()?.openSessionsCount || 0 }} sesiones abiertas). El usuario no podrá iniciar sesión en la plataforma ni consultar expedientes hasta ser reactivado.
+        </p>
+      </div>
+
+      <div class="space-y-1.5">
+        <div class="flex items-center justify-between">
+          <label for="suspend-reason" class="text-xs font-semibold text-foreground">
+            Motivo de la suspensión <span class="text-rose-500">*</span>
+          </label>
+          <span class="text-[11px] font-mono text-muted-foreground">
+            {{ suspendReason().length }}/500
+          </span>
+        </div>
+        <textarea
+          id="suspend-reason"
+          rows="3"
+          maxlength="500"
+          [ngModel]="suspendReason()"
+          (ngModelChange)="suspendReason.set($event)"
+          placeholder="Ej: Solicitud preventiva por extravío de celular o requerimiento legal..."
+          class="w-full rounded-lg border border-input bg-background p-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-colors"></textarea>
+      </div>
+
+      @if (actionModalError(); as err) {
+        <app-form-alert type="error">
+          <span>{{ err }}</span>
+        </app-form-alert>
+      }
+    </div>
+  </app-modal>
+
+  <!-- Modal: Reactivación de Cuenta (RN-HU21-03) -->
+  <app-modal
+    [isOpen]="isReactivateModalOpen()"
+    (isOpenChange)="isReactivateModalOpen.set($event)"
+    title="Reactivar cuenta de usuario"
+    confirmText="Confirmar reactivación"
+    (confirmed)="confirmReactivate()"
+    (cancelled)="isReactivateModalOpen.set(false)">
+    <div class="space-y-4">
+      <p class="text-sm text-muted-foreground">
+        Al reactivar la cuenta, el usuario podrá volver a ingresar a Dokqet con sus credenciales habituales.
+      </p>
+
+      <div class="space-y-1.5">
+        <div class="flex items-center justify-between">
+          <label for="reactivate-reason" class="text-xs font-semibold text-foreground">
+            Motivo de la reactivación <span class="text-rose-500">*</span>
+          </label>
+          <span class="text-[11px] font-mono text-muted-foreground">
+            {{ reactivateReason().length }}/500
+          </span>
+        </div>
+        <textarea
+          id="reactivate-reason"
+          rows="3"
+          maxlength="500"
+          [ngModel]="reactivateReason()"
+          (ngModelChange)="reactivateReason.set($event)"
+          placeholder="Ej: Verificación de identidad completada satisfactoriamente..."
+          class="w-full rounded-lg border border-input bg-background p-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-colors"></textarea>
+      </div>
+
+      @if (actionModalError(); as err) {
+        <app-form-alert type="error">
+          <span>{{ err }}</span>
+        </app-form-alert>
+      }
+    </div>
+  </app-modal>
+
+  <!-- Modal: Otorgar / Revocar Rol Super Admin (RN-HU21-04) -->
+  <app-modal
+    [isOpen]="isSuperAdminRoleModalOpen()"
+    (isOpenChange)="isSuperAdminRoleModalOpen.set($event)"
+    [title]="isGrantingRole() ? 'Nombrar administrador de la plataforma' : 'Revocar administrador de la plataforma'"
+    [confirmText]="isGrantingRole() ? 'Confirmar y otorgar rol' : 'Confirmar y revocar rol'"
+    [confirmVariant]="isGrantingRole() ? 'default' : 'destructive'"
+    (confirmed)="confirmSuperAdminRoleChange()"
+    (cancelled)="isSuperAdminRoleModalOpen.set(false)">
+    <div class="space-y-4">
+      <div class="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3.5 text-xs text-amber-900 dark:text-amber-200">
+        <p class="font-semibold">Confirmación de seguridad obligatoria:</p>
+        <p class="mt-1">
+          Por motivos de seguridad y auditoría institucional, debes ingresar tu <strong>contraseña actual</strong> de Super Administrador para validar esta acción.
+        </p>
+      </div>
+
+      <!-- Password Input -->
+      <div class="space-y-1.5">
+        <label for="admin-current-pwd" class="text-xs font-semibold text-foreground">
+          Tu contraseña actual <span class="text-rose-500">*</span>
+        </label>
+        <div class="relative">
+          <input
+            id="admin-current-pwd"
+            [type]="showAdminPassword() ? 'text' : 'password'"
+            [ngModel]="adminCurrentPassword()"
+            (ngModelChange)="adminCurrentPassword.set($event)"
+            placeholder="••••••••••••"
+            class="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-colors" />
+          <button
+            type="button"
+            (click)="toggleAdminPasswordVisibility()"
+            class="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground hover:text-foreground cursor-pointer"
+            aria-label="Alternar visibilidad de contraseña">
+            @if (showAdminPassword()) {
+              <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" />
+              </svg>
+            } @else {
+              <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+              </svg>
+            }
+          </button>
+        </div>
+      </div>
+
+      <!-- Optional Reason -->
+      <div class="space-y-1.5">
+        <div class="flex items-center justify-between">
+          <label for="role-reason" class="text-xs font-semibold text-foreground">
+            Motivo del cambio <span class="text-muted-foreground font-normal">(opcional)</span>
+          </label>
+          <span class="text-[11px] font-mono text-muted-foreground">
+            {{ roleReason().length }}/500
+          </span>
+        </div>
+        <textarea
+          id="role-reason"
+          rows="2"
+          maxlength="500"
+          [ngModel]="roleReason()"
+          (ngModelChange)="roleReason.set($event)"
+          placeholder="Ej: Asignación a equipo de soporte nivel 3..."
+          class="w-full rounded-lg border border-input bg-background p-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-colors"></textarea>
+      </div>
+
+      @if (roleModalError(); as err) {
+        <app-form-alert type="error">
+          <span>{{ err }}</span>
+        </app-form-alert>
+      }
+    </div>
+  </app-modal>
+
+  <!-- Modal: Desbloqueo de Cuenta por Intentos Fallidos (HU-23) -->
+  <app-modal
+    [isOpen]="isUnlockModalOpen()"
+    (isOpenChange)="isUnlockModalOpen.set($event)"
+    title="Desbloquear cuenta de usuario"
+    confirmText="Confirmar desbloqueo"
+    (confirmed)="confirmUnlockUser()"
+    (cancelled)="isUnlockModalOpen.set(false)">
+    <div class="space-y-4">
+      <div class="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3.5 text-xs text-amber-900 dark:text-amber-200">
+        <p class="font-semibold">Reinicio de seguridad de credenciales:</p>
+        <p class="mt-1">
+          Esta acción restablecerá a <strong>0</strong> los intentos fallidos de inicio de sesión y removerá el bloqueo temporal de la cuenta de <strong>{{ user()?.name }}</strong> (<span class="font-mono">{{ user()?.email }}</span>).
+        </p>
+      </div>
+
+      <div class="space-y-1.5">
+        <div class="flex items-center justify-between">
+          <label for="unlock-reason" class="text-xs font-semibold text-foreground">
+            Motivo del desbloqueo <span class="text-muted-foreground font-normal">(opcional)</span>
+          </label>
+          <span class="text-[11px] font-mono text-muted-foreground">
+            {{ unlockReason().length }}/500
+          </span>
+        </div>
+        <textarea
+          id="unlock-reason"
+          rows="3"
+          maxlength="500"
+          [ngModel]="unlockReason()"
+          (ngModelChange)="unlockReason.set($event)"
+          placeholder="Ej: Abogado solicitó desbloqueo telefónico tras equivocación en su clave..."
+          class="w-full rounded-lg border border-input bg-background p-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-colors"></textarea>
+      </div>
+
+      @if (unlockModalError(); as err) {
+        <app-form-alert type="error">
+          <span>{{ err }}</span>
+        </app-form-alert>
+      }
+    </div>
+  </app-modal>
+</div>

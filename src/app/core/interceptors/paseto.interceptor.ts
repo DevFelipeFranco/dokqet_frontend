@@ -1,6 +1,8 @@
 import { HttpInterceptorFn, HttpRequest, HttpHandlerFn, HttpEvent, HttpErrorResponse } from '@angular/common/http';
 import { inject } from '@angular/core';
+import { Router } from '@angular/router';
 import { AuthService } from '../auth/auth.service';
+import { NotificationService } from '../services/notification.service';
 import { Observable, catchError, switchMap, throwError, BehaviorSubject, filter, take } from 'rxjs';
 
 let isRefreshing = false;
@@ -8,6 +10,8 @@ const refreshTokenSubject = new BehaviorSubject<string | null>(null);
 
 export const pasetoInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, next: HttpHandlerFn): Observable<HttpEvent<unknown>> => {
   const authService = inject(AuthService);
+  const router = inject(Router);
+  const notificationService = inject(NotificationService);
   const token = authService.accessToken();
 
   // Para peticiones hacia la API de Auth (/api/v1/auth/**) asegurar siempre withCredentials: true
@@ -30,19 +34,72 @@ export const pasetoInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, 
 
   return next(modifiedReq).pipe(
     catchError((error: unknown) => {
-      if (error instanceof HttpErrorResponse && error.status === 401) {
-        // Excluir endpoints de autenticación para no crear bucles infinitos
-        const isExcluded =
-          req.url.includes('/api/v1/auth/login') ||
-          req.url.includes('/api/v1/auth/register') ||
-          req.url.includes('/api/v1/auth/refresh') ||
-          req.url.includes('/api/v1/auth/logout');
+      if (error instanceof HttpErrorResponse) {
+        // [HU-20] Manejo de límites operativos (HTTP 429 Too Many Requests con Retry-After)
+        if (error.status === 429) {
+          const retryHeader = error.headers?.get('Retry-After') || error.headers?.get('retry-after');
+          let minutes = 1;
 
-        if (isExcluded) {
+          if (retryHeader) {
+            const seconds = parseInt(retryHeader, 10);
+            if (!isNaN(seconds) && seconds > 0) {
+              minutes = Math.max(1, Math.ceil(seconds / 60));
+            }
+          } else if (error.error?.retryAfterSeconds) {
+            minutes = Math.max(1, Math.ceil(Number(error.error.retryAfterSeconds) / 60));
+          } else if (error.error?.retryMinutes) {
+            minutes = Number(error.error.retryMinutes) || 1;
+          }
+
+          notificationService.showWarning(
+            `Has alcanzado el límite de consultas permitidas. Por favor espera ${minutes} ${minutes === 1 ? 'minuto' : 'minutos'} antes de intentar de nuevo.`,
+            'Límite de operaciones superado'
+          );
           return throwError(() => error);
         }
 
-        return handle401Error(req, next, authService);
+        // [HU-20 / HU-21] Manejo de expiración de sesión por inactividad, corte diario o cuenta suspendida
+        if (error.status === 401) {
+          const errorCode = error.error?.errorCode;
+
+          if (errorCode === 'ACCOUNT_SUSPENDED') {
+            authService.clearSessionState();
+            router.navigate(['/iniciar-sesion'], {
+              queryParams: { motivo: 'cuenta_suspendida' }
+            });
+            return throwError(() => error);
+          }
+
+          if (errorCode === 'SESSION_INACTIVE') {
+            authService.clearSessionState();
+            router.navigate(['/iniciar-sesion'], {
+              queryParams: { motivo: 'inactividad' }
+            });
+            return throwError(() => error);
+          }
+
+          if (errorCode === 'SESSION_DAILY_CUTOFF') {
+            authService.clearSessionState();
+            router.navigate(['/iniciar-sesion']);
+            return throwError(() => error);
+          }
+
+          // Excluir endpoints de autenticación para no crear bucles infinitos
+          const isExcluded =
+            req.url.includes('/api/v1/auth/login') ||
+            req.url.includes('/api/v1/auth/signin') ||
+            req.url.includes('/api/v1/auth/register') ||
+            req.url.includes('/api/v1/auth/signup') ||
+            req.url.includes('/api/v1/auth/refresh') ||
+            req.url.includes('/api/v1/auth/logout') ||
+            req.url.includes('/api/v1/auth/session/heartbeat');
+
+          if (isExcluded) {
+            return throwError(() => error);
+          }
+
+          return handle401Error(req, next, authService, router);
+        }
       }
       return throwError(() => error);
     })
@@ -52,7 +109,8 @@ export const pasetoInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, 
 function handle401Error(
   req: HttpRequest<unknown>,
   next: HttpHandlerFn,
-  authService: AuthService
+  authService: AuthService,
+  router: Router
 ): Observable<HttpEvent<unknown>> {
   if (!isRefreshing) {
     isRefreshing = true;
@@ -74,7 +132,14 @@ function handle401Error(
       catchError(refreshError => {
         isRefreshing = false;
         refreshTokenSubject.next(null);
-        authService.logout();
+        authService.clearSessionState();
+        if (refreshError?.error?.errorCode === 'ACCOUNT_SUSPENDED') {
+          router.navigate(['/iniciar-sesion'], {
+            queryParams: { motivo: 'cuenta_suspendida' }
+          });
+        } else {
+          authService.logout();
+        }
         return throwError(() => refreshError);
       })
     );

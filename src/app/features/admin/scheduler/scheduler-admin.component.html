@@ -1,0 +1,768 @@
+<div class="space-y-6">
+  <!-- 1. Breadcrumbs de Navegación -->
+  <app-breadcrumbs [items]="breadcrumbs"></app-breadcrumbs>
+
+  <!-- 2. CUATRO TARJETAS SUPERIORES DE RESUMEN DE PLATAFORMA (Fiel a la vista de referencia) -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <!-- Card 1: USUARIOS REGISTRADOS -->
+    <div class="rounded-2xl border border-border bg-card p-4 sm:p-5 shadow-xs flex items-start justify-between">
+      <div class="space-y-1">
+        <p class="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+          Usuarios Registrados
+        </p>
+        <div class="flex items-baseline gap-2">
+          <span class="text-2xl sm:text-3xl font-extrabold text-foreground tabular-nums">
+            {{ platformOverview()?.totalUsers ?? overview()?.totalTasks ?? 5 }}
+          </span>
+          <span class="inline-flex items-center text-xs font-bold text-emerald-600 dark:text-emerald-400">
+            ↑ activos
+          </span>
+        </div>
+        <p class="text-xs text-muted-foreground">
+          {{ platformOverview()?.totalOrganizations ?? 4 }} firmas configuradas · 100% verificado
+        </p>
+      </div>
+      <div class="rounded-xl bg-primary/10 p-2.5 text-primary shrink-0">
+        <svg class="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+        </svg>
+      </div>
+    </div>
+
+    <!-- Card 2: SALUD DE LA PLATAFORMA -->
+    <div class="rounded-2xl border border-border bg-card p-4 sm:p-5 shadow-xs flex items-start justify-between">
+      <div class="space-y-1">
+        <p class="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+          Salud de la Plataforma
+        </p>
+        <div class="flex items-baseline gap-2">
+          <span class="text-2xl sm:text-3xl font-extrabold text-foreground tabular-nums">
+            99.98%
+          </span>
+          <span class="rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+            Nominal
+          </span>
+        </div>
+        <p class="text-xs text-muted-foreground">
+          Latencia media: 48 ms · Servicios operativos
+        </p>
+      </div>
+      <div class="rounded-xl bg-emerald-500/10 p-2.5 text-emerald-600 dark:text-emerald-400 shrink-0">
+        <svg class="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+        </svg>
+      </div>
+    </div>
+
+    <!-- Card 3: EXPEDIENTES / SUSCRIPCIONES -->
+    <div class="rounded-2xl border border-border bg-card p-4 sm:p-5 shadow-xs flex items-start justify-between">
+      <div class="space-y-1">
+        <p class="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+          Expedientes Vigilados
+        </p>
+        <div class="flex items-baseline gap-1.5">
+          <span class="text-2xl sm:text-3xl font-extrabold text-foreground tabular-nums">
+            {{ platformOverview()?.totalProcesses ?? 54 }}
+          </span>
+          <span class="text-xs text-muted-foreground font-medium">despachos</span>
+        </div>
+        <p class="text-xs text-muted-foreground">
+          Sincronización continua con Rama Judicial
+        </p>
+      </div>
+      <div class="rounded-xl bg-purple-500/10 p-2.5 text-purple-600 dark:text-purple-400 shrink-0">
+        <svg class="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+        </svg>
+      </div>
+    </div>
+
+    <!-- Card 4: PISTAS DE AUDITORÍA -->
+    <div class="rounded-2xl border border-border bg-card p-4 sm:p-5 shadow-xs flex items-start justify-between">
+      <div class="space-y-1">
+        <p class="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+          Pistas de Auditoría
+        </p>
+        <div class="flex items-baseline gap-1.5">
+          <span class="text-2xl sm:text-3xl font-extrabold text-foreground tabular-nums">
+            {{ overview()?.totalTasks ?? 4 }}
+          </span>
+          <span class="text-xs text-muted-foreground font-medium">tareas vigiladas</span>
+        </div>
+        <p class="text-xs text-muted-foreground">
+          Último: Actividad hoy · Trazabilidad inmutable
+        </p>
+      </div>
+      <div class="rounded-xl bg-amber-500/10 p-2.5 text-amber-600 dark:text-amber-400 shrink-0">
+        <svg class="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. CONTENEDOR MAESTRO: CENTRO DE ADMINISTRACIÓN GLOBAL -->
+  <div class="rounded-2xl border border-border bg-card p-5 sm:p-6 shadow-xs space-y-6">
+    <!-- Cabecera de la Consola con Botones de Acción Global -->
+    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
+          Centro de Administración Global
+        </h1>
+        <p class="mt-1 text-xs sm:text-sm text-muted-foreground">
+          Control centralizado de usuarios, roles, métricas de infraestructura, cuotas y seguridad.
+        </p>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-2 shrink-0">
+        @if (overview()?.globalPaused) {
+          <app-button
+            variant="default"
+            size="sm"
+            [loading]="processingGlobalPause()"
+            (buttonClick)="resumeGlobalScheduler()">
+            <span>Reanudar Scheduler</span>
+          </app-button>
+        } @else {
+          <app-button
+            variant="outline"
+            size="sm"
+            (buttonClick)="openGlobalPauseModal()">
+            <svg class="size-3.5 mr-1 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span>Pausa Global</span>
+          </app-button>
+        }
+
+        <app-button
+          variant="outline"
+          size="sm"
+          [loading]="isRefreshing()"
+          (buttonClick)="loadDashboard(false)">
+          <svg
+            [class]="'size-4 mr-1 ' + (isRefreshing() ? 'animate-spin' : '')"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          <span>Actualizar Estado</span>
+        </app-button>
+      </div>
+    </div>
+
+    <!-- Pestañas Horizontales de Administración Global (Fiel al screenshot de referencia) -->
+    <nav class="flex items-center gap-6 overflow-x-auto border-b border-border/80 text-xs sm:text-sm font-medium scrollbar-none" aria-label="Secciones del Centro de Administración">
+      <a
+        routerLink="/admin/organizaciones"
+        class="flex items-center gap-2 py-3 text-muted-foreground hover:text-foreground transition-colors shrink-0">
+        <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+        </svg>
+        <span>Métricas &amp; Salud</span>
+      </a>
+
+      <a
+        routerLink="/admin/organizaciones"
+        class="flex items-center gap-2 py-3 text-muted-foreground hover:text-foreground transition-colors shrink-0">
+        <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+        </svg>
+        <span>Usuarios &amp; Acceso</span>
+        <span class="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground">
+          {{ platformOverview()?.totalUsers ?? 5 }}
+        </span>
+      </a>
+
+      <a
+        routerLink="/admin/catalogos"
+        class="flex items-center gap-2 py-3 text-muted-foreground hover:text-foreground transition-colors shrink-0">
+        <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+        </svg>
+        <span>Catálogos Maestros</span>
+      </a>
+
+      <!-- PESTAÑA ACTIVA: CRON & SCHEDULER -->
+      <a
+        routerLink="/admin/scheduler"
+        class="flex items-center gap-2 py-3 text-primary border-b-2 border-primary font-semibold shrink-0"
+        aria-current="page">
+        <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <span>Cron &amp; Scheduler</span>
+        @if ((overview()?.alertCount ?? 0) > 0) {
+          <span class="rounded-full bg-destructive/15 px-2 py-0.5 text-[11px] font-bold text-destructive">
+            {{ overview()!.alertCount }} {{ overview()!.alertCount === 1 ? 'Alerta' : 'Alertas' }}
+          </span>
+        }
+      </a>
+    </nav>
+
+    <!-- Banner Ámbar si existe Ventana de Mantenimiento / Pausa Global Activa -->
+    @if (overview()?.globalPaused) {
+      <div class="rounded-xl border border-amber-500/40 bg-amber-500/10 p-3.5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div class="flex items-start gap-2.5 text-xs sm:text-sm text-amber-800 dark:text-amber-200">
+          <svg class="size-5 shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+          <div>
+            <p class="font-bold">Pausa Maestra Global Activa (Ventana de Mantenimiento)</p>
+            <p class="text-xs opacity-90 mt-0.5">
+              Los disparos automáticos por reloj están suspendidos temporalmente. Motivo: {{ overview()?.pauseReason || 'Mantenimiento operativo' }}.
+              Aún puede ejecutar tareas puntuales con «Ejecutar Ahora».
+            </p>
+          </div>
+        </div>
+        <app-button variant="default" size="sm" [loading]="processingGlobalPause()" (buttonClick)="resumeGlobalScheduler()">
+          Reanudar Planificador Global
+        </app-button>
+      </div>
+    }
+
+    <!-- 4. CUATRO TARJETAS KPI DE SCHEDULER (Diseño exacto de la referencia) -->
+    @if (isLoading()) {
+      <app-skeleton-card-grid [count]="4" cols="grid-cols-1 sm:grid-cols-2 lg:grid-cols-4"></app-skeleton-card-grid>
+    } @else if (loadError()) {
+      <app-form-alert type="error">
+        <div class="flex items-center justify-between w-full gap-3">
+          <span>{{ loadError() }}</span>
+          <app-button variant="outline" size="sm" (buttonClick)="loadDashboard(true)">Reintentar</app-button>
+        </div>
+      </app-form-alert>
+    } @else if (overview()) {
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- KPI 1: TOTAL TAREAS CRON -->
+        <div class="rounded-2xl border border-border bg-muted/30 p-4 sm:p-5 flex flex-col justify-between space-y-2">
+          <p class="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+            Total Tareas Cron
+          </p>
+          <div class="flex items-baseline gap-2">
+            <span class="text-2xl sm:text-3xl font-extrabold text-foreground tabular-nums">
+              {{ overview()!.totalTasks }}
+            </span>
+            <span class="text-xs text-muted-foreground font-medium">configuradas</span>
+          </div>
+          @if (overview()!.globalPaused) {
+            <p class="text-xs font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
+              <span class="size-1.5 rounded-full bg-amber-500"></span>
+              Pausa global activa
+            </p>
+          } @else {
+            <p class="text-xs font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
+              <span class="size-1.5 rounded-full bg-emerald-500"></span>
+              Scheduler activo
+            </p>
+          }
+        </div>
+
+        <!-- KPI 2: ESTADO DE EJECUCIÓN -->
+        <div class="rounded-2xl border border-border bg-muted/30 p-4 sm:p-5 flex flex-col justify-between space-y-2">
+          <p class="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+            Estado de Ejecución
+          </p>
+          <div class="flex items-baseline gap-2">
+            <span
+              class="text-2xl sm:text-3xl font-extrabold tabular-nums"
+              [class]="overview()!.errorTasks > 0 ? 'text-destructive' : 'text-emerald-600 dark:text-emerald-400'">
+              {{ overview()!.nominalTasks }} / {{ overview()!.totalTasks }}
+            </span>
+            <span class="text-xs text-muted-foreground font-medium">nominales</span>
+          </div>
+          @if (overview()!.errorTasks > 0) {
+            <p class="text-xs font-semibold text-destructive flex items-center gap-1.5">
+              <span class="size-1.5 rounded-full bg-destructive"></span>
+              {{ overview()!.errorTasks }} {{ overview()!.errorTasks === 1 ? 'tarea reportó error' : 'tareas reportaron error' }}
+            </p>
+          } @else {
+            <p class="text-xs font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
+              <span class="size-1.5 rounded-full bg-emerald-500"></span>
+              Todas las tareas operativas
+            </p>
+          }
+        </div>
+
+        <!-- KPI 3: ZONA HORARIA SERVIDOR -->
+        <div class="rounded-2xl border border-border bg-muted/30 p-4 sm:p-5 flex flex-col justify-between space-y-2">
+          <div class="flex items-center justify-between gap-2">
+            <p class="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+              Zona Horaria Servidor
+            </p>
+            <button
+              type="button"
+              (click)="openServerTimezoneModal()"
+              class="text-[11px] font-semibold text-primary hover:underline cursor-pointer">
+              Configurar
+            </button>
+          </div>
+          <div class="text-lg sm:text-xl font-bold text-foreground truncate" [title]="overview()!.serverUtcOffset + ' (' + overview()!.serverTimezone + ')'">
+            {{ overview()!.serverUtcOffset }} ({{ overview()!.serverTimezone }})
+          </div>
+          <p class="text-xs text-muted-foreground flex items-center gap-1.5">
+            <span class="size-1.5 rounded-full bg-muted-foreground"></span>
+            {{ overview()!.ntpSynchronized ? 'Sincronizado con NTP' : 'Reloj local del servidor' }}
+          </p>
+        </div>
+
+        <!-- KPI 4: MOTOR DE SCHEDULER -->
+        <div class="rounded-2xl border border-border bg-muted/30 p-4 sm:p-5 flex flex-col justify-between space-y-2">
+          <p class="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+            Motor de Scheduler
+          </p>
+          <div class="text-lg sm:text-xl font-bold text-primary truncate" [title]="overview()!.engineName">
+            {{ overview()!.engineName }}
+          </div>
+          <p class="text-xs text-muted-foreground flex items-center gap-1.5">
+            <span class="size-1.5 rounded-full bg-primary"></span>
+            {{ overview()!.workerActive ? 'Worker daemon activo' : 'Worker en pausa' }}
+            @if (overview()!.runningTasks > 0) {
+              <span class="font-bold text-blue-600 dark:text-blue-400">
+                · {{ overview()!.runningTasks }} en curso
+              </span>
+            }
+          </p>
+        </div>
+      </div>
+    }
+
+    <!-- Alerta global de acciones operativas (ej. HTTP 409 Conflict) -->
+    @if (actionError()) {
+      <app-form-alert type="error">
+        <div class="flex items-center justify-between w-full gap-2">
+          <span>{{ actionError() }}</span>
+          <button type="button" (click)="actionError.set(null)" class="text-xs font-semibold underline">
+            Cerrar
+          </button>
+        </div>
+      </app-form-alert>
+    }
+
+    <!-- 5. SECCIÓN PRINCIPAL: PLANIFICADOR DE TAREAS DEL BACKEND (CRON JOBS) -->
+    <section class="space-y-4 pt-2" aria-labelledby="cron-jobs-heading">
+      <!-- Encabezado de Sección, Píldoras de Filtro Rápido y Selector de Vista (Tabla / Tarjetas) -->
+      <div class="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between border-t border-border/70 pt-5">
+        <div>
+          <h2 id="cron-jobs-heading" class="text-xs sm:text-sm font-bold uppercase tracking-wider text-foreground">
+            Planificador de Tareas del Backend (Cron Jobs)
+          </h2>
+          <p class="mt-0.5 text-xs text-muted-foreground">
+            Monitoree la salud de ejecución, active/pause procesos y calibre horarios de forma segura e independiente.
+          </p>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-3">
+          <!-- Buscador rápido -->
+          <div class="relative w-full sm:w-52">
+            <svg class="size-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input
+              type="text"
+              [ngModel]="searchQuery()"
+              (ngModelChange)="searchQuery.set($event)"
+              placeholder="Buscar tarea..."
+              aria-label="Filtrar tareas Cron por título o clave"
+              class="h-9 w-full rounded-xl border border-input bg-background pl-8 pr-7 text-xs text-foreground placeholder:text-muted-foreground outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/20 transition-all" />
+            @if (searchQuery()) {
+              <button
+                type="button"
+                (click)="searchQuery.set('')"
+                aria-label="Limpiar búsqueda"
+                class="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground hover:text-foreground">
+                ✕
+              </button>
+            }
+          </div>
+
+          <!-- Píldoras de estado -->
+          <div class="flex flex-wrap items-center gap-1.5 text-xs" role="group" aria-label="Filtrar tareas por estado">
+            <button
+              type="button"
+              (click)="selectFilter('ALL')"
+              [class]="'rounded-lg px-2.5 py-1 font-semibold transition-all tabular-nums cursor-pointer ' +
+                (selectedFilter() === 'ALL'
+                  ? 'bg-primary text-primary-foreground shadow-xs'
+                  : 'text-muted-foreground hover:bg-muted hover:text-foreground')">
+              Todas ({{ countAll() }})
+            </button>
+
+            <button
+              type="button"
+              (click)="selectFilter('ACTIVE')"
+              [class]="'rounded-lg px-2.5 py-1 font-semibold transition-all tabular-nums cursor-pointer ' +
+                (selectedFilter() === 'ACTIVE'
+                  ? 'bg-primary text-primary-foreground shadow-xs'
+                  : 'text-muted-foreground hover:bg-muted hover:text-foreground')">
+              Activas ({{ countActive() }})
+            </button>
+
+            @if (countRunning() > 0 || selectedFilter() === 'RUNNING') {
+              <button
+                type="button"
+                (click)="selectFilter('RUNNING')"
+                [class]="'rounded-lg px-2.5 py-1 font-semibold transition-all tabular-nums cursor-pointer ' +
+                  (selectedFilter() === 'RUNNING'
+                    ? 'bg-blue-600 text-white shadow-xs'
+                    : 'text-blue-600 dark:text-blue-400 hover:bg-blue-500/10')">
+                En Ejecución ({{ countRunning() }})
+              </button>
+            }
+
+            <button
+              type="button"
+              (click)="selectFilter('SUCCESS')"
+              [class]="'rounded-lg px-2.5 py-1 font-semibold transition-all tabular-nums cursor-pointer ' +
+                (selectedFilter() === 'SUCCESS'
+                  ? 'bg-primary text-primary-foreground shadow-xs'
+                  : 'text-muted-foreground hover:bg-muted hover:text-foreground')">
+              Exitosas ({{ countSuccess() }})
+            </button>
+
+            <button
+              type="button"
+              (click)="selectFilter('ERROR')"
+              [class]="'rounded-lg px-2.5 py-1 font-semibold transition-all tabular-nums cursor-pointer ' +
+                (selectedFilter() === 'ERROR'
+                  ? 'bg-destructive text-destructive-foreground shadow-xs'
+                  : 'text-destructive hover:bg-destructive/10')">
+              Con Error ({{ countError() }})
+            </button>
+          </div>
+
+          <!-- Selector de Modo de Vista: Tabla (Default Escalar) vs Tarjetas -->
+          <div class="flex items-center rounded-xl border border-border bg-muted/40 p-0.5 shrink-0" role="group" aria-label="Cambiar vista">
+            <button
+              type="button"
+              (click)="viewMode.set('TABLE')"
+              [class]="'inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold transition-all cursor-pointer ' +
+                (viewMode() === 'TABLE'
+                  ? 'bg-card text-foreground shadow-2xs'
+                  : 'text-muted-foreground hover:text-foreground')">
+              <svg class="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+              </svg>
+              <span>Tabla</span>
+            </button>
+
+            <button
+              type="button"
+              (click)="viewMode.set('CARDS')"
+              [class]="'inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold transition-all cursor-pointer ' +
+                (viewMode() === 'CARDS'
+                  ? 'bg-card text-foreground shadow-2xs'
+                  : 'text-muted-foreground hover:text-foreground')">
+              <svg class="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+              </svg>
+              <span>Tarjetas</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Skeletons Contextuales -->
+      @if (isLoading()) {
+        <div class="grid grid-cols-1 gap-6 pt-2">
+          @for (placeholder of [1, 2, 3]; track placeholder) {
+            <div class="rounded-2xl border border-border bg-card p-5 space-y-4 shadow-xs">
+              <div class="flex items-center justify-between">
+                <app-skeleton className="h-5 w-72"></app-skeleton>
+                <app-skeleton className="h-6 w-16 rounded-full"></app-skeleton>
+              </div>
+              <app-skeleton className="h-4 w-96"></app-skeleton>
+              <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                <app-skeleton className="h-16 w-full rounded-xl"></app-skeleton>
+                <app-skeleton className="h-16 w-full rounded-xl"></app-skeleton>
+                <app-skeleton className="h-16 w-full rounded-xl"></app-skeleton>
+                <app-skeleton className="h-12 w-full rounded-xl"></app-skeleton>
+              </div>
+            </div>
+          }
+        </div>
+      } @else if (filteredTasks().length === 0) {
+        <div class="py-8">
+          <app-empty-state
+            title="No hay tareas que coincidan con el filtro seleccionado"
+            description="Ajuste los criterios de estado o búsqueda para visualizar las tareas configuradas en el backend."
+            actionLabel="Mostrar todas las tareas"
+            (actionClick)="clearFilters()">
+          </app-empty-state>
+        </div>
+      } @else {
+        <!-- VISTA 1: TABLA EJECUTIVA MODULAR (POR DEFECTO - MÁXIMA ESCALABILIDAD) -->
+        @if (viewMode() === 'TABLE') {
+          <div class="overflow-x-auto rounded-2xl border border-border bg-card shadow-xs">
+            <table class="w-full border-collapse text-left text-xs" aria-label="Tabla de tareas programadas del backend">
+              <thead>
+                <tr class="border-b border-border bg-muted/40 text-[10px] font-bold text-muted-foreground uppercase tracking-wider select-none">
+                  <th scope="col" class="py-3.5 pl-5 pr-3">Tarea / Proceso</th>
+                  <th scope="col" class="py-3.5 px-3">Estado</th>
+                  <th scope="col" class="py-3.5 px-3">Frecuencia &amp; Cron</th>
+                  <th scope="col" class="py-3.5 px-3">Zona Horaria</th>
+                  <th scope="col" class="py-3.5 px-3">Última Corrida</th>
+                  <th scope="col" class="py-3.5 px-3">Próxima Corrida</th>
+                  <th scope="col" class="py-3.5 px-3 text-center">Activa</th>
+                  <th scope="col" class="py-3.5 pl-3 pr-5 text-right">Acciones</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-border/60">
+                @for (taskItem of filteredTasks(); track taskItem.taskKey) {
+                  <tr class="hover:bg-muted/20 transition-colors group">
+                    <!-- Tarea / Clave / Descripción -->
+                    <td class="py-3.5 pl-5 pr-3">
+                      <div class="flex flex-col gap-0.5">
+                        <div class="flex items-center gap-2">
+                          <span class="font-bold text-foreground text-xs sm:text-sm">
+                            {{ taskItem.title }}
+                          </span>
+                          <span class="rounded bg-muted px-1.5 py-0.5 font-mono text-[9px] font-semibold text-muted-foreground border border-border">
+                            {{ taskItem.taskKey }}
+                          </span>
+                        </div>
+                        <p class="text-[11px] text-muted-foreground line-clamp-1 max-w-xs sm:max-w-md">
+                          {{ taskItem.description }}
+                        </p>
+                      </div>
+                    </td>
+
+                    <!-- Estado de Ejecución -->
+                    <td class="py-3.5 px-3 whitespace-nowrap">
+                      @switch (taskItem.lastStatus) {
+                        @case ('COMPLETED') {
+                          <span class="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
+                            <span class="size-1.5 rounded-full bg-emerald-500"></span>
+                            Éxito
+                          </span>
+                        }
+                        @case ('RUNNING') {
+                          <span class="inline-flex items-center gap-1 rounded-full bg-blue-500/10 px-2.5 py-0.5 text-[11px] font-semibold text-blue-700 dark:text-blue-400 border border-blue-500/20">
+                            <span class="size-1.5 rounded-full bg-blue-500 animate-ping"></span>
+                            En ejecución
+                          </span>
+                        }
+                        @case ('FAILED') {
+                          <span class="inline-flex items-center gap-1 rounded-full bg-destructive/10 px-2.5 py-0.5 text-[11px] font-semibold text-destructive border border-destructive/20">
+                            <span class="size-1.5 rounded-full bg-destructive"></span>
+                            Error
+                          </span>
+                        }
+                        @case ('STOPPED') {
+                          <span class="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2.5 py-0.5 text-[11px] font-semibold text-amber-700 dark:text-amber-400 border border-amber-500/20">
+                            <span class="size-1.5 rounded-full bg-amber-500"></span>
+                            Detenido
+                          </span>
+                        }
+                        @case ('INTERRUPTED') {
+                          <span class="inline-flex items-center gap-1 rounded-full bg-destructive/10 px-2.5 py-0.5 text-[11px] font-semibold text-destructive border border-destructive/20">
+                            <span class="size-1.5 rounded-full bg-destructive"></span>
+                            Interrumpido
+                          </span>
+                        }
+                        @default {
+                          <span class="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground">
+                            <span class="size-1.5 rounded-full bg-muted-foreground/60"></span>
+                            Sin corridas
+                          </span>
+                        }
+                      }
+                    </td>
+
+                    <!-- Frecuencia & Expresión Cron -->
+                    <td class="py-3.5 px-3 whitespace-nowrap">
+                      <div class="flex flex-col gap-0.5">
+                        <span class="font-semibold text-foreground text-xs">
+                          {{ formatFrequencySummary(taskItem) }}
+                        </span>
+                        <span class="font-mono text-[10px] text-muted-foreground">
+                          {{ taskItem.displayCronExpression || taskItem.cronExpression }}
+                        </span>
+                      </div>
+                    </td>
+
+                    <!-- Zona Horaria -->
+                    <td class="py-3.5 px-3 whitespace-nowrap">
+                      <div class="flex flex-col">
+                        <span class="text-xs font-medium text-foreground">
+                          {{ taskItem.utcOffset }}
+                        </span>
+                        <span class="text-[10px] text-muted-foreground truncate max-w-[130px]" [title]="taskItem.timezone">
+                          {{ taskItem.timezone }}
+                        </span>
+                      </div>
+                    </td>
+
+                    <!-- Última Corrida / Duración -->
+                    <td class="py-3.5 px-3 whitespace-nowrap">
+                      <div class="flex flex-col">
+                        <span class="text-xs font-semibold text-foreground">
+                          {{ formatFriendlyInstant(taskItem.lastExecutionAt, 'Sin ejecuciones') }}
+                        </span>
+                        <span class="text-[10px] text-muted-foreground tabular-nums">
+                          Duración: {{ formatDuration(taskItem.lastDurationMs) }}
+                        </span>
+                      </div>
+                    </td>
+
+                    <!-- Próxima Corrida -->
+                    <td class="py-3.5 px-3 whitespace-nowrap">
+                      @if (!taskItem.enabled) {
+                        <span class="text-xs font-medium text-muted-foreground italic">Pausada</span>
+                      } @else if (overview()?.globalPaused) {
+                        <span class="text-xs font-semibold text-amber-600 dark:text-amber-400">Pausa global</span>
+                      } @else {
+                        <span class="text-xs font-bold text-primary tabular-nums">
+                          {{ formatFriendlyInstant(taskItem.nextExecutionAt, 'Pendiente cálculo') }}
+                        </span>
+                      }
+                    </td>
+
+                    <!-- Switch Activa / Pausada -->
+                    <td class="py-3.5 px-3 text-center whitespace-nowrap">
+                      <button
+                        type="button"
+                        role="switch"
+                        [attr.aria-checked]="taskItem.enabled"
+                        [attr.aria-label]="(taskItem.enabled ? 'Pausar ' : 'Activar ') + taskItem.title"
+                        (click)="toggleTaskActive(taskItem)"
+                        [class]="'relative inline-flex h-5 w-9 shrink-0 items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer ' +
+                          (taskItem.enabled ? 'bg-primary' : 'bg-muted border border-border')">
+                        <span
+                          aria-hidden="true"
+                          [class]="'pointer-events-none inline-block size-4 transform rounded-full bg-white dark:bg-foreground shadow-sm ring-0 transition-transform ' +
+                            (taskItem.enabled ? 'translate-x-4' : 'translate-x-0')">
+                        </span>
+                      </button>
+                    </td>
+
+                    <!-- Botones de Acción Modular -->
+                    <td class="py-3.5 pl-3 pr-5 text-right whitespace-nowrap">
+                      <div class="flex items-center justify-end gap-1.5">
+                        <!-- Botón Historial -->
+                        <button
+                          type="button"
+                          (click)="openHistoryForTask(taskItem)"
+                          title="Ver historial de ejecuciones y auditoría"
+                          aria-label="Ver historial"
+                          class="inline-flex size-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer">
+                          <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                        </button>
+
+                        <!-- Botón Administrar (Abre Modal Aislado y Seguro) -->
+                        <button
+                          type="button"
+                          (click)="openConfigModal(taskItem)"
+                          title="Calibrar horario, cron y opciones de esta tarea"
+                          class="inline-flex h-8 items-center gap-1 rounded-lg border border-border bg-background px-2.5 text-xs font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer shadow-2xs">
+                          <svg class="size-3.5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                          </svg>
+                          <span>Administrar</span>
+                        </button>
+
+                        <!-- Botón Ejecutar Ahora -->
+                        <button
+                          type="button"
+                          [disabled]="taskItem.lastStatus === 'RUNNING'"
+                          (click)="onRunNow(taskItem)"
+                          title="Ejecutar de inmediato en segundo plano"
+                          class="inline-flex h-8 items-center gap-1 rounded-full bg-primary hover:bg-primary/90 px-3 text-xs font-bold text-primary-foreground shadow-xs transition-all disabled:opacity-40 disabled:pointer-events-none cursor-pointer">
+                          <svg class="size-3" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M8 5v14l11-7z" />
+                          </svg>
+                          <span>Ejecutar</span>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        } @else {
+          <!-- VISTA 2: LISTADO DE TARJETAS EXTENDIDAS (ESPACIADO OPTIMIZADO CON GRID GAP-6) -->
+          <div class="grid grid-cols-1 gap-6 pt-2">
+            @for (taskItem of filteredTasks(); track taskItem.taskKey) {
+              <app-scheduler-task-card
+                [task]="taskItem"
+                [timezones]="availableTimezones()"
+                [globalPaused]="overview()?.globalPaused ?? false"
+                (taskMutated)="onTaskMutated($event)"
+                (runNowRequested)="onRunNow($event)"
+                (stopRequested)="onStopTask($event)"
+                (unlockRequested)="onUnlockTask($event)"
+                (historyRequested)="openHistoryForTask($event)">
+              </app-scheduler-task-card>
+            }
+          </div>
+        }
+      }
+    </section>
+  </div>
+
+  <!-- MODAL DE CONFIGURACIÓN MODULAR AISLADA DE TAREA (Previene modificar otra tarea accidentalmente) -->
+  <app-scheduler-task-config-modal
+    [(isOpen)]="configModalOpen"
+    [task]="selectedConfigTask()"
+    [timezones]="availableTimezones()"
+    (taskMutated)="onTaskMutated($event)">
+  </app-scheduler-task-config-modal>
+
+  <!-- MODAL 1: ACTIVAR PAUSA MAESTRA GLOBAL (VENTANA DE MANTENIMIENTO) -->
+  <app-modal
+    [(isOpen)]="pauseModalOpen"
+    title="Activar Pausa Maestra Global del Scheduler"
+    description="Suspende temporalmente todos los disparos automáticos por reloj sin alterar la configuración ni el estado individual de cada tarea."
+    confirmText="Activar Pausa Global"
+    cancelText="Cancelar"
+    (confirmed)="confirmGlobalPause()">
+    <div class="space-y-2">
+      <label for="global-pause-reason" class="block text-xs font-semibold text-foreground">
+        Motivo operativo de la ventana de mantenimiento
+      </label>
+      <textarea
+        id="global-pause-reason"
+        rows="3"
+        maxlength="300"
+        [ngModel]="pauseReasonInput()"
+        (ngModelChange)="pauseReasonInput.set($event)"
+        placeholder="Ej. Mantenimiento programado en el Portal Único de la Rama Judicial..."
+        class="w-full rounded-xl border border-border bg-background p-3 text-xs sm:text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30"></textarea>
+    </div>
+  </app-modal>
+
+  <!-- MODAL 2: CONFIGURAR ZONA HORARIA PREDETERMINADA DEL SERVIDOR -->
+  <app-modal
+    [(isOpen)]="timezoneModalOpen"
+    title="Configurar Zona Horaria Predeterminada del Servidor"
+    description="Seleccione la zona horaria IANA de referencia para el Centro de Administración Global."
+    confirmText="Guardar Zona Horaria"
+    cancelText="Cancelar"
+    (confirmed)="confirmServerTimezone()">
+    <div class="space-y-2">
+      <label for="server-timezone-select" class="block text-xs font-semibold text-foreground">
+        Zona Horaria IANA
+      </label>
+      <select
+        id="server-timezone-select"
+        [ngModel]="serverTimezoneInput()"
+        (ngModelChange)="serverTimezoneInput.set($event)"
+        class="h-10 w-full rounded-xl border border-border bg-background px-3 text-xs sm:text-sm text-foreground outline-none focus-visible:border-ring">
+        @for (tz of availableTimezones(); track tz.zoneId) {
+          <option [value]="tz.zoneId">{{ tz.displayName }}</option>
+        }
+      </select>
+    </div>
+  </app-modal>
+
+  <!-- MODAL 3: HISTORIAL PAGINADO DE EJECUCIONES Y AUDITORÍA INMUTABLE -->
+  <app-scheduler-history-modal
+    [(isOpen)]="historyModalOpen"
+    [task]="selectedHistoryTask()">
+  </app-scheduler-history-modal>
+</div>

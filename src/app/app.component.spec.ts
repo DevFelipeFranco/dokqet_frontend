@@ -45,4 +45,34 @@ describe('AppComponent', () => {
     component.selectProcessFilter('NEWS');
     expect(layoutStore.activeDashboardTab()).toBe('NEWS');
   });
+
+  it('should resolve Cron & Scheduler title for /admin/scheduler route', () => {
+    component.currentUrl.set('/admin/scheduler');
+    expect(component.pageTitle()).toBe('Cron & Scheduler');
+  });
+
+  it('should resolve correct pageTitle and isAdminActive for admin routes', () => {
+    component.currentUrl.set('/admin/usuarios');
+    expect(component.pageTitle()).toBe('Gestión de Usuarios');
+    expect(component.isAdminActive()).toBeTrue();
+
+    component.currentUrl.set('/admin/acciones');
+    expect(component.pageTitle()).toBe('Registro de Acciones');
+    expect(component.isAdminActive()).toBeTrue();
+
+    component.currentUrl.set('/panel');
+    expect(component.isAdminActive()).toBeFalse();
+  });
+
+  it('should toggle admin menu expansion and expand sidebar if collapsed', () => {
+    expect(layoutStore.adminExpanded()).toBeTrue();
+    layoutStore.toggleAdminMenu();
+    expect(layoutStore.adminExpanded()).toBeFalse();
+
+    // When sidebar is collapsed, toggleAdminMenu expands the sidebar and opens the menu
+    layoutStore.sidebarCollapsed.set(true);
+    layoutStore.toggleAdminMenu();
+    expect(layoutStore.sidebarCollapsed()).toBeFalse();
+    expect(layoutStore.adminExpanded()).toBeTrue();
+  });
 });

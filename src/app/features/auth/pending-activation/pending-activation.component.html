@@ -1,0 +1,118 @@
+<div class="min-h-svh flex flex-col justify-center items-center px-4 py-12 sm:px-6 lg:px-8 bg-background text-foreground">
+  <div class="w-full max-w-md flex flex-col gap-8">
+
+    <!-- Header & Logo -->
+    <div class="flex flex-col items-center gap-2 text-center">
+      <a routerLink="/" aria-label="Ir a Dokqet">
+        <app-logo height="h-9"></app-logo>
+      </a>
+      <p class="text-xs text-muted-foreground uppercase tracking-wider font-semibold">
+        Plataforma de Vigilancia Judicial
+      </p>
+    </div>
+
+    <!-- Activation Card -->
+    <app-card className="rounded-2xl border border-border shadow-sm p-2 sm:p-4">
+      <app-card-header className="text-center pb-4">
+        <!-- Mail Envelope Icon -->
+        <div class="mx-auto flex size-14 items-center justify-center rounded-2xl bg-primary/10 text-primary mb-3">
+          <svg class="size-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+          </svg>
+        </div>
+        <app-card-title className="text-2xl font-bold tracking-tight text-foreground">
+          Revisa tu correo electrónico
+        </app-card-title>
+        <app-card-description className="text-sm text-muted-foreground pt-1">
+          Hemos enviado un enlace de activación seguro a:
+        </app-card-description>
+        @if (email()) {
+          <div class="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-muted/80 border border-border text-xs font-semibold text-foreground break-all">
+            <svg class="size-3.5 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
+            </svg>
+            <span>{{ email() }}</span>
+          </div>
+        }
+      </app-card-header>
+
+      <app-card-content className="flex flex-col gap-4 text-xs sm:text-sm text-muted-foreground">
+        <!-- Informative steps -->
+        <div class="rounded-xl border border-border/80 bg-muted/40 p-4 space-y-2.5">
+          <div class="flex items-start gap-2.5">
+            <span class="flex size-5 shrink-0 items-center justify-center rounded-full bg-primary/20 text-primary text-[11px] font-bold">1</span>
+            <span class="text-foreground/90 leading-tight">Abre el mensaje de <strong>Dokqet</strong> en tu bandeja de entrada.</span>
+          </div>
+          <div class="flex items-start gap-2.5">
+            <span class="flex size-5 shrink-0 items-center justify-center rounded-full bg-primary/20 text-primary text-[11px] font-bold">2</span>
+            <span class="text-foreground/90 leading-tight">Pulsa en <strong>"Activar mi cuenta"</strong> para validar tu identidad profesional.</span>
+          </div>
+          <div class="flex items-start gap-2.5">
+            <span class="flex size-5 shrink-0 items-center justify-center rounded-full bg-primary/20 text-primary text-[11px] font-bold">3</span>
+            <span class="text-foreground/90 leading-tight">Inicia sesión y accede a la vigilancia de tus expedientes judiciales.</span>
+          </div>
+        </div>
+
+        <!-- Feedback alerts -->
+        @if (resendSuccess()) {
+          <app-form-alert type="success" className="animate-in fade-in duration-200">
+            <span>{{ resendSuccess() }}</span>
+          </app-form-alert>
+        }
+        @if (resendError()) {
+          <app-form-alert type="error" className="animate-in fade-in duration-200">
+            <span>{{ resendError() }}</span>
+          </app-form-alert>
+        }
+
+        <!-- Webmail Quick Access Button (if recognized provider) -->
+        @if (webmailProvider(); as provider) {
+          <a
+            [href]="provider.url"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-primary text-primary-foreground font-semibold px-4 py-2.5 hover:bg-primary/90 transition-colors shadow-xs text-sm cursor-pointer">
+            <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+            </svg>
+            <span>{{ provider.name }}</span>
+          </a>
+        }
+      </app-card-content>
+
+      <app-card-footer className="flex flex-col gap-3 pt-2 border-t border-border/80">
+        <!-- Resend button with 60s cooldown -->
+        <div class="w-full flex flex-col sm:flex-row items-center justify-between gap-2 text-xs">
+          <span class="text-muted-foreground text-center sm:text-left">
+            ¿No recibiste el correo? (Revisa tu carpeta de spam)
+          </span>
+          <button
+            type="button"
+            (click)="resendEmail()"
+            [disabled]="resending() || cooldownRemaining() > 0"
+            class="font-semibold text-primary hover:text-primary/80 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer shrink-0">
+            @if (resending()) {
+              <span>Enviando...</span>
+            } @else if (cooldownRemaining() > 0) {
+              <span>Reenviar en {{ cooldownRemaining() }}s...</span>
+            } @else {
+              <span>Reenviar correo</span>
+            }
+          </button>
+        </div>
+
+        <!-- Back to login link -->
+        <div class="w-full text-center pt-2">
+          <a
+            routerLink="/iniciar-sesion"
+            class="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 transition-colors">
+            <svg class="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            <span>Volver a iniciar sesión</span>
+          </a>
+        </div>
+      </app-card-footer>
+    </app-card>
+  </div>
+</div>

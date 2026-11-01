@@ -16,6 +16,8 @@ export class ModalComponent {
   cancelText = input<string>('Cancelar');
   confirmVariant = input<'default' | 'destructive'>('default');
   closeOnBackdrop = input<boolean>(true);
+  maxWidth = input<string>('max-w-lg');
+  showFooter = input<boolean>(true);
 
   confirmed = output<void>();
   cancelled = output<void>();

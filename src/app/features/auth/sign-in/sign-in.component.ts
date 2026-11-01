@@ -4,6 +4,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../../core/auth/auth.service';
 import { ProblemDetailAccountLocked } from '../../../core/models/user.model';
+import { parseHttpAuthError, ParsedHttpError } from '../../../core/utils/http-error.utils';
 import { 
   ButtonComponent, 
   FormAlertComponent,
@@ -46,8 +47,21 @@ export class SignInComponent implements OnInit {
   readonly countdownDisplay = signal<string>('');
   readonly warningAttempts = signal<number | null>(null);
   readonly accountUnlockedNotice = signal<string | null>(null);
+  readonly connectionError = signal<ParsedHttpError | null>(null);
+
+  // Estados de vigencia de sesión y activación de cuenta (HU-20)
+  readonly sessionInactiveNotice = signal<string | null>(null);
+  readonly emailNotVerified = signal<boolean>(false);
+  readonly resendingVerification = signal<boolean>(false);
+  readonly resendCooldown = signal<number>(0);
+  readonly resendSuccess = signal<string | null>(null);
+  readonly resendError = signal<string | null>(null);
+
+  // Estado de cuenta suspendida (HU-21 / US-020)
+  readonly accountSuspendedNotice = signal<string | null>(null);
 
   private countdownTimer: any = null;
+  private resendTimer: any = null;
 
   readonly form = this.fb.group({
     email: ['', [Validators.required, Validators.email]],
@@ -57,6 +71,7 @@ export class SignInComponent implements OnInit {
   constructor() {
     this.destroyRef.onDestroy(() => {
       this.stopCountdown();
+      this.clearResendTimer();
     });
   }
 
@@ -64,6 +79,12 @@ export class SignInComponent implements OnInit {
     const emailParam = this.route.snapshot.queryParams['email'];
     if (emailParam) {
       this.form.patchValue({ email: emailParam });
+    }
+
+    if (this.route.snapshot.queryParams['motivo'] === 'inactividad') {
+      this.sessionInactiveNotice.set('Tu sesión se cerró por inactividad.');
+    } else if (this.route.snapshot.queryParams['motivo'] === 'cuenta_suspendida') {
+      this.accountSuspendedNotice.set('Tu cuenta ha sido suspendida y no es posible iniciar sesión. Contacta al administrador.');
     }
   }
 
@@ -129,8 +150,12 @@ export class SignInComponent implements OnInit {
 
     this.loading.set(true);
     this.errorMessage.set(null);
+    this.connectionError.set(null);
     this.warningAttempts.set(null);
     this.accountUnlockedNotice.set(null);
+    this.sessionInactiveNotice.set(null);
+    this.accountSuspendedNotice.set(null);
+    this.emailNotVerified.set(false);
 
     const email = this.form.value.email?.trim().toLowerCase() || '';
     const password = this.form.value.password || '';
@@ -139,14 +164,54 @@ export class SignInComponent implements OnInit {
       next: () => {
         this.loading.set(false);
         this.stopCountdown();
+        this.clearResendTimer();
         this.lockedInfo.set(null);
-        const returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/panel';
-        this.router.navigateByUrl(returnUrl);
+        this.connectionError.set(null);
+
+        // [HU-20 RN-FE-05] Redirección segura: Si viene con invitación va a la invitación, si no estrictamente a /panel
+        const invToken = this.route.snapshot.queryParams['invitacion'];
+        if (invToken) {
+          this.router.navigate(['/invitacion', invToken]);
+        } else {
+          this.router.navigate(['/panel']);
+        }
       },
       error: (err) => {
         this.loading.set(false);
+        const parsed = parseHttpAuthError(err);
+        const errorCode = err?.error?.errorCode;
 
-        // Caso 1: Cuenta bloqueada temporalmente (HTTP 423 Locked)
+        // Caso 0A: Cuenta suspendida (HTTP 403 Forbidden con ACCOUNT_SUSPENDED - HU-21 / US-020)
+        // NO computa como intento fallido de contraseña ni altera bloqueo temporal
+        if ((err.status === 403 || err.status === 401) && (errorCode === 'ACCOUNT_SUSPENDED' || parsed.kind === 'ACCOUNT_SUSPENDED')) {
+          this.accountSuspendedNotice.set('Tu cuenta ha sido suspendida y no es posible iniciar sesión. Contacta al administrador.');
+          this.warningAttempts.set(null);
+          this.errorMessage.set(null);
+          this.connectionError.set(null);
+          this.emailNotVerified.set(false);
+          return;
+        }
+
+        // Caso 0B: Correo no verificado (HTTP 403 Forbidden con EMAIL_NOT_VERIFIED - HU-20)
+        // NO computa como intento fallido de contraseña errónea ni bloquea la cuenta
+        if (err.status === 403 && (errorCode === 'EMAIL_NOT_VERIFIED' || parsed.kind === 'EMAIL_NOT_VERIFIED')) {
+          this.emailNotVerified.set(true);
+          this.warningAttempts.set(null);
+          this.errorMessage.set(null);
+          this.connectionError.set(null);
+          this.startResendCooldown(60);
+          return;
+        }
+
+        // Caso 1: Servidor no disponible, conexión caída o fallas 5xx
+        if (parsed.isConnectionOrServerError) {
+          this.connectionError.set(parsed);
+          this.warningAttempts.set(null);
+          this.errorMessage.set(null);
+          return;
+        }
+
+        // Caso 2: Cuenta bloqueada temporalmente (HTTP 423 Locked)
         if (err.status === 423) {
           const errorPayload: ProblemDetailAccountLocked | undefined = err.error;
           const lockedUntilStr = errorPayload?.lockedUntil;
@@ -160,11 +225,12 @@ export class SignInComponent implements OnInit {
             detail
           });
           this.startCountdown(lockedDate);
+          this.connectionError.set(null);
           this.errorMessage.set(null);
           return;
         }
 
-        // Caso 2: Intento fallido antes del umbral de bloqueo (HTTP 400 Bad Request)
+        // Caso 3: Intento fallido con advertencia de intentos restantes (HTTP 400 Bad Request)
         if (err.status === 400) {
           const msg: string = err.error?.detail || err.error?.message || '';
           const match = msg.match(/quedan\s+(\d+)\s+intento/i);
@@ -174,14 +240,62 @@ export class SignInComponent implements OnInit {
           } else {
             this.warningAttempts.set(null);
           }
+          this.connectionError.set(null);
           this.errorMessage.set(msg || 'Credenciales incorrectas.');
           return;
         }
 
-        // Caso 3: Otros errores
+        // Caso 4: Credenciales inválidas explícitas (HTTP 401, 404 u otros 4xx)
+        this.connectionError.set(null);
         this.warningAttempts.set(null);
-        this.errorMessage.set(err.error?.detail || err.error?.message || 'Credenciales inválidas o correo profesional no registrado.');
+        this.errorMessage.set(parsed.message);
       }
     });
+  }
+
+  /**
+   * Reenvía correo de verificación para cuenta no verificada (HU-20)
+   */
+  resendVerification(): void {
+    const email = this.form.value.email?.trim().toLowerCase();
+    if (!email || this.resendingVerification() || this.resendCooldown() > 0) return;
+
+    this.resendingVerification.set(true);
+    this.resendSuccess.set(null);
+    this.resendError.set(null);
+
+    this.authService.resendVerificationEmail(email).subscribe({
+      next: () => {
+        this.resendingVerification.set(false);
+        this.resendSuccess.set('Correo de verificación reenviado exitosamente. Revisa tu bandeja de entrada.');
+        this.startResendCooldown(60);
+      },
+      error: (err) => {
+        this.resendingVerification.set(false);
+        this.resendError.set(err.error?.detail || err.error?.message || 'Error al reenviar el correo. Intenta de nuevo más tarde.');
+      }
+    });
+  }
+
+  startResendCooldown(seconds: number): void {
+    this.clearResendTimer();
+    this.resendCooldown.set(seconds);
+
+    this.resendTimer = setInterval(() => {
+      const current = this.resendCooldown();
+      if (current <= 1) {
+        this.clearResendTimer();
+        this.resendCooldown.set(0);
+      } else {
+        this.resendCooldown.set(current - 1);
+      }
+    }, 1000);
+  }
+
+  private clearResendTimer(): void {
+    if (this.resendTimer) {
+      clearInterval(this.resendTimer);
+      this.resendTimer = null;
+    }
   }
 }

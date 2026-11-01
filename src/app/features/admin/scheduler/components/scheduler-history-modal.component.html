@@ -1,0 +1,192 @@
+<app-modal
+  [(isOpen)]="isOpen"
+  [title]="modalTitle()"
+  [description]="task() ? 'Clave técnica: ' + task()!.taskKey + ' · Zona horaria: ' + task()!.timezone : ''"
+  maxWidth="max-w-4xl"
+  [showFooter]="false">
+
+  <div class="space-y-4">
+    <!-- Barra de Pestañas (Ejecuciones vs Auditoría Inmutable) -->
+    <div class="flex items-center justify-between border-b border-border pb-2.5 gap-2 flex-wrap" role="tablist" aria-label="Secciones de trazabilidad de la tarea">
+      <div class="flex items-center gap-1.5">
+        <button
+          type="button"
+          role="tab"
+          [attr.aria-selected]="activeTab() === 'RUNS'"
+          (click)="selectTab('RUNS')"
+          [class]="'px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-colors ' +
+            (activeTab() === 'RUNS'
+              ? 'bg-primary text-primary-foreground shadow-2xs'
+              : 'text-muted-foreground hover:bg-muted hover:text-foreground')">
+          Ejecuciones ({{ runsTotalElements() }})
+        </button>
+
+        <button
+          type="button"
+          role="tab"
+          [attr.aria-selected]="activeTab() === 'AUDIT'"
+          (click)="selectTab('AUDIT')"
+          [class]="'px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-colors ' +
+            (activeTab() === 'AUDIT'
+              ? 'bg-primary text-primary-foreground shadow-2xs'
+              : 'text-muted-foreground hover:bg-muted hover:text-foreground')">
+          Pista de Auditoría ({{ auditsTotalElements() }})
+        </button>
+      </div>
+
+      <app-button
+        variant="outline"
+        size="sm"
+        (buttonClick)="activeTab() === 'RUNS' ? loadRuns(runsPage()) : loadAudits(auditsPage())">
+        Actualizar vista
+      </app-button>
+    </div>
+
+    <!-- PESTAÑA 1: HISTORIAL DE EJECUCIONES -->
+    @if (activeTab() === 'RUNS') {
+      @if (runsError()) {
+        <app-form-alert type="error">{{ runsError() }}</app-form-alert>
+      }
+
+      @if (loadingRuns()) {
+        <app-skeleton-table [rows]="4"></app-skeleton-table>
+      } @else if (runs().length === 0) {
+        <div class="py-6">
+          <app-empty-state
+            title="Sin ejecuciones registradas"
+            description="Esta tarea aún no registra corridas automáticas ni manuales en la bitácora.">
+          </app-empty-state>
+        </div>
+      } @else {
+        <div class="overflow-x-auto rounded-xl border border-border">
+          <table class="w-full text-left border-collapse text-xs sm:text-sm">
+            <thead class="bg-muted/60 text-muted-foreground border-b border-border text-[11px] uppercase tracking-wider">
+              <tr>
+                <th class="py-2.5 px-3 font-semibold">Estado</th>
+                <th class="py-2.5 px-3 font-semibold">Disparo</th>
+                <th class="py-2.5 px-3 font-semibold">Inicio</th>
+                <th class="py-2.5 px-3 font-semibold">Duración</th>
+                <th class="py-2.5 px-3 font-semibold">Resultado Operativo</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-border bg-card">
+              @for (run of runs(); track run.runId) {
+                <tr class="hover:bg-muted/30 transition-colors align-top">
+                  <td class="py-3 px-3 whitespace-nowrap">
+                    <span
+                      [class]="'inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ' +
+                        (run.status === 'COMPLETED'
+                          ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
+                          : run.status === 'RUNNING'
+                            ? 'bg-blue-500/10 text-blue-700 dark:text-blue-300'
+                            : run.status === 'STOPPED'
+                              ? 'bg-amber-500/10 text-amber-700 dark:text-amber-300'
+                              : 'bg-red-500/10 text-red-700 dark:text-red-300')">
+                      <span class="size-1.5 rounded-full bg-current" aria-hidden="true"></span>
+                      {{ statusLabel(run.status) }}
+                    </span>
+                  </td>
+                  <td class="py-3 px-3 whitespace-nowrap">
+                    <div class="font-medium text-foreground">
+                      {{ run.triggerType === 'MANUAL' ? 'Manual' : 'Automático (Cron)' }}
+                    </div>
+                    @if (run.triggeredByEmail) {
+                      <div class="text-[11px] text-muted-foreground">{{ run.triggeredByEmail }}</div>
+                    }
+                  </td>
+                  <td class="py-3 px-3 whitespace-nowrap tabular-nums text-foreground">
+                    {{ formatDateTime(run.startedAt) }}
+                  </td>
+                  <td class="py-3 px-3 whitespace-nowrap tabular-nums font-semibold text-foreground">
+                    {{ formatDuration(run.durationMs) }}
+                  </td>
+                  <td class="py-3 px-3">
+                    <div class="tabular-nums text-xs text-foreground">
+                      Revisados: <strong>{{ run.checked }}/{{ run.total }}</strong>
+                      · Cambios: <strong>{{ run.withChanges }}</strong>
+                      @if (run.instancesFound > 0) {
+                        · Instancias: <strong>{{ run.instancesFound }}</strong>
+                      }
+                      @if (run.errors > 0) {
+                        · <span class="text-destructive font-semibold">Errores: {{ run.errors }}</span>
+                      }
+                    </div>
+                    @if (run.note) {
+                      <p class="mt-0.5 text-[11px] text-muted-foreground">{{ run.note }}</p>
+                    }
+                    @if (run.errorDetail) {
+                      <p class="mt-1 rounded-md bg-destructive/10 px-2 py-1 font-mono text-[11px] text-destructive break-words">
+                        {{ run.errorDetail }}
+                      </p>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        @if (runsTotalPages() > 1) {
+          <div class="flex items-center justify-between pt-2 text-xs text-muted-foreground">
+            <span>Página {{ runsPage() + 1 }} de {{ runsTotalPages() }}</span>
+            <div class="flex items-center gap-2">
+              <app-button variant="outline" size="sm" [disabled]="runsPage() === 0" (buttonClick)="loadRuns(runsPage() - 1)">
+                Anterior
+              </app-button>
+              <app-button variant="outline" size="sm" [disabled]="runsPage() + 1 >= runsTotalPages()" (buttonClick)="loadRuns(runsPage() + 1)">
+                Siguiente
+              </app-button>
+            </div>
+          </div>
+        }
+      }
+    }
+
+    <!-- PESTAÑA 2: PISTA DE AUDITORÍA INMUTABLE -->
+    @if (activeTab() === 'AUDIT') {
+      @if (auditsError()) {
+        <app-form-alert type="error">{{ auditsError() }}</app-form-alert>
+      }
+
+      @if (loadingAudits()) {
+        <app-skeleton-table [rows]="4"></app-skeleton-table>
+      } @else if (audits().length === 0) {
+        <div class="py-6">
+          <app-empty-state
+            title="Sin cambios auditados"
+            description="No se han registrado modificaciones manuales sobre esta tarea.">
+          </app-empty-state>
+        </div>
+      } @else {
+        <div class="space-y-2.5 max-h-[420px] overflow-y-auto pr-1">
+          @for (item of audits(); track item.id) {
+            <div class="rounded-xl border border-border bg-muted/20 p-3 text-xs space-y-1.5">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <span class="font-semibold text-foreground">{{ auditActionLabel(item.action) }}</span>
+                <span class="tabular-nums text-muted-foreground">{{ formatDateTime(item.createdAt) }}</span>
+              </div>
+              <div class="text-muted-foreground">
+                Autor: <strong class="text-foreground">{{ item.performedByEmail }}</strong>
+                @if (item.ipAddress) {
+                  <span> · IP: {{ item.ipAddress }}</span>
+                }
+              </div>
+              @if (item.reason) {
+                <p class="text-foreground italic">Motivo: {{ item.reason }}</p>
+              }
+              @if (item.newStateJson) {
+                <div class="rounded-lg bg-card border border-border p-2 font-mono text-[11px] text-muted-foreground break-all">
+                  {{ item.newStateJson }}
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
+    }
+
+    <div class="flex justify-end pt-2 border-t border-border">
+      <app-button variant="outline" size="sm" (buttonClick)="close()">Cerrar</app-button>
+    </div>
+  </div>
+</app-modal>

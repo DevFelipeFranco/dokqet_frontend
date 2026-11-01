@@ -176,7 +176,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
   readonly passwordForm = this.fb.group(
     {
       currentPassword: ['', [Validators.required]],
-      newPassword: ['', [Validators.required, Validators.minLength(8), Validators.maxLength(128)]],
+      newPassword: ['', [Validators.required, Validators.minLength(10), Validators.maxLength(128)]],
       confirmPassword: ['', [Validators.required]]
     },
     { validators: [passwordMatchValidator] }
@@ -369,11 +369,19 @@ export class ProfileComponent implements OnInit, OnDestroy {
     const formValue = this.profileForm.getRawValue();
     this.savingProfile.set(true);
 
+    // [HU-20 RN-FE-06] Normalización automática de nombres a MAYÚSCULAS NFC conservando tildes y Ñ
+    const normalizeNfcUpper = (str?: string | null) => str ? str.trim().normalize('NFC').toUpperCase() : null;
+
+    const normalizedFirstName = normalizeNfcUpper(formValue.firstName) || '';
+    const normalizedMiddleName = normalizeNfcUpper(formValue.middleName);
+    const normalizedLastName = normalizeNfcUpper(formValue.lastName) || '';
+    const normalizedSecondLastName = normalizeNfcUpper(formValue.secondLastName);
+
     this.userService.updateProfile({
-      firstName: formValue.firstName?.trim() || '',
-      middleName: formValue.middleName?.trim() || null,
-      lastName: formValue.lastName?.trim() || '',
-      secondLastName: formValue.secondLastName?.trim() || null,
+      firstName: normalizedFirstName,
+      middleName: normalizedMiddleName,
+      lastName: normalizedLastName,
+      secondLastName: normalizedSecondLastName,
       documentType: formValue.documentType as string,
       documentNumber: formValue.documentNumber?.trim() || '',
       genderCode: formValue.genderCode || null,
@@ -383,6 +391,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
         this.savingProfile.set(false);
         if (res.success && res.data) {
           this.authService.updateCurrentUser(res.data);
+          this.applyUserToForm(res.data);
           this.profileSuccess.set('Información personal actualizada correctamente.');
         } else {
           this.profileSuccess.set('Información personal guardada.');
@@ -390,7 +399,12 @@ export class ProfileComponent implements OnInit, OnDestroy {
       },
       error: (err) => {
         this.savingProfile.set(false);
-        const msg = err.error?.message || 'Error al guardar los cambios del perfil.';
+        // [HU-20 RN-FE-06] Captura de error 409 Conflict mostrando mensaje neutro
+        if (err.status === 409) {
+          this.profileError.set('No fue posible actualizar los datos con la información ingresada.');
+          return;
+        }
+        const msg = err.error?.detail || err.error?.message || 'Error al guardar los cambios del perfil.';
         this.profileError.set(msg);
       }
     });
@@ -405,7 +419,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
       if (this.passwordForm.errors?.['passwordMismatch']) {
         this.passwordError.set('La nueva contraseña y su confirmación no coinciden.');
       } else {
-        this.passwordError.set('Verifica que la contraseña cumpla los requisitos de seguridad (mínimo 8 caracteres).');
+        this.passwordError.set('Verifica que la contraseña cumpla los requisitos de seguridad (mínimo 10 caracteres).');
       }
       return;
     }
@@ -420,12 +434,13 @@ export class ProfileComponent implements OnInit, OnDestroy {
     }).subscribe({
       next: () => {
         this.changingPassword.set(false);
-        this.passwordSuccess.set('Tu contraseña ha sido actualizada con éxito.');
+        // [HU-20 RN-FE-06] Notifica que las demás sesiones abiertas fueron cerradas por seguridad
+        this.passwordSuccess.set('Tu contraseña ha sido actualizada con éxito. Por seguridad, tus demás sesiones activas han sido cerradas.');
         this.passwordForm.reset();
       },
       error: (err) => {
         this.changingPassword.set(false);
-        const msg = err.error?.message || 'Error al actualizar la contraseña.';
+        const msg = err.error?.detail || err.error?.message || 'Error al actualizar la contraseña.';
         this.passwordError.set(msg);
       }
     });
