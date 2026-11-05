@@ -1,11 +1,11 @@
 import { Component, computed, input } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { SkeletonComponent } from './skeleton.component';
 
 @Component({
   selector: 'app-stat-card',
   standalone: true,
-  imports: [CommonModule, SkeletonComponent],
+  imports: [SkeletonComponent],
   templateUrl: './stat-card.component.html'
 })
 export class StatCardComponent {

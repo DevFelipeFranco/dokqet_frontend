@@ -1,10 +1,10 @@
 import { Component, input } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 
 @Component({
   selector: 'app-logo',
   standalone: true,
-  imports: [CommonModule],
+  imports: [],
   template: `
     <svg 
       viewBox="116 150 396 106" 

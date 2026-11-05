@@ -1,12 +1,12 @@
 import { Component, computed, input } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 
 export type AlertType = 'error' | 'success' | 'warning' | 'info';
 
 @Component({
   selector: 'app-form-alert',
   standalone: true,
-  imports: [CommonModule],
+  imports: [],
   templateUrl: './form-alert.component.html'
 })
 export class FormAlertComponent {

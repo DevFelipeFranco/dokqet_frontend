@@ -1,7 +1,7 @@
 import { Component, OnInit, inject, signal, DestroyRef } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { CommonModule } from '@angular/common';
+
 import { AuthService } from '../../../core/auth/auth.service';
 import { ProblemDetailAccountLocked } from '../../../core/models/user.model';
 import { parseHttpAuthError, ParsedHttpError } from '../../../core/utils/http-error.utils';
@@ -21,13 +21,12 @@ export interface LockInfoState {
   selector: 'app-sign-in',
   standalone: true,
   imports: [
-    CommonModule, 
-    ReactiveFormsModule, 
+    ReactiveFormsModule,
     RouterLink,
     ButtonComponent,
     FormAlertComponent,
     LogoComponent
-  ],
+],
   templateUrl: './sign-in.component.html'
 })
 export class SignInComponent implements OnInit {

@@ -1,10 +1,10 @@
 import { Component, input } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 
 @Component({
   selector: 'app-card',
   standalone: true,
-  imports: [CommonModule],
+  imports: [],
   template: `
     <div [class]="'group/card flex flex-col rounded-xl bg-card text-card-foreground border border-border shadow-xs overflow-hidden ' + (className() || '')">
       <ng-content></ng-content>
@@ -18,7 +18,7 @@ export class CardComponent {
 @Component({
   selector: 'app-card-header',
   standalone: true,
-  imports: [CommonModule],
+  imports: [],
   template: `
     <div [class]="'flex flex-col gap-1.5 p-5 ' + (border() ? 'border-b border-border ' : '') + (className() || '')">
       <div class="flex items-start justify-between gap-4">
@@ -42,7 +42,7 @@ export class CardHeaderComponent {
 @Component({
   selector: 'app-card-title',
   standalone: true,
-  imports: [CommonModule],
+  imports: [],
   template: `
     <h3 [class]="'text-lg font-semibold leading-tight text-foreground ' + (className() || '')">
       <ng-content></ng-content>
@@ -56,7 +56,7 @@ export class CardTitleComponent {
 @Component({
   selector: 'app-card-description',
   standalone: true,
-  imports: [CommonModule],
+  imports: [],
   template: `
     <p [class]="'text-sm text-muted-foreground ' + (className() || '')">
       <ng-content></ng-content>
@@ -70,7 +70,7 @@ export class CardDescriptionComponent {
 @Component({
   selector: 'app-card-content',
   standalone: true,
-  imports: [CommonModule],
+  imports: [],
   template: `
     <div [class]="'p-5 text-sm ' + (className() || '')">
       <ng-content></ng-content>
@@ -84,7 +84,7 @@ export class CardContentComponent {
 @Component({
   selector: 'app-card-footer',
   standalone: true,
-  imports: [CommonModule],
+  imports: [],
   template: `
     <div [class]="'flex items-center justify-between p-5 border-t border-border/50 bg-muted/20 ' + (className() || '')">
       <ng-content></ng-content>

@@ -1,5 +1,5 @@
 import { Component, OnInit, OnDestroy, computed, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, ValidatorFn, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
@@ -75,7 +75,6 @@ export function computeMemberStats(members: Member[]) {
   selector: 'app-profile',
   standalone: true,
   imports: [
-    CommonModule,
     ReactiveFormsModule,
     RouterLink,
     RadicadoPipe,
@@ -94,7 +93,7 @@ export function computeMemberStats(members: Member[]) {
     ModalComponent,
     SkeletonComponent,
     SkeletonTableComponent
-  ],
+],
   templateUrl: './profile.component.html'
 })
 export class ProfileComponent implements OnInit, OnDestroy {

@@ -1,5 +1,5 @@
 import { Component, DestroyRef, OnInit, ViewChild, computed, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { SchedulerAdminService } from '../../../core/services/scheduler-admin.service';
@@ -30,7 +30,6 @@ import { SchedulerTaskConfigModalComponent } from './components/scheduler-task-c
   selector: 'app-scheduler-admin',
   standalone: true,
   imports: [
-    CommonModule,
     FormsModule,
     RouterLink,
     BreadcrumbsComponent,
@@ -43,7 +42,7 @@ import { SchedulerTaskConfigModalComponent } from './components/scheduler-task-c
     SchedulerTaskCardComponent,
     SchedulerHistoryModalComponent,
     SchedulerTaskConfigModalComponent
-  ],
+],
   templateUrl: './scheduler-admin.component.html'
 })
 export class SchedulerAdminComponent implements OnInit {

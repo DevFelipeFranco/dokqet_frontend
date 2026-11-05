@@ -1,5 +1,5 @@
 import { Component, ElementRef, HostListener, ViewChild, computed, effect, inject, signal, untracked } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { filter } from 'rxjs/operators';
@@ -18,7 +18,6 @@ import { extractFirstName, extractUserInitials } from './core/constants';
   selector: 'app-root',
   standalone: true,
   imports: [
-    CommonModule,
     RouterOutlet,
     RouterLink,
     FormsModule,
@@ -26,7 +25,7 @@ import { extractFirstName, extractUserInitials } from './core/constants';
     DropdownComponent,
     FormAlertComponent,
     OrganizationSwitcherComponent
-  ],
+],
   templateUrl: './app.component.html'
 })
 export class AppComponent {

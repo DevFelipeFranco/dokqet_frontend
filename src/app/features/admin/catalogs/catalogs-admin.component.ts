@@ -1,5 +1,5 @@
 import { Component, OnInit, OnDestroy, computed, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { CatalogService } from '../../../core/services/catalog.service';
@@ -190,7 +190,6 @@ export const CATALOG_DEFINITIONS: CatalogMetadata[] = [
   selector: 'app-catalogs-admin',
   standalone: true,
   imports: [
-    CommonModule,
     FormsModule,
     ReactiveFormsModule,
     CardComponent,
@@ -206,7 +205,7 @@ export const CATALOG_DEFINITIONS: CatalogMetadata[] = [
     EmptyStateComponent,
     SkeletonComponent,
     SkeletonTableComponent
-  ],
+],
   templateUrl: './catalogs-admin.component.html'
 })
 export class CatalogsAdminComponent implements OnInit, OnDestroy {
