@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
@@ -38,6 +38,7 @@ import {
     LogoComponent,
     SkeletonComponent
   ],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './accept-invitation.component.html'
 })
 export class AcceptInvitationComponent implements OnInit {

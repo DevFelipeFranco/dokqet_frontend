@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal, DestroyRef } from '@angular/core';
+import { Component, OnInit, inject, signal, DestroyRef, ChangeDetectionStrategy } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
@@ -27,6 +27,7 @@ export interface LockInfoState {
     FormAlertComponent,
     LogoComponent
 ],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './sign-in.component.html'
 })
 export class SignInComponent implements OnInit {

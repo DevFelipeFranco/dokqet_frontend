@@ -9,7 +9,8 @@ import {
   model,
   output,
   signal,
-  untracked
+  untracked,
+  ChangeDetectionStrategy
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -32,6 +33,7 @@ import { ButtonComponent, FormAlertComponent, ModalComponent } from '../../../..
   selector: 'app-scheduler-task-config-modal',
   standalone: true,
   imports: [CommonModule, FormsModule, ModalComponent, ButtonComponent, FormAlertComponent],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './scheduler-task-config-modal.component.html'
 })
 export class SchedulerTaskConfigModalComponent implements OnInit {

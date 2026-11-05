@@ -1,4 +1,4 @@
-import { Component, input, output } from '@angular/core';
+import { Component, input, output, ChangeDetectionStrategy } from '@angular/core';
 
 import { ButtonComponent } from './button.component';
 
@@ -6,6 +6,7 @@ import { ButtonComponent } from './button.component';
   selector: 'app-empty-state',
   standalone: true,
   imports: [ButtonComponent],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './empty-state.component.html'
 })
 export class EmptyStateComponent {

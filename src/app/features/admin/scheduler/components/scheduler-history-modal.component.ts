@@ -1,4 +1,4 @@
-import { Component, computed, inject, input, model, signal } from '@angular/core';
+import { Component, computed, inject, input, model, signal, ChangeDetectionStrategy } from '@angular/core';
 
 import { SchedulerAdminService } from '../../../../core/services/scheduler-admin.service';
 import {
@@ -25,6 +25,7 @@ import {
     EmptyStateComponent,
     SkeletonTableComponent
 ],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './scheduler-history-modal.component.html'
 })
 export class SchedulerHistoryModalComponent {

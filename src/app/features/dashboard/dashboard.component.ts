@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, effect, inject, signal, untracked } from '@angular/core';
+import { Component, OnInit, computed, effect, inject, signal, untracked, ChangeDetectionStrategy } from '@angular/core';
 
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -57,6 +57,7 @@ export function matchesProcessQuery(process: ProcessListItem, query: string): bo
     SkeletonCardGridComponent,
     SkeletonTableComponent
 ],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './dashboard.component.html'
 })
 export class DashboardComponent implements OnInit {

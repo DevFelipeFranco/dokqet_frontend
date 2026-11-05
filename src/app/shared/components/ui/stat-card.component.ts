@@ -1,4 +1,4 @@
-import { Component, computed, input } from '@angular/core';
+import { Component, computed, input, ChangeDetectionStrategy } from '@angular/core';
 
 import { SkeletonComponent } from './skeleton.component';
 
@@ -6,6 +6,7 @@ import { SkeletonComponent } from './skeleton.component';
   selector: 'app-stat-card',
   standalone: true,
   imports: [SkeletonComponent],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './stat-card.component.html'
 })
 export class StatCardComponent {

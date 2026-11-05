@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
@@ -34,6 +34,7 @@ import {
     FormAlertComponent,
     LogoComponent
 ],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './sign-up.component.html'
 })
 export class SignUpComponent implements OnInit {

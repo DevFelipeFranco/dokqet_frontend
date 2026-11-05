@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal, computed, DestroyRef } from '@angular/core';
+import { Component, OnInit, inject, signal, computed, DestroyRef, ChangeDetectionStrategy } from '@angular/core';
 
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/auth/auth.service';
@@ -33,6 +33,7 @@ export interface WebmailProvider {
     FormAlertComponent,
     LogoComponent
 ],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './pending-activation.component.html'
 })
 export class PendingActivationComponent implements OnInit {

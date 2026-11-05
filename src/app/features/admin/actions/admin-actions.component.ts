@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -31,6 +31,7 @@ import {
     FormAlertComponent,
     SkeletonTableComponent
 ],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './admin-actions.component.html'
 })
 export class AdminActionsComponent implements OnInit {

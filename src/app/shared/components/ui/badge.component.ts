@@ -1,4 +1,4 @@
-import { Component, computed, input } from '@angular/core';
+import { Component, computed, input, ChangeDetectionStrategy } from '@angular/core';
 
 
 export type BadgeVariant = 'default' | 'secondary' | 'outline' | 'destructive' | 'success' | 'warning' | 'brand';
@@ -7,6 +7,7 @@ export type BadgeVariant = 'default' | 'secondary' | 'outline' | 'destructive' |
   selector: 'app-badge',
   standalone: true,
   imports: [],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './badge.component.html'
 })
 export class BadgeComponent {

@@ -1,4 +1,4 @@
-import { Component, DestroyRef, OnInit, ViewChild, computed, inject, signal } from '@angular/core';
+import { Component, DestroyRef, OnInit, ViewChild, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -43,6 +43,7 @@ import { SchedulerTaskConfigModalComponent } from './components/scheduler-task-c
     SchedulerHistoryModalComponent,
     SchedulerTaskConfigModalComponent
 ],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './scheduler-admin.component.html'
 })
 export class SchedulerAdminComponent implements OnInit {

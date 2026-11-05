@@ -1,10 +1,11 @@
-import { Component, input } from '@angular/core';
+import { Component, input, ChangeDetectionStrategy } from '@angular/core';
 
 
 @Component({
   selector: 'app-card',
   standalone: true,
   imports: [],
+  changeDetection: ChangeDetectionStrategy.Eager,
   template: `
     <div [class]="'group/card flex flex-col rounded-xl bg-card text-card-foreground border border-border shadow-xs overflow-hidden ' + (className() || '')">
       <ng-content></ng-content>
@@ -19,6 +20,7 @@ export class CardComponent {
   selector: 'app-card-header',
   standalone: true,
   imports: [],
+  changeDetection: ChangeDetectionStrategy.Eager,
   template: `
     <div [class]="'flex flex-col gap-1.5 p-5 ' + (border() ? 'border-b border-border ' : '') + (className() || '')">
       <div class="flex items-start justify-between gap-4">
@@ -43,6 +45,7 @@ export class CardHeaderComponent {
   selector: 'app-card-title',
   standalone: true,
   imports: [],
+  changeDetection: ChangeDetectionStrategy.Eager,
   template: `
     <h3 [class]="'text-lg font-semibold leading-tight text-foreground ' + (className() || '')">
       <ng-content></ng-content>
@@ -57,6 +60,7 @@ export class CardTitleComponent {
   selector: 'app-card-description',
   standalone: true,
   imports: [],
+  changeDetection: ChangeDetectionStrategy.Eager,
   template: `
     <p [class]="'text-sm text-muted-foreground ' + (className() || '')">
       <ng-content></ng-content>
@@ -71,6 +75,7 @@ export class CardDescriptionComponent {
   selector: 'app-card-content',
   standalone: true,
   imports: [],
+  changeDetection: ChangeDetectionStrategy.Eager,
   template: `
     <div [class]="'p-5 text-sm ' + (className() || '')">
       <ng-content></ng-content>
@@ -85,6 +90,7 @@ export class CardContentComponent {
   selector: 'app-card-footer',
   standalone: true,
   imports: [],
+  changeDetection: ChangeDetectionStrategy.Eager,
   template: `
     <div [class]="'flex items-center justify-between p-5 border-t border-border/50 bg-muted/20 ' + (className() || '')">
       <ng-content></ng-content>

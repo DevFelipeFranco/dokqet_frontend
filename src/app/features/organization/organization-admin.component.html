@@ -152,7 +152,7 @@
 
             <dt class="text-muted-foreground">Tipo de persona</dt>
             <dd class="text-foreground">
-              {{ formatPersonType(org()?.personType) }}
+              {{ formatPersonType($safeNavigationMigration(org()?.personType)) }}
             </dd>
 
             @if (org()?.personType === PersonType.JURIDICA && org()?.legalName) {

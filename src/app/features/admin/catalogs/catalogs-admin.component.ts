@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, computed, inject, signal } from '@angular/core';
+import { Component, OnInit, OnDestroy, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -206,6 +206,7 @@ export const CATALOG_DEFINITIONS: CatalogMetadata[] = [
     SkeletonComponent,
     SkeletonTableComponent
 ],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './catalogs-admin.component.html'
 })
 export class CatalogsAdminComponent implements OnInit, OnDestroy {

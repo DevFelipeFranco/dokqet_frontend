@@ -1,4 +1,4 @@
-import { Component, computed, input } from '@angular/core';
+import { Component, computed, input, ChangeDetectionStrategy } from '@angular/core';
 
 
 export type AlertType = 'error' | 'success' | 'warning' | 'info';
@@ -7,6 +7,7 @@ export type AlertType = 'error' | 'success' | 'warning' | 'info';
   selector: 'app-form-alert',
   standalone: true,
   imports: [],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './form-alert.component.html'
 })
 export class FormAlertComponent {

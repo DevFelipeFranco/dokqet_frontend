@@ -1,4 +1,4 @@
-import { Component, HostListener, input, model, output } from '@angular/core';
+import { Component, HostListener, input, model, output, ChangeDetectionStrategy } from '@angular/core';
 
 import { ButtonComponent } from './button.component';
 
@@ -6,6 +6,7 @@ import { ButtonComponent } from './button.component';
   selector: 'app-modal',
   standalone: true,
   imports: [ButtonComponent],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './modal.component.html'
 })
 export class ModalComponent {

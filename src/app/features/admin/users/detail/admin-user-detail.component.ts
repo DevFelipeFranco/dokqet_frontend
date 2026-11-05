@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal, computed } from '@angular/core';
+import { Component, OnInit, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
 
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -36,6 +36,7 @@ import {
     ModalComponent,
     SkeletonComponent
 ],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './admin-user-detail.component.html'
 })
 export class AdminUserDetailComponent implements OnInit {

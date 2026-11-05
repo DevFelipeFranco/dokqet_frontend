@@ -1,10 +1,11 @@
-import { Component, computed, input } from '@angular/core';
+import { Component, computed, input, ChangeDetectionStrategy } from '@angular/core';
 import { SkeletonComponent } from './skeleton.component';
 
 @Component({
   selector: 'app-skeleton-form',
   standalone: true,
   imports: [SkeletonComponent],
+  changeDetection: ChangeDetectionStrategy.Eager,
   template: `
     <div [class]="'space-y-6 ' + className()" role="status" aria-live="polite" aria-busy="true">
       <span class="sr-only">Cargando formulario...</span>

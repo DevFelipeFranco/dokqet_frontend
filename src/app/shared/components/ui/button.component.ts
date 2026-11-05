@@ -1,4 +1,4 @@
-import { Component, computed, input, output } from '@angular/core';
+import { Component, computed, input, output, ChangeDetectionStrategy } from '@angular/core';
 
 
 export type ButtonVariant = 'default' | 'outline' | 'secondary' | 'ghost' | 'destructive' | 'link';
@@ -8,6 +8,7 @@ export type ButtonSize = 'sm' | 'default' | 'lg' | 'icon';
   selector: 'app-button',
   standalone: true,
   imports: [],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './button.component.html'
 })
 export class ButtonComponent {

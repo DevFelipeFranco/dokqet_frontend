@@ -116,7 +116,7 @@
             @if (invitation()?.expiresAt) {
               <div class="flex justify-between items-center text-sm">
                 <span class="text-muted-foreground">Vence:</span>
-                <span class="text-xs text-muted-foreground">{{ invitation()?.expiresAt | date:'medium' }}</span>
+                <span class="text-xs text-muted-foreground">{{ $safeNavigationMigration(invitation()?.expiresAt) | date:'medium' }}</span>
               </div>
             }
           </div>
@@ -166,14 +166,14 @@
                   <div class="flex flex-col sm:flex-row gap-3 pt-2">
                     <a
                       [routerLink]="['/iniciar-sesion']"
-                      [queryParams]="{ returnUrl: '/invitacion/' + token(), email: invitation()?.email }"
+                      [queryParams]="{ returnUrl: '/invitacion/' + token(), email: $safeNavigationMigration(invitation()?.email) }"
                       class="flex-1 inline-flex items-center justify-center rounded-lg bg-primary text-primary-foreground font-medium py-2.5 px-4 shadow-sm hover:bg-primary/90 text-sm transition-colors text-center"
                       >
                       Iniciar sesión
                     </a>
                     <a
                       [routerLink]="['/registro']"
-                      [queryParams]="{ returnUrl: '/invitacion/' + token(), email: invitation()?.email }"
+                      [queryParams]="{ returnUrl: '/invitacion/' + token(), email: $safeNavigationMigration(invitation()?.email) }"
                       class="flex-1 inline-flex items-center justify-center rounded-lg border border-border bg-background hover:bg-muted font-medium py-2.5 px-4 shadow-xs text-sm text-foreground transition-colors text-center"
                       >
                       Crear cuenta

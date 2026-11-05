@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal, DestroyRef } from '@angular/core';
+import { Component, OnInit, inject, signal, DestroyRef, ChangeDetectionStrategy } from '@angular/core';
 
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -31,6 +31,7 @@ export type ActivationState = 'LOADING' | 'ACTIVATED' | 'EXPIRED' | 'INVALID';
     FormAlertComponent,
     LogoComponent
 ],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './cuenta-activada.component.html'
 })
 export class CuentaActivadaComponent implements OnInit {
