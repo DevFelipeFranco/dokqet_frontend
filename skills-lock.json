@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "skills": {
+    "angular-developer": {
+      "source": "angular/skills",
+      "sourceType": "github",
+      "skillPath": "angular-developer/SKILL.md",
+      "computedHash": "479e7c8d75cb017be85ae866c610830aae12f4e38c331d758f321ac2841c2810"
+    },
+    "ui-ux-pro-max": {
+      "source": "nextlevelbuilder/ui-ux-pro-max-skill",
+      "sourceType": "github",
+      "skillPath": ".claude/skills/ui-ux-pro-max/SKILL.md",
+      "computedHash": "7ac62d931e52dbc7c309ed8ee067101969db2454709339b02daa583e80e98d5f"
+    }
+  }
+}
