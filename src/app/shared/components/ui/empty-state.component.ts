@@ -1,11 +1,12 @@
-import { Component, input, output } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, input, output, ChangeDetectionStrategy } from '@angular/core';
+
 import { ButtonComponent } from './button.component';
 
 @Component({
   selector: 'app-empty-state',
   standalone: true,
-  imports: [CommonModule, ButtonComponent],
+  imports: [ButtonComponent],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './empty-state.component.html'
 })
 export class EmptyStateComponent {

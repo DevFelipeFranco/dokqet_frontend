@@ -1,4 +1,4 @@
-import { Component, computed, input } from '@angular/core';
+import { Component, computed, input, ChangeDetectionStrategy } from '@angular/core';
 import { SkeletonComponent } from './skeleton.component';
 
 export type SkeletonTableVariant = 'default' | 'processes' | 'actuaciones' | 'catalog' | 'team' | 'organizations';
@@ -7,6 +7,7 @@ export type SkeletonTableVariant = 'default' | 'processes' | 'actuaciones' | 'ca
   selector: 'app-skeleton-table',
   standalone: true,
   imports: [SkeletonComponent],
+  changeDetection: ChangeDetectionStrategy.Eager,
   template: `
     <div [class]="'overflow-x-auto rounded-xl border border-border/70 ' + className()" role="status" aria-live="polite" aria-busy="true">
       <span class="sr-only">{{ srText() }}</span>

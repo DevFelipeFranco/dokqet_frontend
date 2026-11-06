@@ -1,5 +1,5 @@
-import { Component, computed, inject, input, model, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, computed, inject, input, model, signal, ChangeDetectionStrategy } from '@angular/core';
+
 import { SchedulerAdminService } from '../../../../core/services/scheduler-admin.service';
 import {
   ScheduledTaskAuditDto,
@@ -19,13 +19,13 @@ import {
   selector: 'app-scheduler-history-modal',
   standalone: true,
   imports: [
-    CommonModule,
     ModalComponent,
     ButtonComponent,
     FormAlertComponent,
     EmptyStateComponent,
     SkeletonTableComponent
-  ],
+],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './scheduler-history-modal.component.html'
 })
 export class SchedulerHistoryModalComponent {

@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SuperAdminService } from '../../../core/services/super-admin.service';
@@ -41,6 +41,7 @@ import {
     FormAlertComponent,
     ModalComponent
   ],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './organizations-admin.component.html'
 })
 export class OrganizationsAdminComponent implements OnInit {

@@ -1,5 +1,5 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { SuperAdminService } from '../../../core/services/super-admin.service';
@@ -22,7 +22,6 @@ import {
   selector: 'app-admin-actions',
   standalone: true,
   imports: [
-    CommonModule,
     FormsModule,
     RouterLink,
     DokqetDatePipe,
@@ -31,7 +30,8 @@ import {
     EmptyStateComponent,
     FormAlertComponent,
     SkeletonTableComponent
-  ],
+],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './admin-actions.component.html'
 })
 export class AdminActionsComponent implements OnInit {

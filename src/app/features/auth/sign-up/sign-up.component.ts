@@ -1,7 +1,7 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { CommonModule } from '@angular/common';
+
 import { AuthService } from '../../../core/auth/auth.service';
 import { CatalogService } from '../../../core/services/catalog.service';
 import { ConsentTypeDto, DocumentTypeDto, GenderDto } from '../../../core/models/catalog.model';
@@ -22,8 +22,7 @@ import {
   selector: 'app-sign-up',
   standalone: true,
   imports: [
-    CommonModule, 
-    ReactiveFormsModule, 
+    ReactiveFormsModule,
     RouterLink,
     CardComponent,
     CardHeaderComponent,
@@ -34,7 +33,8 @@ import {
     ButtonComponent,
     FormAlertComponent,
     LogoComponent
-  ],
+],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './sign-up.component.html'
 })
 export class SignUpComponent implements OnInit {

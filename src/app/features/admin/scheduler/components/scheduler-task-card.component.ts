@@ -8,7 +8,8 @@ import {
   input,
   output,
   signal,
-  untracked
+  untracked,
+  ChangeDetectionStrategy
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -32,6 +33,7 @@ import { FormAlertComponent } from '../../../../shared/components/ui';
   standalone: true,
   imports: [CommonModule, FormsModule, FormAlertComponent],
   templateUrl: './scheduler-task-card.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   host: {
     class: 'block'
   }

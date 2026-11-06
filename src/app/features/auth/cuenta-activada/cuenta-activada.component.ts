@@ -1,5 +1,5 @@
-import { Component, OnInit, inject, signal, DestroyRef } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, inject, signal, DestroyRef, ChangeDetectionStrategy } from '@angular/core';
+
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../../core/auth/auth.service';
@@ -20,7 +20,6 @@ export type ActivationState = 'LOADING' | 'ACTIVATED' | 'EXPIRED' | 'INVALID';
   selector: 'app-cuenta-activada',
   standalone: true,
   imports: [
-    CommonModule,
     RouterLink,
     FormsModule,
     CardComponent,
@@ -31,7 +30,8 @@ export type ActivationState = 'LOADING' | 'ACTIVATED' | 'EXPIRED' | 'INVALID';
     CardFooterComponent,
     FormAlertComponent,
     LogoComponent
-  ],
+],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './cuenta-activada.component.html'
 })
 export class CuentaActivadaComponent implements OnInit {

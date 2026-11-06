@@ -1,5 +1,5 @@
-import { Component, input } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, input, ChangeDetectionStrategy } from '@angular/core';
+
 import { RouterModule } from '@angular/router';
 
 export interface BreadcrumbItem {
@@ -10,7 +10,8 @@ export interface BreadcrumbItem {
 @Component({
   selector: 'app-breadcrumbs',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [RouterModule],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './breadcrumbs.component.html'
 })
 export class BreadcrumbsComponent {

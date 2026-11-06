@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, effect, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, effect, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
@@ -71,6 +71,7 @@ export function calculateRemainingCooldownDays(
     SkeletonComponent,
     SkeletonTableComponent
   ],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './organization-admin.component.html'
 })
 export class OrganizationAdminComponent implements OnInit {

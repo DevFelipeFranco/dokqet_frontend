@@ -1,5 +1,5 @@
-import { Component, OnInit, computed, effect, inject, signal, untracked } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, computed, effect, inject, signal, untracked, ChangeDetectionStrategy } from '@angular/core';
+
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ProcessService } from '../../../core/services/process.service';
@@ -48,7 +48,6 @@ export type ActuacionViewMode = 'TABLE' | 'TIMELINE';
   selector: 'app-process-detail',
   standalone: true,
   imports: [
-    CommonModule,
     RouterLink,
     FormsModule,
     RadicadoPipe,
@@ -67,7 +66,8 @@ export type ActuacionViewMode = 'TABLE' | 'TIMELINE';
     SkeletonComponent,
     SkeletonCardGridComponent,
     SkeletonTableComponent
-  ],
+],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './process-detail.component.html'
 })
 export class ProcessDetailComponent implements OnInit {

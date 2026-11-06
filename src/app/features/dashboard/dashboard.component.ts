@@ -1,5 +1,5 @@
-import { Component, OnInit, computed, effect, inject, signal, untracked } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, computed, effect, inject, signal, untracked, ChangeDetectionStrategy } from '@angular/core';
+
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ProcessService } from '../../core/services/process.service';
@@ -49,7 +49,6 @@ export function matchesProcessQuery(process: ProcessListItem, query: string): bo
   selector: 'app-dashboard',
   standalone: true,
   imports: [
-    CommonModule,
     RouterLink,
     FormsModule,
     RadicadoPipe,
@@ -57,7 +56,8 @@ export function matchesProcessQuery(process: ProcessListItem, query: string): bo
     StatCardComponent,
     SkeletonCardGridComponent,
     SkeletonTableComponent
-  ],
+],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './dashboard.component.html'
 })
 export class DashboardComponent implements OnInit {

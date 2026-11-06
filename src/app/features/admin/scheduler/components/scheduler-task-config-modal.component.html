@@ -36,7 +36,7 @@
           Título Identificativo
         </label>
         <input
-          [id]="'modal-title-' + task()?.taskKey"
+          [id]="'modal-title-' + $safeNavigationMigration(task()?.taskKey)"
           type="text"
           [ngModel]="title()"
           (ngModelChange)="title.set($event); isDirty.set(true)"
@@ -53,7 +53,7 @@
           Correos de Notificación ante Falla
         </label>
         <input
-          [id]="'modal-emails-' + task()?.taskKey"
+          [id]="'modal-emails-' + $safeNavigationMigration(task()?.taskKey)"
           type="text"
           [ngModel]="alertEmails()"
           (ngModelChange)="alertEmails.set($event); isDirty.set(true)"
@@ -76,7 +76,7 @@
         @if (frequencyType() === 'INTERVAL_MINUTES') {
           <div class="flex items-center gap-2">
             <input
-              [id]="'modal-interval-' + task()?.taskKey"
+              [id]="'modal-interval-' + $safeNavigationMigration(task()?.taskKey)"
               type="number"
               min="1"
               max="720"
@@ -88,7 +88,7 @@
         } @else if (frequencyType() === 'ONCE_AT_DATE') {
           <div class="grid grid-cols-2 gap-1.5">
             <input
-              [id]="'modal-date-' + task()?.taskKey"
+              [id]="'modal-date-' + $safeNavigationMigration(task()?.taskKey)"
               type="date"
               [min]="minDateString()"
               [ngModel]="scheduledDate()"
@@ -102,7 +102,7 @@
           </div>
         } @else {
           <input
-            [id]="'modal-time-' + task()?.taskKey"
+            [id]="'modal-time-' + $safeNavigationMigration(task()?.taskKey)"
             type="time"
             [disabled]="frequencyType() === 'CUSTOM_CRON'"
             [ngModel]="executionTime()"
@@ -117,7 +117,7 @@
           Frecuencia / Intervalo
         </label>
         <select
-          [id]="'modal-freq-' + task()?.taskKey"
+          [id]="'modal-freq-' + $safeNavigationMigration(task()?.taskKey)"
           [ngModel]="frequencyType()"
           (ngModelChange)="onFrequencyChange($event)"
           class="h-9 w-full rounded-lg border border-border bg-card px-2 text-xs sm:text-sm font-medium text-foreground outline-none focus-visible:border-ring">
@@ -138,7 +138,7 @@
           }
         </div>
         <input
-          [id]="'modal-cron-' + task()?.taskKey"
+          [id]="'modal-cron-' + $safeNavigationMigration(task()?.taskKey)"
           type="text"
           [ngModel]="cronExpression()"
           (ngModelChange)="onManualCronInput($event)"
@@ -172,7 +172,7 @@
           Día del mes (1 - 28):
         </label>
         <input
-          [id]="'modal-dom-' + task()?.taskKey"
+          [id]="'modal-dom-' + $safeNavigationMigration(task()?.taskKey)"
           type="number"
           min="1"
           max="28"
@@ -217,7 +217,7 @@
           Zona Horaria IANA
         </label>
         <select
-          [id]="'modal-tz-' + task()?.taskKey"
+          [id]="'modal-tz-' + $safeNavigationMigration(task()?.taskKey)"
           [ngModel]="timezone()"
           (ngModelChange)="onTimezoneChange($event)"
           class="h-9 w-full rounded-xl border border-border bg-card px-2 text-xs font-medium text-foreground outline-none focus-visible:border-ring">
@@ -232,7 +232,7 @@
           Timeout Máximo (segundos)
         </label>
         <input
-          [id]="'modal-timeout-' + task()?.taskKey"
+          [id]="'modal-timeout-' + $safeNavigationMigration(task()?.taskKey)"
           type="number"
           min="30"
           max="86400"

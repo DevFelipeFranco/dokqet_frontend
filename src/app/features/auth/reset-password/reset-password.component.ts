@@ -1,7 +1,7 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { CommonModule } from '@angular/common';
+
 import { AuthService } from '../../../core/auth/auth.service';
 import { parseHttpAuthError } from '../../../core/utils/http-error.utils';
 import {
@@ -20,8 +20,7 @@ import {
   selector: 'app-reset-password',
   standalone: true,
   imports: [
-    CommonModule, 
-    ReactiveFormsModule, 
+    ReactiveFormsModule,
     RouterLink,
     CardComponent,
     CardHeaderComponent,
@@ -32,7 +31,8 @@ import {
     ButtonComponent,
     FormAlertComponent,
     LogoComponent
-  ],
+],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './reset-password.component.html'
 })
 export class ResetPasswordComponent implements OnInit {

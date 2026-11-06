@@ -1,5 +1,5 @@
-import { Component, computed, inject, input } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, computed, inject, input, ChangeDetectionStrategy } from '@angular/core';
+
 import { Router, RouterLink } from '@angular/router';
 import { OrganizationStore } from '../../core/state/organization.store';
 import { DropdownComponent } from './ui/dropdown.component';
@@ -7,7 +7,8 @@ import { DropdownComponent } from './ui/dropdown.component';
 @Component({
   selector: 'app-organization-switcher',
   standalone: true,
-  imports: [CommonModule, RouterLink, DropdownComponent],
+  imports: [RouterLink, DropdownComponent],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './organization-switcher.component.html'
 })
 export class OrganizationSwitcherComponent {

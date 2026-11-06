@@ -1,10 +1,11 @@
-import { Component, computed, input } from '@angular/core';
+import { Component, computed, input, ChangeDetectionStrategy } from '@angular/core';
 
 export type SkeletonVariant = 'text' | 'circular' | 'rounded' | 'rectangle';
 
 @Component({
   selector: 'app-skeleton',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.Eager,
   template: `
     <div
       [class]="computedClasses()"

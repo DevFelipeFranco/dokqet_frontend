@@ -1,11 +1,12 @@
-import { Component, computed, input } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, computed, input, ChangeDetectionStrategy } from '@angular/core';
+
 import { SkeletonComponent } from './skeleton.component';
 
 @Component({
   selector: 'app-stat-card',
   standalone: true,
-  imports: [CommonModule, SkeletonComponent],
+  imports: [SkeletonComponent],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './stat-card.component.html'
 })
 export class StatCardComponent {

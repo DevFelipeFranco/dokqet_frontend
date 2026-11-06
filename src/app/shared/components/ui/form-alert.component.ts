@@ -1,12 +1,13 @@
-import { Component, computed, input } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, computed, input, ChangeDetectionStrategy } from '@angular/core';
+
 
 export type AlertType = 'error' | 'success' | 'warning' | 'info';
 
 @Component({
   selector: 'app-form-alert',
   standalone: true,
-  imports: [CommonModule],
+  imports: [],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './form-alert.component.html'
 })
 export class FormAlertComponent {

@@ -1,5 +1,5 @@
-import { Component, OnInit, inject, signal, computed } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
+
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { SuperAdminService } from '../../../../core/services/super-admin.service';
@@ -26,7 +26,6 @@ import {
   selector: 'app-admin-user-detail',
   standalone: true,
   imports: [
-    CommonModule,
     FormsModule,
     RouterLink,
     DokqetDatePipe,
@@ -36,7 +35,8 @@ import {
     FormAlertComponent,
     ModalComponent,
     SkeletonComponent
-  ],
+],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './admin-user-detail.component.html'
 })
 export class AdminUserDetailComponent implements OnInit {

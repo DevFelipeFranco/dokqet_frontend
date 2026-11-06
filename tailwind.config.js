@@ -55,6 +55,9 @@ module.exports = {
         lg: 'var(--radius)',
         md: 'calc(var(--radius) - 2px)',
         sm: 'calc(var(--radius) - 4px)',
+      },
+      spacing: {
+        '4.5': '1.125rem', // 18px
       }
     },
   },

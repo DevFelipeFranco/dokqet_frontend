@@ -1,10 +1,11 @@
-import { Component, computed, input } from '@angular/core';
+import { Component, computed, input, ChangeDetectionStrategy } from '@angular/core';
 import { SkeletonComponent } from './skeleton.component';
 
 @Component({
   selector: 'app-skeleton-card-grid',
   standalone: true,
   imports: [SkeletonComponent],
+  changeDetection: ChangeDetectionStrategy.Eager,
   template: `
     <div [class]="computedGridClasses()" role="status" aria-live="polite" aria-busy="true">
       <span class="sr-only">Cargando métricas e indicadores...</span>

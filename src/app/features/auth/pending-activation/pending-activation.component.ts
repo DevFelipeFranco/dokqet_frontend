@@ -1,5 +1,5 @@
-import { Component, OnInit, inject, signal, computed, DestroyRef } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, inject, signal, computed, DestroyRef, ChangeDetectionStrategy } from '@angular/core';
+
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/auth/auth.service';
 import {
@@ -23,7 +23,6 @@ export interface WebmailProvider {
   selector: 'app-pending-activation',
   standalone: true,
   imports: [
-    CommonModule,
     RouterLink,
     CardComponent,
     CardHeaderComponent,
@@ -33,7 +32,8 @@ export interface WebmailProvider {
     CardFooterComponent,
     FormAlertComponent,
     LogoComponent
-  ],
+],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './pending-activation.component.html'
 })
 export class PendingActivationComponent implements OnInit {
