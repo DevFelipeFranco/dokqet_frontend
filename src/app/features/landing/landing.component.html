@@ -1,0 +1,1135 @@
+<!-- ===========================================================================
+     DOKQET LANDING PAGE (HU-32)
+     Contenido oficial del proyecto DOKQET de Miguel + Motor de Scrub 3D & Origami al Scroll
+     =========================================================================== -->
+<div id="inicio" class="min-h-screen flex flex-col bg-background text-foreground selection:bg-brand selection:text-white relative overflow-x-clip">
+
+  <!-- Barra Superior de Progreso de Lectura (Scrub Continuo al Scroll) -->
+  <div
+    class="fixed top-0 left-0 w-full h-1 bg-gradient-to-r from-brand via-rose-500 to-emerald-500 origin-left z-[100] pointer-events-none transition-transform duration-75"
+    [style.transform]="'scaleX(' + (scrollProgressPercent() / 100) + ')'"
+    aria-hidden="true"
+  ></div>
+
+  <!-- FONDOS ORGÁNICOS FLOTANTES + TRIÁNGULOS DE ORIGAMI CON PARALLAX Y ROTACIÓN AL SCROLL -->
+  <div class="pointer-events-none fixed inset-0 -z-10 overflow-hidden" aria-hidden="true">
+    <div
+      class="absolute -top-32 -left-32 size-[520px] rounded-full bg-brand/10 dark:bg-brand/15 blur-[130px] transition-transform duration-150"
+      [style.transform]="'translate3d(0, ' + (scrollProgressPercent() * 2.2) + 'px, 0)'"
+    ></div>
+    <div
+      class="absolute top-1/3 -right-40 size-[480px] rounded-full bg-emerald-500/10 dark:bg-emerald-500/12 blur-[140px] transition-transform duration-150"
+      [style.transform]="'translate3d(0, ' + (scrollProgressPercent() * -1.8) + 'px, 0)'"
+    ></div>
+    <div
+      class="absolute -bottom-40 left-1/4 size-[500px] rounded-full bg-sky-500/8 dark:bg-sky-500/10 blur-[140px] transition-transform duration-150"
+      [style.transform]="'translate3d(0, ' + (scrollProgressPercent() * -1.2) + 'px, 0)'"
+    ></div>
+
+    <!-- Triángulos de papel de origami flotantes que rotan y derivan en 3D con el scroll -->
+    <div
+      class="absolute top-[14%] left-[6%] size-8 bg-brand/15 dark:bg-brand/20 will-change-transform"
+      style="clip-path: polygon(50% 0%, 0% 100%, 100% 100%)"
+      [style.transform]="getFloatingTriangleTransform(0)"
+    ></div>
+    <div
+      class="absolute top-[28%] right-[8%] size-10 bg-brand/12 dark:bg-brand/18 will-change-transform"
+      style="clip-path: polygon(0% 0%, 100% 25%, 35% 100%)"
+      [style.transform]="getFloatingTriangleTransform(1)"
+    ></div>
+    <div
+      class="absolute top-[48%] left-[10%] size-7 bg-emerald-500/15 dark:bg-emerald-400/20 will-change-transform"
+      style="clip-path: polygon(20% 0%, 100% 50%, 0% 100%)"
+      [style.transform]="getFloatingTriangleTransform(2)"
+    ></div>
+    <div
+      class="absolute top-[64%] right-[12%] size-9 bg-brand/15 dark:bg-brand/20 will-change-transform"
+      style="clip-path: polygon(50% 0%, 100% 100%, 0% 75%)"
+      [style.transform]="getFloatingTriangleTransform(3)"
+    ></div>
+    <div
+      class="absolute top-[78%] left-[15%] size-6 bg-sky-500/15 dark:bg-sky-400/20 will-change-transform"
+      style="clip-path: polygon(0% 15%, 100% 0%, 60% 100%)"
+      [style.transform]="getFloatingTriangleTransform(4)"
+    ></div>
+    <div
+      class="absolute top-[88%] right-[7%] size-8 bg-brand/12 dark:bg-brand/18 will-change-transform"
+      style="clip-path: polygon(50% 0%, 0% 100%, 100% 100%)"
+      [style.transform]="getFloatingTriangleTransform(5)"
+    ></div>
+  </div>
+
+  <!-- =========================================================================
+       1. FLOATING PILL NAVBAR (STICKY GLASSMORPHISM + PAJARITO DE PROGRESO AL SCROLL)
+       ========================================================================= -->
+  <header class="sticky top-4 z-50 px-4 sm:px-6 lg:px-8 transition-all duration-300 pointer-events-none">
+    <div class="max-w-7xl mx-auto h-16 px-5 sm:px-7 rounded-full border border-border/70 bg-background/80 dark:bg-[#032225]/85 backdrop-blur-xl shadow-lg flex items-center justify-between pointer-events-auto">
+      
+      <!-- Brand Logo -->
+      <a href="#inicio" class="flex items-center gap-2.5 focus:outline-none focus:ring-2 focus:ring-brand rounded-full px-1" aria-label="dokqet, inicio">
+        <app-logo height="h-7 sm:h-8" variant="completo"></app-logo>
+      </a>
+
+      <!-- Desktop Anchor Links + Pajarito de 7 piezas + Reloj Narrativo en Vivo -->
+      <nav class="hidden md:flex items-center gap-5 text-sm font-medium text-muted-foreground" aria-label="Secciones">
+        <div class="flex items-center gap-2 px-3 py-1 rounded-full bg-muted/60 border border-border/60 text-xs font-semibold text-foreground">
+          <svg class="size-5 shrink-0" viewBox="0 0 122 116" aria-hidden="true">
+            <polygon
+              class="transition-colors duration-300"
+              [attr.fill]="activeBirdPieces() >= 1 ? '#ec1319' : 'currentColor'"
+              [attr.opacity]="activeBirdPieces() >= 1 ? '1' : '0.28'"
+              points="72.1,108 55.6,99 72.1,54.2"
+            />
+            <polygon
+              class="transition-colors duration-300"
+              [attr.fill]="activeBirdPieces() >= 2 ? '#ec1319' : 'currentColor'"
+              [attr.opacity]="activeBirdPieces() >= 2 ? '0.9' : '0.28'"
+              points="71.8,48.1 57.45,86.6 21,48.1"
+            />
+            <polygon
+              class="transition-colors duration-300"
+              [attr.fill]="activeBirdPieces() >= 3 ? '#ec1319' : 'currentColor'"
+              [attr.opacity]="activeBirdPieces() >= 3 ? '0.95' : '0.28'"
+              points="72.1,10.6 72.1,45.6 39.2,45.6"
+            />
+            <polygon
+              class="transition-colors duration-300"
+              [attr.fill]="activeBirdPieces() >= 4 ? '#ec1319' : 'currentColor'"
+              [attr.opacity]="activeBirdPieces() >= 4 ? '1' : '0.28'"
+              points="74.8,8.5 110.3,9.8 74.8,43.8"
+            />
+            <polygon
+              class="transition-colors duration-300"
+              [attr.fill]="activeBirdPieces() >= 5 ? '#ec1319' : 'currentColor'"
+              [attr.opacity]="activeBirdPieces() >= 5 ? '0.85' : '0.28'"
+              points="113.1,16.8 96.5,26.6 108.4,15.1"
+            />
+            <polygon
+              class="transition-colors duration-300"
+              [attr.fill]="activeBirdPieces() >= 6 ? '#ec1319' : 'currentColor'"
+              [attr.opacity]="activeBirdPieces() >= 6 ? '0.92' : '0.28'"
+              points="26.5,19 43.3,37.5 35.4,45.6 19.1,45.6 19.1,19"
+            />
+            <polygon
+              class="transition-colors duration-300"
+              [attr.fill]="activeBirdPieces() >= 7 ? '#ec1319' : 'currentColor'"
+              [attr.opacity]="activeBirdPieces() >= 7 ? '0.88' : '0.28'"
+              points="16.6,28.25 8.35,28.25 16.6,20.6"
+            />
+          </svg>
+          <span class="italic font-serif tabular-nums text-[11px] sm:text-xs text-foreground">
+            {{ currentStoryTime() }}
+          </span>
+        </div>
+
+        <a
+          href="#problema"
+          class="nav-fold-link hover:text-foreground"
+          [class.active]="activeSection() === 'problema'"
+          [class.text-foreground]="activeSection() === 'problema'"
+        >
+          El Problema
+        </a>
+        <a
+          href="#funciones"
+          class="nav-fold-link hover:text-foreground"
+          [class.active]="activeSection() === 'funciones'"
+          [class.text-foreground]="activeSection() === 'funciones'"
+        >
+          {{ nav.platform }}
+        </a>
+        <a
+          href="#demo"
+          class="nav-fold-link hover:text-foreground"
+          [class.active]="activeSection() === 'demo'"
+          [class.text-foreground]="activeSection() === 'demo'"
+        >
+          {{ nav.demo }}
+        </a>
+        <a
+          href="#planes"
+          class="nav-fold-link hover:text-foreground"
+          [class.active]="activeSection() === 'planes'"
+          [class.text-foreground]="activeSection() === 'planes'"
+        >
+          {{ nav.plans }}
+        </a>
+        <a
+          href="#consultoria"
+          class="nav-fold-link hover:text-foreground"
+          [class.active]="activeSection() === 'consultoria'"
+          [class.text-foreground]="activeSection() === 'consultoria'"
+        >
+          {{ nav.consulting }}
+        </a>
+      </nav>
+
+      <!-- Auth Actions + Theme Switcher (Connected to /iniciar-sesion & /registro) -->
+      <div class="hidden md:flex items-center gap-2.5">
+        <button
+          type="button"
+          (click)="themeService.toggle()"
+          class="flex size-10 items-center justify-center rounded-full border border-border/80 bg-card/80 text-foreground hover:bg-muted transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-brand"
+          [title]="themeService.isDark() ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro'"
+          aria-label="Cambiar tema claro u oscuro"
+        >
+          @if (themeService.isDark()) {
+            <svg class="size-4 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+            </svg>
+          } @else {
+            <svg class="size-4 text-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+            </svg>
+          }
+        </button>
+        <a
+          routerLink="/iniciar-sesion"
+          class="px-4 py-2 rounded-full text-sm font-semibold text-foreground hover:bg-muted/80 transition-colors focus:outline-none focus:ring-2 focus:ring-brand"
+        >
+          Iniciar sesión
+        </a>
+        <a
+          routerLink="/registro"
+          class="px-5 py-2.5 rounded-full text-sm font-bold text-white bg-brand hover:bg-brand/90 shadow-md hover:shadow-brand/30 hover:shadow-lg transition-all active:scale-95 shimmer-cta focus:outline-none focus:ring-2 focus:ring-brand focus:ring-offset-2"
+        >
+          Crear cuenta
+        </a>
+      </div>
+
+      <!-- Mobile Theme Switcher + Menu Toggle -->
+      <div class="flex items-center gap-2 md:hidden">
+        <button
+          type="button"
+          (click)="themeService.toggle()"
+          class="flex size-10 items-center justify-center rounded-full border border-border/80 bg-card/80 text-foreground hover:bg-muted transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-brand"
+          aria-label="Cambiar tema claro u oscuro"
+        >
+          @if (themeService.isDark()) {
+            <svg class="size-4 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+            </svg>
+          } @else {
+            <svg class="size-4 text-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+            </svg>
+          }
+        </button>
+        <button
+          type="button"
+          (click)="toggleMobileMenu()"
+          class="p-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted focus:outline-none focus:ring-2 focus:ring-brand"
+          [attr.aria-expanded]="mobileMenuOpen()"
+          aria-label="Abrir menú de navegación"
+        >
+          @if (!mobileMenuOpen()) {
+            <svg class="size-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          } @else {
+            <svg class="size-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          }
+        </button>
+      </div>
+    </div>
+
+    <!-- Mobile Navigation Drawer -->
+    @if (mobileMenuOpen()) {
+      <div class="md:hidden mt-2 rounded-3xl border border-border bg-card/95 backdrop-blur-xl px-5 pt-4 pb-6 space-y-3 shadow-2xl pointer-events-auto">
+        <a href="#problema" (click)="closeMobileMenu()" class="block py-2 text-sm font-medium text-foreground hover:text-brand">El Problema</a>
+        <a href="#funciones" (click)="closeMobileMenu()" class="block py-2 text-sm font-medium text-foreground hover:text-brand">{{ nav.platform }}</a>
+        <a href="#demo" (click)="closeMobileMenu()" class="block py-2 text-sm font-medium text-foreground hover:text-brand">{{ nav.demo }}</a>
+        <a href="#planes" (click)="closeMobileMenu()" class="block py-2 text-sm font-medium text-foreground hover:text-brand">{{ nav.plans }}</a>
+        <a href="#consultoria" (click)="closeMobileMenu()" class="block py-2 text-sm font-medium text-foreground hover:text-brand">{{ nav.consulting }}</a>
+        <div class="pt-3 border-t border-border flex flex-col gap-2.5">
+          <a
+            routerLink="/iniciar-sesion"
+            (click)="closeMobileMenu()"
+            class="w-full py-2.5 text-center rounded-full border border-border text-sm font-semibold text-foreground hover:bg-muted"
+          >
+            Iniciar sesión
+          </a>
+          <a
+            routerLink="/registro"
+            (click)="closeMobileMenu()"
+            class="w-full py-2.5 text-center rounded-full bg-brand text-white text-sm font-bold hover:bg-brand/90 shadow-md"
+          >
+            Crear cuenta
+          </a>
+        </div>
+      </div>
+    }
+  </header>
+
+  <main class="flex-1">
+
+    <!-- =========================================================================
+         2. CAPÍTULO 1 — HERO: LUNES, 7:40 A. M. · 48 PROCESOS
+            Con Parallax Multicapa 3D al iniciar el scroll
+         ========================================================================= -->
+    <section #heroSection class="relative pt-8 pb-12 md:pt-12 md:pb-16 overflow-hidden">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-10 items-center">
+          
+          <!-- Left Column: Narrative & CTAs from Miguel's Hero.astro -->
+          <div
+            class="lg:col-span-7 flex flex-col gap-5 text-center lg:text-left will-change-transform"
+            [style.transform]="getHeroTextTransform()"
+            [style.opacity]="getHeroTextOpacity()"
+          >
+            
+            <!-- Narrative Time Pill: Lunes, 7:40 a. m. -->
+            <div class="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-card/90 dark:bg-card/60 backdrop-blur-md border border-brand/25 shadow-xs text-xs sm:text-sm font-medium w-fit mx-auto lg:mx-0">
+              <span class="relative flex size-2.5">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand opacity-75"></span>
+                <span class="relative inline-flex rounded-full size-2.5 bg-brand"></span>
+              </span>
+              <span class="italic font-serif text-foreground font-semibold">{{ hero.time }}</span>
+              <span class="text-muted-foreground">· {{ hero.boardCaption }}</span>
+            </div>
+
+            <!-- Main Heading: 48 procesos. Una actuación no puede esperar. -->
+            <h1 class="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-foreground leading-[1.08]">
+              <span class="block">{{ hero.titleLine1 }}</span>
+              <span class="block">{{ hero.titleLine2 }}</span>
+              <span class="bg-gradient-to-r from-brand via-rose-600 to-amber-600 bg-clip-text text-transparent">
+                {{ hero.titleHighlight }}
+              </span>
+            </h1>
+
+            <!-- Subtitle: Automatiza el seguimiento de tus procesos judiciales. -->
+            <p class="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto lg:mx-0 leading-relaxed">
+              <strong class="block text-foreground font-bold mb-1">{{ hero.leadStrong }}</strong>
+              {{ hero.lead }}
+            </p>
+
+            <!-- Dual Rounded CTAs + Sigue la historia -->
+            <div class="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3.5 pt-2">
+              <a
+                routerLink="/registro"
+                class="w-full sm:w-auto px-8 py-4 rounded-full bg-brand hover:bg-brand/90 text-white font-extrabold text-sm sm:text-base shadow-lg hover:shadow-brand/35 hover:shadow-xl hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2 group shimmer-cta active:scale-95"
+              >
+                <span>Crear cuenta</span>
+                <svg class="size-4 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                </svg>
+              </a>
+              <a
+                routerLink="/iniciar-sesion"
+                class="w-full sm:w-auto px-7 py-4 rounded-full border border-border hover:border-foreground/30 bg-card/80 text-foreground font-semibold text-sm sm:text-base hover:bg-muted transition-all text-center backdrop-blur-sm"
+              >
+                Iniciar sesión
+              </a>
+              <a
+                href="#problema"
+                class="px-4 py-2 text-sm font-bold text-foreground hover:text-brand underline decoration-brand decoration-2 underline-offset-4 transition-colors"
+              >
+                {{ hero.storyCta }} ↓
+              </a>
+            </div>
+
+          </div>
+
+          <!-- Right Column: Animated Origami Brand Showcase with Miguel's Notice & Scroll Parallax -->
+          <div class="lg:col-span-5 relative flex flex-col items-center mt-4 lg:mt-0">
+            <!-- Ambient Glow Behind Origami Panel -->
+            <div class="absolute -inset-4 rounded-[3rem] bg-gradient-to-tr from-brand/30 via-emerald-500/15 to-sky-500/30 blur-2xl opacity-75 pointer-events-none -z-10"></div>
+
+            <!-- Central Origami Container (48 triángulos + plegado del pajarito + inclinación 3D al scroll) -->
+            <div
+              class="relative w-full max-w-md rounded-[2.5rem] p-1.5 bg-gradient-to-tr from-brand/50 via-emerald-500/25 to-sky-500/45 shadow-2xl will-change-transform"
+              [style.transform]="getHeroShowcaseTransform()"
+            >
+              <div class="w-full rounded-[2.25rem] overflow-hidden bg-[#011416] border border-white/10 shadow-inner">
+                <app-origami-brand-panel [animate]="true" [showFeatures]="true"></app-origami-brand-panel>
+              </div>
+            </div>
+
+            <!-- Floating Card 1: Top-Right (Aviso de ejemplo oficial de Miguel con parallax diferencial) -->
+            <div
+              class="absolute -top-6 -right-2 sm:-right-6 lg:-right-8 z-20 max-w-[280px] p-4 rounded-2xl glass-floating-card text-left select-none will-change-transform"
+              [style.transform]="getHeroFloatingCardTransform(1)"
+              role="img"
+              [attr.aria-label]="hero.notice.label"
+            >
+              <div class="flex items-center gap-2 mb-1">
+                <span class="relative flex size-2">
+                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand opacity-75"></span>
+                  <span class="relative inline-flex rounded-full size-2 bg-brand"></span>
+                </span>
+                <span class="text-[11px] font-black uppercase tracking-wider text-brand">{{ hero.notice.title }}</span>
+              </div>
+              <p class="font-mono text-[11px] font-bold text-muted-foreground">{{ hero.notice.radicado }}</p>
+              <p class="text-xs font-black text-foreground mt-0.5">{{ hero.notice.text }}</p>
+            </div>
+
+            <!-- Floating Card 2: Bottom-Left (Mosaico de 48 procesos con parallax inverso) -->
+            <div
+              class="absolute -bottom-5 -left-2 sm:-left-6 lg:-left-8 z-20 max-w-[260px] p-3.5 rounded-2xl glass-floating-card text-left select-none will-change-transform"
+              [style.transform]="getHeroFloatingCardTransform(2)"
+            >
+              <div class="flex items-center gap-2.5">
+                <div class="size-8 rounded-xl bg-brand/15 text-brand flex items-center justify-center shrink-0 font-black text-xs">
+                  48
+                </div>
+                <div>
+                  <p class="text-xs font-bold text-foreground">{{ hero.boardCaption }}</p>
+                  <p class="text-[10px] text-muted-foreground">DOBLEZ &amp; ASOCIADOS ABOGADOS</p>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- Seamless Ambient Hairline Separator (Expands from Center on Scroll) -->
+    <div class="relative max-w-5xl mx-auto px-4 pointer-events-none flex items-center justify-center" aria-hidden="true">
+      <div
+        class="h-px w-full bg-gradient-to-r from-transparent via-brand/50 to-transparent origin-center will-change-transform"
+        [style.transform]="getHairlineScale(problemProgress())"
+      ></div>
+      <span class="absolute size-2 rotate-45 bg-brand/60"></span>
+    </div>
+
+    <!-- =========================================================================
+         3. CAPÍTULO 2 — EL PROBLEMA EN TRES TIEMPOS (Problem.astro)
+            Con contador dinámico 1..48 al hacer scroll y rotación 3D progresiva
+         ========================================================================= -->
+    <section #problemSection id="problema" class="py-10 md:py-14 relative">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <div
+          class="max-w-3xl mb-8 will-change-transform"
+          [style.transform]="getSectionHeaderTransform(problemProgress())"
+          [style.opacity]="getSectionHeaderOpacity(problemProgress())"
+        >
+          <p class="inline-flex items-center gap-2.5 text-base sm:text-lg italic font-serif text-muted-foreground">
+            <span class="inline-block w-3.5 h-3 bg-brand" style="clip-path: polygon(0 100%, 50% 0, 100% 100%)"></span>
+            <span>{{ problem.kicker }}</span>
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 items-stretch">
+          @for (beat of problem.beats; track beat.id; let idx = $index) {
+            <article
+              class="rounded-[2rem] border border-border/80 bg-card/90 p-7 sm:p-8 flex flex-col justify-between shadow-lg hover:shadow-xl hover:border-brand/40 transition-shadow duration-300 relative overflow-hidden group origin-top will-change-transform"
+              [style.transform]="getProblemCardTransform(idx)"
+              [style.opacity]="getProblemCardOpacity(idx)"
+            >
+              <div class="space-y-4">
+                <div class="flex items-center justify-between">
+                  <span class="px-3 py-1 rounded-full bg-brand/10 text-brand font-mono text-xs font-black">
+                    {{ beat.numberBadge }}
+                  </span>
+                  <div class="flex items-center gap-1.5" aria-hidden="true">
+                    <span class="w-3.5 h-3 bg-brand" style="clip-path: polygon(0 100%, 50% 0, 100% 100%)"></span>
+                    <span
+                      class="w-3.5 h-3 transition-colors duration-300"
+                      [class.bg-brand]="idx >= 1"
+                      [class.bg-muted]="idx < 1"
+                      style="clip-path: polygon(0 100%, 50% 0, 100% 100%)"
+                    ></span>
+                    <span
+                      class="w-3.5 h-3 transition-colors duration-300"
+                      [class.bg-brand]="idx >= 2"
+                      [class.bg-muted]="idx < 2"
+                      style="clip-path: polygon(0 100%, 50% 0, 100% 100%)"
+                    ></span>
+                  </div>
+                </div>
+
+                <h2 class="text-2xl sm:text-3xl font-black tracking-tight text-foreground leading-tight">
+                  {{ beat.titlePrefix }}
+                  @if (idx === 0) {
+                    <span class="text-brand tabular-nums">{{ problemCounter() }} de 48.</span>
+                  } @else {
+                    <span class="text-brand">{{ beat.titleHighlight }}</span>
+                  }
+                  @if (beat.titleSuffix) {
+                    <span> {{ beat.titleSuffix }}</span>
+                  }
+                </h2>
+              </div>
+
+              <!-- Barra vertical roja que se dibuja de arriba abajo con el scroll -->
+              <div class="mt-6 pl-4 relative">
+                <span
+                  class=" absolute left-0 top-0.5 bottom-0.5 w-[3px] rounded-full bg-brand origin-top"
+                  [style.transform]="getProblemBarTransform(idx)"
+                  aria-hidden="true"
+                ></span>
+                <p class="text-sm sm:text-base text-muted-foreground leading-relaxed font-medium">
+                  {{ beat.description }}
+                </p>
+              </div>
+            </article>
+          }
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Seamless Ambient Hairline Separator (Expands from Center on Scroll) -->
+    <div class="relative max-w-5xl mx-auto px-4 pointer-events-none flex items-center justify-center" aria-hidden="true">
+      <div
+        class="h-px w-full bg-gradient-to-r from-transparent via-brand/50 to-transparent origin-center will-change-transform"
+        [style.transform]="getHairlineScale(howProgress())"
+      ></div>
+      <span class="absolute size-2 rotate-45 bg-brand/60"></span>
+    </div>
+
+    <!-- =========================================================================
+         4. CAPÍTULO 3 — CÓMO FUNCIONA: TÚ REGISTRAS. DOKQET VIGILA. (How.astro)
+            Los 4 pasos se despliegan como hojas de origami en 3D + Haz de progreso
+         ========================================================================= -->
+    <section #howSection id="funciones" class="py-10 md:py-14 bg-muted/20 relative">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <div
+          class="max-w-3xl space-y-2 mb-8 will-change-transform"
+          [style.transform]="getSectionHeaderTransform(howProgress())"
+          [style.opacity]="getSectionHeaderOpacity(howProgress())"
+        >
+          <p class="text-base sm:text-lg italic font-serif text-muted-foreground">
+            {{ how.kicker }}
+          </p>
+          <h2 class="text-3xl sm:text-5xl font-black tracking-tight text-foreground">
+            {{ how.title }}
+          </h2>
+        </div>
+
+        <!-- Haz conector luminoso (Progress Beam) que conecta los pasos 01 → 02 → 03 → 04 con el scroll -->
+        <div class="hidden lg:block relative h-1 w-full bg-border/60 rounded-full overflow-hidden mb-6" aria-hidden="true">
+          <div
+            class="h-full w-full bg-gradient-to-r from-brand via-rose-500 to-emerald-500 origin-left will-change-transform"
+            [style.transform]="getHowConnectorScale()"
+          ></div>
+        </div>
+
+        <!-- Los 4 pasos desplegables de Miguel (how.steps) con efecto 3D Origami Unfold en tiempo real -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+          @for (item of how.steps; track item.step; let idx = $index) {
+            <div
+              class="relative rounded-[2rem] border bg-card/90 backdrop-blur-sm p-7 flex flex-col justify-between hover:border-brand/50 hover:shadow-xl transition-all duration-300 group origin-top will-change-transform"
+              [class.border-brand/50]="isStepLit(idx)"
+              [class.border-border/70]="!isStepLit(idx)"
+              [style.transform]="getStepFoldTransform(idx)"
+              [style.opacity]="getStepFoldOpacity(idx)"
+            >
+              <div class="space-y-4">
+                <div class="flex items-center justify-between">
+                  <span class="text-[11px] font-extrabold uppercase tracking-widest text-brand">
+                    {{ item.tag }}
+                  </span>
+                  <span
+                    class="size-8 rounded-xl font-black text-xs flex items-center justify-center transition-all duration-300"
+                    [class.bg-brand]="isStepLit(idx)"
+                    [class.text-white]="isStepLit(idx)"
+                    [class.shadow-md]="isStepLit(idx)"
+                    [class.scale-110]="isStepLit(idx)"
+                    [class.bg-brand/10]="!isStepLit(idx)"
+                    [class.text-brand]="!isStepLit(idx)"
+                  >
+                    0{{ item.step }}
+                  </span>
+                </div>
+                <h3 class="text-xl font-black text-foreground leading-snug">
+                  {{ item.title }}
+                </h3>
+                <p class="text-sm text-muted-foreground leading-relaxed">
+                  {{ item.text }}
+                </p>
+              </div>
+            </div>
+          }
+        </div>
+
+        <!-- Las 3 funcionalidades destacadas de Miguel (how.features) en Bento Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4 border-t border-border/60">
+          @for (feat of how.features; track feat.id; let idx = $index) {
+            <div
+              class="rounded-[2rem] border border-border/80 bg-card/95 p-7 shadow-md hover:shadow-xl hover:border-brand/40 transition-shadow bento-card origin-top will-change-transform"
+              [style.transform]="getStepFoldTransform(idx)"
+              [style.opacity]="getStepFoldOpacity(idx)"
+            >
+              <div class="flex items-center gap-2.5 mb-3">
+                <span class="size-3 bg-brand shrink-0" style="clip-path: polygon(0 0, 100% 0, 0 100%)"></span>
+                <span class="text-xs font-extrabold uppercase tracking-wider text-brand">{{ feat.badge }}</span>
+              </div>
+              <h3 class="text-xl font-black text-foreground mb-2">
+                {{ feat.title }}
+              </h3>
+              <p class="text-sm text-muted-foreground leading-relaxed">
+                {{ feat.text }}
+              </p>
+            </div>
+          }
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Seamless Ambient Hairline Separator (Expands from Center on Scroll) -->
+    <div class="relative max-w-5xl mx-auto px-4 pointer-events-none flex items-center justify-center" aria-hidden="true">
+      <div
+        class="h-px w-full bg-gradient-to-r from-transparent via-brand/50 to-transparent origin-center will-change-transform"
+        [style.transform]="getHairlineScale(demoProgress())"
+      ></div>
+      <span class="absolute size-2 rotate-45 bg-brand/60"></span>
+    </div>
+
+    <!-- =========================================================================
+         5. CAPÍTULO 4 — DEMOSTRACIÓN EN PANTALLA (Demo.astro & DemoScreens.astro)
+            Las 3 pantallas se abren como un tríptico en 3D + Contadores vivos
+         ========================================================================= -->
+    <section #demoSection id="demo" class="py-10 md:py-14 relative">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <div
+          class="max-w-3xl space-y-2 mb-10 will-change-transform"
+          [style.transform]="getSectionHeaderTransform(demoProgress())"
+          [style.opacity]="getSectionHeaderOpacity(demoProgress())"
+        >
+          <p class="text-base sm:text-lg italic font-serif text-muted-foreground">
+            {{ demo.kicker }}
+          </p>
+          <h2 class="text-3xl sm:text-5xl font-black tracking-tight text-foreground">
+            {{ demo.title }}
+          </h2>
+        </div>
+
+        <!-- Tríptico 3D de las 3 pantallas recreadas en HTML con los datos ficticios de Miguel -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-7 items-stretch">
+
+          <!-- PANTALLA 1: EL AVISO (Gira en 3D desde la izquierda al hacer scroll) -->
+          <div
+            class="flex flex-col justify-between rounded-[2.25rem] border border-border/80 bg-card/95 p-6 shadow-xl hover:border-brand/40 transition-colors origin-left will-change-transform"
+            [style.transform]="getDemoTriptychTransform(0)"
+            [style.opacity]="getDemoTriptychOpacity()"
+          >
+            <div class="space-y-4">
+              <!-- Cabecera de la tarjeta -->
+              <div class="flex items-center justify-between pb-3 border-b border-border/60">
+                <div>
+                  <span class="text-[11px] font-black uppercase tracking-wider text-brand">01 · El aviso</span>
+                  <p class="text-xs text-muted-foreground font-medium">Llega solo, sin que lo busques.</p>
+                </div>
+                <span class="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold">
+                  Correo automático
+                </span>
+              </div>
+
+              <!-- Recreación exacta del correo de DemoScreens.astro -->
+              <div class="rounded-2xl bg-muted/40 border border-border/70 p-4 space-y-3 text-xs leading-relaxed" role="img" aria-label="Correo de novedades de dokqet, con datos de ejemplo">
+                <div class="text-[11px] text-muted-foreground pb-2 border-b border-border/50">
+                  Asunto: <strong class="text-foreground font-semibold">Novedades en 2 procesos · DOBLEZ &amp; ASOCIADOS ABOGADOS</strong>
+                </div>
+
+                <div class="rounded-xl bg-card p-3.5 border border-border/60 space-y-2.5 shadow-2xs">
+                  <div class="flex items-center gap-2 font-bold text-foreground">
+                    <span class="size-2.5 rounded-full bg-brand"></span>
+                    <span>dokqet</span>
+                  </div>
+                  <p class="text-foreground">¡Hola!</p>
+                  <p class="text-muted-foreground">Encontramos novedades en tus procesos en la Rama Judicial.</p>
+                  <p class="text-[10px] font-bold uppercase tracking-wider text-muted-foreground pt-1">
+                    Doblez &amp; Asociados Abogados
+                  </p>
+
+                  <!-- Proceso 1 del correo -->
+                  <div class="pt-2.5 border-t border-border/60 space-y-1">
+                    <p class="font-mono font-bold text-foreground text-[11px]">99999-31-03-001-2023-00001-00</p>
+                    <p class="text-[11px] text-muted-foreground">PAPELERA LA GRULLA S.A.S. · MARTÍN PLIEGUE ARANGO</p>
+                    <p class="text-[11px] text-muted-foreground">Juzgado 001 Civil del Circuito</p>
+                    <p class="font-semibold text-foreground pt-1">2 actuaciones nuevas:</p>
+                    <ul class="list-disc pl-4 space-y-0.5 text-foreground font-medium">
+                      <li>3 nov 2026 · Fijación estado</li>
+                      <li>3 nov 2026 · Auto fija fecha de audiencia</li>
+                    </ul>
+                    <div class="pt-1">
+                      <p class="font-medium text-foreground">Estado No. 159 publicado:</p>
+                      <span class="text-brand font-semibold">Abrir auto notificado (PDF) →</span>
+                    </div>
+                    <div class="pt-0.5">
+                      <span class="text-brand font-semibold">Ver el proceso →</span>
+                    </div>
+                  </div>
+
+                  <!-- Proceso 2 del correo -->
+                  <div class="pt-2.5 border-t border-border/60 space-y-1">
+                    <p class="font-mono font-bold text-foreground text-[11px]">99999-40-03-002-2024-00002-00</p>
+                    <p class="text-[11px] text-muted-foreground">MARTÍN PLIEGUE ARANGO · INVERSIONES PAPEL Y TINTA S.A.S.</p>
+                    <p class="font-semibold text-foreground pt-0.5">1 actuación nueva:</p>
+                    <ul class="list-disc pl-4 text-foreground font-medium">
+                      <li>3 nov 2026 · Traslado de excepciones</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- PANTALLA 2: EL PANEL (Se despliega desde el centro del tríptico al hacer scroll) -->
+          <div
+            class="flex flex-col justify-between rounded-[2.25rem] border border-border/80 bg-card/95 p-6 shadow-xl hover:border-brand/40 transition-colors origin-center will-change-transform"
+            [style.transform]="getDemoTriptychTransform(1)"
+            [style.opacity]="getDemoTriptychOpacity()"
+          >
+            <div class="space-y-4">
+              <!-- Cabecera de la tarjeta -->
+              <div class="flex items-center justify-between pb-3 border-b border-border/60">
+                <div>
+                  <span class="text-[11px] font-black uppercase tracking-wider text-brand">02 · El panel</span>
+                  <p class="text-xs text-muted-foreground font-medium">Lo que cambió aparece primero.</p>
+                </div>
+                <span class="px-2.5 py-1 rounded-full bg-brand/10 text-brand text-[10px] font-bold">
+                  Vista centralizada
+                </span>
+              </div>
+
+              <!-- Recreación exacta del Panel de DemoScreens.astro -->
+              <div class="rounded-2xl bg-muted/40 border border-border/70 p-4 space-y-3 text-xs leading-relaxed" role="img" aria-label="Panel de procesos de dokqet, con datos de ejemplo">
+                <div>
+                  <div class="text-sm font-bold text-foreground">
+                    Con novedades <span class="text-muted-foreground font-normal">· 3</span>
+                  </div>
+                  <div class="text-[11px] text-muted-foreground font-semibold">DOBLEZ &amp; ASOCIADOS ABOGADOS</div>
+                </div>
+
+                <!-- Chips de filtro con conteo dinámico al desplegar el tríptico -->
+                <div class="flex flex-wrap gap-1.5 text-[11px] tabular-nums">
+                  <span class="px-2.5 py-0.5 rounded-full border border-border bg-card text-foreground">
+                    Todos <b class="text-brand">{{ getDemoCount(12) }}</b>
+                  </span>
+                  <span class="px-2.5 py-0.5 rounded-full bg-foreground text-background font-semibold">
+                    Con novedades <b>{{ getDemoCount(3) }}</b>
+                  </span>
+                  <span class="px-2.5 py-0.5 rounded-full border border-border bg-card text-foreground">
+                    Míos <b class="text-brand">{{ getDemoCount(5) }}</b>
+                  </span>
+                  <span class="px-2.5 py-0.5 rounded-full border border-border bg-card text-foreground">
+                    Sin asignar <b class="text-brand">1</b>
+                  </span>
+                </div>
+
+                <!-- Barra de búsqueda -->
+                <div class="rounded-xl bg-card border border-border/70 px-3 py-2 text-[11px] text-muted-foreground truncate">
+                  Buscar por radicado, parte, despacho, responsable, actuación o notas
+                </div>
+
+                <!-- Lista de procesos -->
+                <div class="rounded-xl bg-card border border-border/60 p-3.5 divide-y divide-border/60 space-y-2.5 shadow-2xs">
+                  <!-- Fila 1 -->
+                  <div class="space-y-1">
+                    <div class="flex items-center justify-between gap-2">
+                      <span class="font-mono font-bold text-foreground text-[11px]">99999-31-03-001-2023-00001-00</span>
+                      <span class="new-badge-pulse px-2 py-0.5 rounded-full bg-brand text-white text-[10px] font-bold shrink-0">2 nuevas</span>
+                    </div>
+                    <p class="text-[11px] text-foreground"><span class="text-muted-foreground">Demandante:</span> PAPELERA LA GRULLA S.A.S.</p>
+                    <p class="text-[11px] text-foreground"><span class="text-muted-foreground">Demandado:</span> MARTÍN PLIEGUE ARANGO Y OTROS</p>
+                    <p class="text-[11px] text-muted-foreground">Juzgado 001 Civil del Circuito · Responsable: Andrea Vélez</p>
+                  </div>
+
+                  <!-- Fila 2 -->
+                  <div class="pt-2.5 space-y-1">
+                    <div class="flex items-center justify-between gap-2">
+                      <span class="font-mono font-bold text-foreground text-[11px]">99999-40-03-002-2024-00002-00</span>
+                      <span class="new-badge-pulse px-2 py-0.5 rounded-full bg-brand text-white text-[10px] font-bold shrink-0">1 nueva</span>
+                    </div>
+                    <p class="text-[11px] text-foreground"><span class="text-muted-foreground">Demandante:</span> MARTÍN PLIEGUE ARANGO</p>
+                    <p class="text-[11px] text-foreground"><span class="text-muted-foreground">Demandado:</span> INVERSIONES PAPEL Y TINTA S.A.S.</p>
+                    <p class="text-[11px] text-muted-foreground">Juzgado 002 Civil Municipal · Responsable: Carlos Rueda</p>
+                  </div>
+
+                  <!-- Fila 3 -->
+                  <div class="pt-2.5 space-y-1">
+                    <div class="flex items-center justify-between gap-2">
+                      <span class="font-mono font-bold text-foreground text-[11px]">99999-31-05-003-2022-00003-00</span>
+                      <span class="px-2 py-0.5 rounded-full border border-brand/50 text-brand text-[10px] font-bold shrink-0">Instancia nueva</span>
+                    </div>
+                    <p class="text-[11px] text-foreground"><span class="text-muted-foreground">Demandante:</span> LUCÍA DOBLEZ MORA</p>
+                    <p class="text-[11px] text-muted-foreground pl-2 border-l-2 border-border">1 subproceso · instancias 00 · 01</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- PANTALLA 3: EL DETALLE (Gira en 3D desde la derecha al hacer scroll) -->
+          <div
+            class="flex flex-col justify-between rounded-[2.25rem] border border-border/80 bg-card/95 p-6 shadow-xl hover:border-brand/40 transition-colors origin-right will-change-transform"
+            [style.transform]="getDemoTriptychTransform(2)"
+            [style.opacity]="getDemoTriptychOpacity()"
+          >
+            <div class="space-y-4">
+              <!-- Cabecera de la tarjeta -->
+              <div class="flex items-center justify-between pb-3 border-b border-border/60">
+                <div>
+                  <span class="text-[11px] font-black uppercase tracking-wider text-brand">03 · El detalle</span>
+                  <p class="text-xs text-muted-foreground font-medium">Actuación, estado y documento juntos.</p>
+                </div>
+                <span class="px-2.5 py-1 rounded-full bg-sky-500/10 text-sky-600 dark:text-sky-400 text-[10px] font-bold">
+                  Estados &amp; PDF
+                </span>
+              </div>
+
+              <!-- Recreación exacta del Detalle de DemoScreens.astro -->
+              <div class="rounded-2xl bg-muted/40 border border-border/70 p-4 space-y-3 text-xs leading-relaxed" role="img" aria-label="Detalle de un proceso en dokqet, con datos de ejemplo">
+                <!-- Encabezado del expediente -->
+                <div class="rounded-xl bg-card border border-border/60 p-3.5 space-y-2 shadow-2xs">
+                  <div class="font-mono font-black text-foreground text-xs sm:text-sm tabular-nums">
+                    99999-31-03-001-2023-00001-00
+                  </div>
+                  <div class="text-[11px] space-y-0.5">
+                    <p class="text-foreground"><span class="text-muted-foreground">Demandante:</span> PAPELERA LA GRULLA S.A.S.</p>
+                    <p class="text-foreground"><span class="text-muted-foreground">Demandado:</span> MARTÍN PLIEGUE ARANGO Y OTROS</p>
+                  </div>
+                  <div class="text-[11px] text-muted-foreground">
+                    Juzgado 001 Civil del Circuito · Ejemplo · instancia 00
+                  </div>
+                  <div class="flex flex-wrap gap-1.5 pt-1 text-[10px]">
+                    <span class="px-2.5 py-0.5 rounded-full bg-foreground text-background font-semibold">
+                      <b>00</b> Juzgado 001 Civil del Circuito · principal
+                    </span>
+                    <span class="px-2.5 py-0.5 rounded-full border border-border text-muted-foreground">
+                      <b>01</b> Tribunal Superior · Sala Civil
+                    </span>
+                  </div>
+                </div>
+
+                <!-- Bloque Actuaciones (24) con contador vivo -->
+                <div class="rounded-xl bg-card border border-border/60 p-3.5 space-y-2.5 shadow-2xs">
+                  <div>
+                    <div class="font-bold text-foreground text-sm tabular-nums">Actuaciones ({{ getDemoCount(24) }})</div>
+                    <div class="text-[11px] text-muted-foreground">2 nuevas desde tu última visita</div>
+                  </div>
+
+                  <div class="divide-y divide-border/60 space-y-2.5">
+                    <!-- Actuación 1 -->
+                    <div class="pt-2 grid grid-cols-12 gap-2">
+                      <span class="col-span-3 text-[11px] text-muted-foreground">3 nov 2026</span>
+                      <div class="col-span-9 space-y-1">
+                        <div class="flex items-center gap-1.5 flex-wrap font-semibold text-foreground">
+                          <span class="new-badge-pulse px-2 py-0.5 rounded-full bg-brand text-white text-[10px] font-bold">Nueva</span>
+                          <span>Fijación estado</span>
+                        </div>
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-border bg-muted/40 text-foreground font-medium text-[11px]">
+                          📄 Auto notificado (PDF)
+                        </span>
+                        <div class="text-[11px] text-brand font-medium">
+                          Ver la publicación en el micrositio ↗
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Actuación 2 -->
+                    <div class="pt-2.5 grid grid-cols-12 gap-2">
+                      <span class="col-span-3 text-[11px] text-muted-foreground">3 nov 2026</span>
+                      <div class="col-span-9 space-y-1">
+                        <div class="flex items-center gap-1.5 flex-wrap font-semibold text-foreground">
+                          <span class="new-badge-pulse px-2 py-0.5 rounded-full bg-brand text-white text-[10px] font-bold">Nueva</span>
+                          <span>Auto fija fecha de audiencia 📎</span>
+                        </div>
+                        <p class="text-[11px] text-muted-foreground">
+                          Se fija audiencia inicial para el 2 de diciembre de 2026.
+                        </p>
+                      </div>
+                    </div>
+
+                    <!-- Actuación 3 -->
+                    <div class="pt-2.5 grid grid-cols-12 gap-2">
+                      <span class="col-span-3 text-[11px] text-muted-foreground">21 oct 2026</span>
+                      <div class="col-span-9 space-y-0.5">
+                        <div class="font-semibold text-foreground">Recepción memorial</div>
+                        <div class="text-[11px] text-muted-foreground">Término: 22 oct 2026 – 5 nov 2026</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Seamless Ambient Hairline Separator (Expands from Center on Scroll) -->
+    <div class="relative max-w-5xl mx-auto px-4 pointer-events-none flex items-center justify-center" aria-hidden="true">
+      <div
+        class="h-px w-full bg-gradient-to-r from-transparent via-brand/50 to-transparent origin-center will-change-transform"
+        [style.transform]="getHairlineScale(plansProgress())"
+      ></div>
+      <span class="absolute size-2 rotate-45 bg-brand/60"></span>
+    </div>
+
+    <!-- =========================================================================
+         6. CAPÍTULO 5 — PLANES Y PRECIOS: UN PLAN PARA CADA OFICINA (Plans.astro)
+         ========================================================================= -->
+    <section #plansSection id="planes" class="py-10 md:py-14 bg-muted/20 relative">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <div
+          class="max-w-3xl space-y-2 mb-10 will-change-transform"
+          [style.transform]="getSectionHeaderTransform(plansProgress())"
+          [style.opacity]="getSectionHeaderOpacity(plansProgress())"
+        >
+          <p class="text-base sm:text-lg italic font-serif text-muted-foreground">
+            {{ plans.kicker }}
+          </p>
+          <h2 class="text-3xl sm:text-5xl font-black tracking-tight text-foreground">
+            {{ plans.title }}
+          </h2>
+          <p class="text-sm sm:text-base text-muted-foreground leading-relaxed pt-1">
+            {{ plans.note }}
+          </p>
+        </div>
+
+        <!-- Las 3 tarjetas de plan de Miguel (Independiente, Firma, Organización) -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 items-stretch">
+          @for (p of plans.items; track p.id; let idx = $index) {
+            <article
+              class="relative rounded-[2.25rem] border p-8 flex flex-col justify-between transition-shadow duration-300 hover:shadow-2xl backdrop-blur-md origin-top will-change-transform"
+              [style.transform]="getPlanCardTransform(idx)"
+              [style.opacity]="getPlanCardOpacity(idx)"
+              [class.bg-brand]="p.highlight"
+              [class.text-white]="p.highlight"
+              [class.border-brand]="p.highlight"
+              [class.shadow-xl]="p.highlight"
+              [class.bg-card/95]="!p.highlight"
+              [class.text-foreground]="!p.highlight"
+              [class.border-border/80]="!p.highlight"
+              [class.shadow-md]="!p.highlight"
+            >
+              <div class="space-y-5">
+                <div>
+                  <h3 class="text-2xl sm:text-3xl font-black tracking-tight">{{ p.name }}</h3>
+                  <p
+                    class="text-sm mt-1"
+                    [class.text-white/85]="p.highlight"
+                    [class.text-muted-foreground]="!p.highlight"
+                  >
+                    {{ p.forText }}
+                  </p>
+                </div>
+
+                <div
+                  class="py-3 border-y text-xs font-extrabold uppercase tracking-widest"
+                  [class.border-white/30]="p.highlight"
+                  [class.text-white]="p.highlight"
+                  [class.border-border/70]="!p.highlight"
+                  [class.text-brand]="!p.highlight"
+                >
+                  {{ p.priceLabel }}
+                </div>
+
+                <ul class="space-y-3 pt-1 text-sm">
+                  @for (feat of p.features; track feat) {
+                    <li class="flex items-start gap-2.5">
+                      <span
+                        class="mt-1.5 size-2 shrink-0"
+                        [class.bg-white]="p.highlight"
+                        [class.bg-brand]="!p.highlight"
+                        style="clip-path: polygon(0 0, 100% 50%, 0 100%)"
+                      ></span>
+                      <span [class.text-white/90]="p.highlight" [class.text-muted-foreground]="!p.highlight">
+                        {{ feat }}
+                      </span>
+                    </li>
+                  }
+                </ul>
+              </div>
+
+              <div class="pt-7 mt-7 border-t" [class.border-white/25]="p.highlight" [class.border-border/60]="!p.highlight">
+                <a
+                  routerLink="/registro"
+                  class="w-full py-3.5 rounded-full font-bold text-sm text-center block transition-all active:scale-95 shadow-sm"
+                  [class.bg-white]="p.highlight"
+                  [class.text-brand]="p.highlight"
+                  [class.hover:bg-white/90]="p.highlight"
+                  [class.bg-brand]="!p.highlight"
+                  [class.text-white]="!p.highlight"
+                  [class.hover:bg-brand/90]="!p.highlight"
+                >
+                  Crear cuenta
+                </a>
+              </div>
+            </article>
+          }
+        </div>
+
+        <div class="mt-8 flex flex-wrap items-center gap-4">
+          <a
+            href="mailto:info@dokqet.com"
+            class="px-7 py-3.5 rounded-full bg-foreground text-background font-bold text-sm hover:opacity-90 transition-all shadow-md"
+          >
+            Escríbenos · info&#64;dokqet.com
+          </a>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Seamless Ambient Hairline Separator (Expands from Center on Scroll) -->
+    <div class="relative max-w-5xl mx-auto px-4 pointer-events-none flex items-center justify-center" aria-hidden="true">
+      <div
+        class="h-px w-full bg-gradient-to-r from-transparent via-brand/50 to-transparent origin-center will-change-transform"
+        [style.transform]="getHairlineScale(consultingProgress())"
+      ></div>
+      <span class="absolute size-2 rotate-45 bg-brand/60"></span>
+    </div>
+
+    <!-- =========================================================================
+         7. CAPÍTULO 6 — CONSULTORÍA DE IA PARA OFICINAS Y FIRMAS (Consulting.astro)
+         ========================================================================= -->
+    <section #consultingSection id="consultoria" class="py-10 md:py-14 relative">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <div
+          class="max-w-3xl space-y-2 mb-10 will-change-transform"
+          [style.transform]="getSectionHeaderTransform(consultingProgress())"
+          [style.opacity]="getSectionHeaderOpacity(consultingProgress())"
+        >
+          <p class="text-base sm:text-lg italic font-serif text-muted-foreground">
+            {{ consulting.kicker }}
+          </p>
+          <h2 class="text-3xl sm:text-5xl font-black tracking-tight text-foreground leading-tight">
+            {{ consulting.title }}
+          </h2>
+          <p class="text-sm sm:text-base text-muted-foreground leading-relaxed pt-1">
+            {{ consulting.lede }}
+          </p>
+        </div>
+
+        <!-- Las 4 tarjetas numeradas de Consultoría IA de Miguel con despliegue 3D al scroll -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          @for (item of consulting.items; track item.number; let idx = $index) {
+            <article
+              class="rounded-[2rem] border border-border/80 bg-card/90 p-7 flex flex-col justify-between shadow-md hover:shadow-xl hover:border-brand/40 transition-shadow origin-top will-change-transform"
+              [style.transform]="getConsultingCardTransform(idx)"
+              [style.opacity]="getConsultingCardOpacity(idx)"
+            >
+              <div class="space-y-3">
+                <span class="text-4xl font-black text-brand leading-none block">
+                  {{ item.number }}
+                </span>
+                <h3 class="text-xl font-black text-foreground">
+                  {{ item.title }}
+                </h3>
+                <p class="text-sm text-muted-foreground leading-relaxed">
+                  {{ item.text }}
+                </p>
+              </div>
+            </article>
+          }
+        </div>
+
+        <div class="mt-8 flex flex-wrap items-center gap-5">
+          <a
+            [href]="consulting.mailHref"
+            class="px-7 py-3.5 rounded-full bg-foreground text-background font-bold text-sm hover:opacity-90 transition-all shadow-md"
+          >
+            {{ consulting.cta }}
+          </a>
+          <a
+            href="mailto:info@dokqet.com"
+            class="text-sm font-bold text-foreground hover:text-brand underline decoration-brand decoration-2 underline-offset-4 transition-colors"
+          >
+            {{ consulting.email }}
+          </a>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Seamless Ambient Hairline Separator (Expands from Center on Scroll) -->
+    <div class="relative max-w-5xl mx-auto px-4 pointer-events-none flex items-center justify-center" aria-hidden="true">
+      <div
+        class="h-px w-full bg-gradient-to-r from-transparent via-brand/50 to-transparent origin-center will-change-transform"
+        [style.transform]="getHairlineScale(closingProgress())"
+      ></div>
+      <span class="absolute size-2 rotate-45 bg-brand/60"></span>
+    </div>
+
+    <!-- =========================================================================
+         8. CAPÍTULO 7 — CIERRE: LUNES, 6:00 P. M. NINGÚN TÉRMINO VENCIDO (Closing.astro)
+            Una hoja entra volando y se pliega en el pájaro de 7 piezas con el scroll
+         ========================================================================= -->
+    <section #closingSection class="py-10 md:py-14 relative px-4 sm:px-6 lg:px-8">
+      <div
+        class="max-w-6xl mx-auto rounded-[3rem] bg-[#011416] text-white p-10 sm:p-14 md:p-16 relative overflow-hidden shadow-2xl border border-white/10 text-center space-y-6 will-change-transform"
+        [style.transform]="getClosingCardTransform()"
+      >
+        <!-- Ambient Glow Behind CTA -->
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 size-[550px] rounded-full bg-brand/15 blur-[140px] pointer-events-none"></div>
+
+        <!-- El pájaro de origami que entra girando y se pliega dinámicamente al hacer scroll -->
+        <svg
+          #closingBirdSvg
+          class="w-28 sm:w-36 h-auto mx-auto block relative z-10 overflow-visible will-change-transform"
+          [style.transform]="closingBirdTransform()"
+          aria-hidden="true"
+        ></svg>
+
+        <p class="italic font-serif text-lg sm:text-xl text-[#9db4b6] relative z-10">
+          {{ closing.time }}
+        </p>
+
+        <h2 class="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-tight relative z-10">
+          {{ closing.titlePrefix }} <span class="text-brand">{{ closing.titleHighlight }}</span>
+        </h2>
+
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2 relative z-10">
+          <a
+            routerLink="/registro"
+            class="w-full sm:w-auto px-9 py-4 rounded-full bg-brand hover:bg-brand/90 text-white font-extrabold text-base shadow-xl hover:shadow-brand/40 hover:-translate-y-0.5 transition-all shimmer-cta active:scale-95"
+          >
+            Crear cuenta
+          </a>
+          <a
+            routerLink="/iniciar-sesion"
+            class="w-full sm:w-auto px-8 py-4 rounded-full border border-white/20 hover:border-white/40 text-white font-semibold text-base hover:bg-white/5 transition-all active:scale-95"
+          >
+            Iniciar sesión
+          </a>
+          <a
+            href="mailto:info@dokqet.com"
+            class="px-4 py-2 text-sm font-bold text-white/90 hover:text-white underline decoration-brand decoration-2 underline-offset-4 transition-colors"
+          >
+            Escríbenos
+          </a>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- =========================================================================
+       9. INSTITUTIONAL FOOTER (Footer.astro)
+       ========================================================================= -->
+  <footer class="border-t border-border/50 bg-card py-10 text-xs sm:text-sm text-muted-foreground relative z-20">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-6">
+      
+      <div class="flex items-center gap-3">
+        <a href="#inicio" aria-label="dokqet, inicio">
+          <app-logo height="h-6" variant="completo"></app-logo>
+        </a>
+      </div>
+
+      <div class="flex flex-wrap items-center justify-center gap-6 font-medium">
+        <a routerLink="/iniciar-sesion" class="hover:text-foreground transition-colors">Iniciar sesión</a>
+        <a routerLink="/registro" class="hover:text-foreground transition-colors">Crear cuenta</a>
+        <span>·</span>
+        <span>© 2026 dokqet · <a href="mailto:info@dokqet.com" class="hover:text-foreground underline decoration-brand underline-offset-4">info&#64;dokqet.com</a></span>
+      </div>
+
+    </div>
+  </footer>
+
+</div>

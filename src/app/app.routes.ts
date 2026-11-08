@@ -1,12 +1,15 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/auth/auth.guard';
+import { guestGuard } from './core/auth/guest.guard';
 import { superAdminGuard } from './core/auth/super-admin.guard';
 
 export const routes: Routes = [
   {
     path: '',
     pathMatch: 'full',
-    redirectTo: 'panel'
+    title: 'Dokqet · Plataforma de Vigilancia Judicial para Colombia',
+    canActivate: [guestGuard],
+    loadComponent: () => import('./features/landing/landing.component').then(m => m.LandingComponent)
   },
   {
     path: 'iniciar-sesion',

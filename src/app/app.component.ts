@@ -130,6 +130,14 @@ export class AppComponent {
   readonly isDashboardRoute = computed(() => this.isActive('/panel'));
 
   /**
+   * Indica si la ruta actual es la Landing Page pública ('/')
+   */
+  readonly isLandingRoute = computed(() => {
+    const url = this.currentUrl();
+    return url === '/' || url === '' || url.startsWith('/#') || url.startsWith('/?');
+  });
+
+  /**
    * Determina si la tarjeta inferior del Sidebar sugiere crear una firma jurídica
    */
   readonly showCreateOrgCard = computed(() => {

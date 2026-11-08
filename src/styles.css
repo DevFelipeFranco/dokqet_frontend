@@ -66,6 +66,11 @@
     border-color: var(--border);
   }
 
+  html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 5.5rem;
+  }
+
   body {
     background-color: var(--background);
     color: var(--foreground);
@@ -360,6 +365,522 @@
     .marca-simbolo,
     .marca-aviso {
       transition: none !important;
+    }
+  }
+
+  /* ==========================================================================
+     SCROLL-DRIVEN ANIMATIONS (CSS NATIVO WCAG 2.1 AA / COMPOSITOR THREAD)
+     ========================================================================== */
+
+  @media (prefers-reduced-motion: no-preference) {
+    @supports (animation-timeline: scroll()) {
+      @keyframes grow-scroll-progress {
+        from {
+          transform: scaleX(0);
+        }
+        to {
+          transform: scaleX(1);
+        }
+      }
+
+      .dokqet-scroll-progress {
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 3.5px;
+        background: linear-gradient(90deg, #ec1319 0%, #ff4d4f 45%, #10b981 100%);
+        box-shadow: 0 0 12px rgba(236, 19, 25, 0.45), 0 0 6px rgba(16, 185, 129, 0.35);
+        transform-origin: 0 50%;
+        animation: grow-scroll-progress auto linear;
+        animation-timeline: scroll();
+        z-index: 100;
+        pointer-events: none;
+      }
+
+      @keyframes orb-scroll-down {
+        from {
+          transform: translateY(0);
+        }
+        to {
+          transform: translateY(320px);
+        }
+      }
+
+      @keyframes orb-scroll-up {
+        from {
+          transform: translateY(0);
+        }
+        to {
+          transform: translateY(-260px);
+        }
+      }
+
+      .scroll-parallax-drift-1 {
+        animation: orb-scroll-down auto linear;
+        animation-timeline: scroll();
+      }
+
+      .scroll-parallax-drift-2 {
+        animation: orb-scroll-up auto linear;
+        animation-timeline: scroll();
+      }
+    }
+
+    @supports ((animation-timeline: view()) and (animation-range: entry)) {
+      @keyframes scroll-card-reveal {
+        from {
+          opacity: 0;
+          transform: translateY(36px) scale(0.96);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+
+      @keyframes scroll-header-reveal {
+        from {
+          opacity: 0;
+          transform: translateY(24px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes scroll-fade-in {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+
+      @keyframes scroll-scale-up {
+        from {
+          opacity: 0;
+          transform: scale(0.92);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1);
+        }
+      }
+
+      @keyframes scroll-wave-expand {
+        from {
+          opacity: 0.6;
+          transform: scaleX(0.97) translateY(8px);
+        }
+        to {
+          opacity: 1;
+          transform: scaleX(1) translateY(0);
+        }
+      }
+
+      @keyframes scroll-row-in {
+        from {
+          opacity: 0;
+          transform: translateX(-16px);
+        }
+        to {
+          opacity: 1;
+          transform: translateX(0);
+        }
+      }
+
+      .scroll-reveal-card {
+        animation: scroll-card-reveal ease-out both;
+        animation-timeline: view();
+        animation-range: entry 8% cover 28%;
+      }
+
+      .scroll-reveal-stagger-1 {
+        animation: scroll-card-reveal ease-out both;
+        animation-timeline: view();
+        animation-range: entry 4% cover 24%;
+      }
+
+      .scroll-reveal-stagger-2 {
+        animation: scroll-card-reveal ease-out both;
+        animation-timeline: view();
+        animation-range: entry 8% cover 28%;
+      }
+
+      .scroll-reveal-stagger-3 {
+        animation: scroll-card-reveal ease-out both;
+        animation-timeline: view();
+        animation-range: entry 12% cover 32%;
+      }
+
+      .scroll-reveal-header {
+        animation: scroll-header-reveal ease-out both;
+        animation-timeline: view();
+        animation-range: entry 5% cover 25%;
+      }
+
+      .scroll-reveal-fade {
+        animation: scroll-fade-in ease-out both;
+        animation-timeline: view();
+        animation-range: entry 5% cover 25%;
+      }
+
+      .scroll-reveal-scale {
+        animation: scroll-scale-up ease-out both;
+        animation-timeline: view();
+        animation-range: entry 8% cover 32%;
+      }
+
+      .scroll-reveal-wave {
+        animation: scroll-wave-expand ease-out both;
+        animation-timeline: view();
+        animation-range: entry 0% cover 25%;
+      }
+
+      .scroll-reveal-row {
+        animation: scroll-row-in ease-out both;
+        animation-timeline: view();
+        animation-range: entry 5% cover 22%;
+      }
+
+      /* Despliegue 3D tipo hoja de origami para pasos (How.astro) */
+      @keyframes scroll-origami-sheet-unfold {
+        0% {
+          opacity: 0;
+          transform: perspective(1200px) rotateX(-65deg) translateY(32px) scale(0.94);
+        }
+        60% {
+          opacity: 1;
+        }
+        100% {
+          opacity: 1;
+          transform: perspective(1200px) rotateX(0deg) translateY(0) scale(1);
+        }
+      }
+
+      .scroll-origami-unfold {
+        transform-origin: top center;
+        animation: scroll-origami-sheet-unfold cubic-bezier(0.22, 1, 0.36, 1) both;
+        animation-timeline: view();
+        animation-range: entry 4% cover 30%;
+        will-change: transform, opacity;
+      }
+
+      /* Tríptico 3D para las 3 pantallas de demostración (DemoScreens.astro) */
+      @keyframes scroll-triptych-open-left {
+        0% {
+          opacity: 0;
+          transform: perspective(1600px) rotateY(45deg) translateX(-28px) scale(0.92);
+        }
+        100% {
+          opacity: 1;
+          transform: perspective(1600px) rotateY(0deg) translateX(0) scale(1);
+        }
+      }
+
+      @keyframes scroll-triptych-open-center {
+        0% {
+          opacity: 0;
+          transform: perspective(1600px) scaleX(0.82) translateY(36px);
+        }
+        100% {
+          opacity: 1;
+          transform: perspective(1600px) scaleX(1) translateY(0);
+        }
+      }
+
+      @keyframes scroll-triptych-open-right {
+        0% {
+          opacity: 0;
+          transform: perspective(1600px) rotateY(-45deg) translateX(28px) scale(0.92);
+        }
+        100% {
+          opacity: 1;
+          transform: perspective(1600px) rotateY(0deg) translateX(0) scale(1);
+        }
+      }
+
+      .scroll-triptych-left {
+        transform-origin: left center;
+        animation: scroll-triptych-open-left cubic-bezier(0.22, 1, 0.36, 1) both;
+        animation-timeline: view();
+        animation-range: entry 5% cover 32%;
+        will-change: transform, opacity;
+      }
+
+      .scroll-triptych-center {
+        transform-origin: center center;
+        animation: scroll-triptych-open-center cubic-bezier(0.22, 1, 0.36, 1) both;
+        animation-timeline: view();
+        animation-range: entry 8% cover 34%;
+        will-change: transform, opacity;
+      }
+
+      .scroll-triptych-right {
+        transform-origin: right center;
+        animation: scroll-triptych-open-right cubic-bezier(0.22, 1, 0.36, 1) both;
+        animation-timeline: view();
+        animation-range: entry 11% cover 36%;
+        will-change: transform, opacity;
+      }
+
+      /* Dibujo progresivo de la barra vertical roja en la sección El Problema */
+      @keyframes scroll-draw-vertical-bar {
+        0% {
+          transform: scaleY(0);
+        }
+        100% {
+          transform: scaleY(1);
+        }
+      }
+
+      .scroll-draw-bar {
+        transform-origin: top center;
+        animation: scroll-draw-vertical-bar ease-out both;
+        animation-timeline: view();
+        animation-range: entry 10% cover 35%;
+      }
+
+      /* Expansión horizontal de los separadores sutiles entre capítulos */
+      @keyframes scroll-hairline-grow {
+        0% {
+          opacity: 0.2;
+          transform: scaleX(0.15);
+        }
+        100% {
+          opacity: 1;
+          transform: scaleX(1);
+        }
+      }
+
+      .scroll-hairline-expand {
+        transform-origin: center;
+        animation: scroll-hairline-grow ease-out both;
+        animation-timeline: view();
+        animation-range: entry 0% cover 28%;
+      }
+    }
+  }
+
+  /* ==========================================================================
+     DYNAMIC AMBIENT ANIMATIONS & ORGANIC CURVES (DOKQET VIBRANCE)
+     ========================================================================== */
+
+  @keyframes float-gentle {
+    0%, 100% {
+      transform: translateY(0) rotate(0deg);
+    }
+    50% {
+      transform: translateY(-10px) rotate(1.5deg);
+    }
+  }
+
+  @keyframes float-reverse {
+    0%, 100% {
+      transform: translateY(0) rotate(0deg);
+    }
+    50% {
+      transform: translateY(10px) rotate(-1.5deg);
+    }
+  }
+
+  @keyframes pulse-glow {
+    0%, 100% {
+      opacity: 0.18;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.32;
+      transform: scale(1.08);
+    }
+  }
+
+  .animate-float-gentle {
+    animation: float-gentle 7s ease-in-out infinite;
+  }
+
+  .animate-float-reverse {
+    animation: float-reverse 9s ease-in-out infinite;
+  }
+
+  .animate-pulse-glow {
+    animation: pulse-glow 6s ease-in-out infinite;
+  }
+
+  .gradient-border-card {
+    position: relative;
+    border-radius: 1.75rem;
+    background: linear-gradient(var(--card), var(--card)) padding-box,
+                linear-gradient(135deg, rgba(236, 19, 25, 0.4), rgba(3, 42, 46, 0.15), rgba(16, 185, 129, 0.3)) border-box;
+    border: 1px solid transparent;
+  }
+
+  /* ==========================================================================
+     REVIO-STYLE LAYERED FLOATING CARDS & SHIMMER CTA (HIGH-IMPACT UI)
+     ========================================================================== */
+
+  @keyframes float-slow-1 {
+    0%, 100% {
+      transform: translateY(0px) rotate(0deg);
+    }
+    50% {
+      transform: translateY(-9px) rotate(1deg);
+    }
+  }
+
+  @keyframes float-slow-2 {
+    0%, 100% {
+      transform: translateY(0px) rotate(0deg);
+    }
+    50% {
+      transform: translateY(9px) rotate(-1.5deg);
+    }
+  }
+
+  @keyframes float-slow-3 {
+    0%, 100% {
+      transform: translateY(0px) rotate(0deg);
+    }
+    50% {
+      transform: translateY(-7px) rotate(-1deg);
+    }
+  }
+
+  .floating-card-1 {
+    animation: float-slow-1 6.5s ease-in-out infinite;
+    will-change: transform;
+  }
+
+  .floating-card-2 {
+    animation: float-slow-2 8s ease-in-out infinite 0.6s;
+    will-change: transform;
+  }
+
+  .floating-card-3 {
+    animation: float-slow-3 9.5s ease-in-out infinite 1.2s;
+    will-change: transform;
+  }
+
+  .glass-floating-card {
+    background: rgba(255, 255, 255, 0.88);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(220, 228, 229, 0.85);
+    box-shadow: 0 20px 45px -12px rgba(3, 42, 46, 0.14), 0 0 1px 1px rgba(255, 255, 255, 0.85) inset;
+  }
+
+  .dark .glass-floating-card {
+    background: rgba(4, 36, 40, 0.86);
+    border: 1px solid rgba(12, 56, 62, 0.9);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.65), 0 0 1px 1px rgba(124, 196, 203, 0.12) inset;
+  }
+
+  /* Shimmer sweep on primary brand buttons */
+  .shimmer-cta {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .shimmer-cta::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(
+      60deg,
+      transparent 25%,
+      rgba(255, 255, 255, 0.28) 50%,
+      transparent 75%
+    );
+    transform: rotate(25deg);
+    animation: button-shimmer-sweep 4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    pointer-events: none;
+  }
+
+  @keyframes button-shimmer-sweep {
+    0%, 60% {
+      transform: translate(-100%, -100%) rotate(25deg);
+    }
+    100% {
+      transform: translate(100%, 100%) rotate(25deg);
+    }
+  }
+
+  /* Bento Grid card interactive transitions */
+  .bento-card {
+    position: relative;
+    border-radius: 2rem;
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+                box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+                border-color 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .bento-card:hover {
+    transform: translateY(-4px);
+  }
+
+  /* Pulso de novedad en las insignias «Nueva» / «2 nuevas» de la demostración */
+  @keyframes badge-ring-pulse {
+    0% {
+      box-shadow: 0 0 0 0 rgba(236, 19, 25, 0.55);
+    }
+    70% {
+      box-shadow: 0 0 0 8px rgba(236, 19, 25, 0);
+    }
+    100% {
+      box-shadow: 0 0 0 0 rgba(236, 19, 25, 0);
+    }
+  }
+
+  .new-badge-pulse {
+    animation: badge-ring-pulse 2.4s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+  }
+
+  /* Pliegue rojo inferior en el enlace activo de la barra de navegación */
+  .nav-fold-link {
+    position: relative;
+    padding: 0.35rem 0.25rem;
+    transition: color 0.25s ease;
+  }
+
+  .nav-fold-link::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -2px;
+    height: 2px;
+    border-radius: 99px;
+    background: var(--brand, #ec1319);
+    transform: scaleX(0);
+    transform-origin: left center;
+    transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .nav-fold-link.active::after,
+  .nav-fold-link:hover::after {
+    transform: scaleX(1);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .floating-card-1,
+    .floating-card-2,
+    .floating-card-3 {
+      animation: none !important;
+    }
+
+    .shimmer-cta::after {
+      animation: none !important;
+      display: none;
+    }
+
+    .bento-card:hover {
+      transform: none !important;
     }
   }
 }
