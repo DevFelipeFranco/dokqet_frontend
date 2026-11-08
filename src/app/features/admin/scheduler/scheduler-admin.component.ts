@@ -73,6 +73,45 @@ export class SchedulerAdminComponent implements OnInit {
   readonly searchQuery = signal<string>('');
   readonly viewMode = signal<'TABLE' | 'CARDS'>('TABLE');
 
+  // Control de tarjetas colapsibles en vista CARDS
+  readonly expandedTaskKeys = signal<Set<string>>(new Set<string>());
+
+  readonly allCardsExpanded = computed(() => {
+    const tasks = this.filteredTasks();
+    return tasks.length > 0 && tasks.every((t) => this.expandedTaskKeys().has(t.taskKey));
+  });
+
+  isTaskExpanded(taskKey: string): boolean {
+    return this.expandedTaskKeys().has(taskKey);
+  }
+
+  onTaskExpandedChange(taskKey: string, expanded: boolean): void {
+    this.expandedTaskKeys.update((set) => {
+      const copy = new Set(set);
+      if (expanded) {
+        copy.add(taskKey);
+      } else {
+        copy.delete(taskKey);
+      }
+      return copy;
+    });
+  }
+
+  toggleAllCards(): void {
+    const shouldExpand = !this.allCardsExpanded();
+    this.expandedTaskKeys.update((set) => {
+      const copy = new Set(set);
+      for (const t of this.filteredTasks()) {
+        if (shouldExpand) {
+          copy.add(t.taskKey);
+        } else {
+          copy.delete(t.taskKey);
+        }
+      }
+      return copy;
+    });
+  }
+
   // Modal de Configuración Aislada de Tarea
   readonly configModalOpen = signal<boolean>(false);
   readonly selectedConfigTask = signal<ScheduledTaskDto | null>(null);

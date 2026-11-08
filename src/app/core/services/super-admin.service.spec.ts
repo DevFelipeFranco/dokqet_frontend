@@ -37,10 +37,29 @@ describe('SuperAdminService', () => {
 
   const mockOverview: AdminPlatformOverview = {
     totalOrganizations: 15,
+    personalOrganizations: 10,
+    firmOrganizations: 5,
     totalPersonalOrganizations: 10,
     totalCollectiveOrganizations: 5,
     totalUsers: 42,
-    totalProcesses: 380
+    totalProcesses: 380,
+    processes: {
+      distinct: 380,
+      follows: 450,
+      monitoredByDay: 350,
+      instancesDetected: 40
+    },
+    users: {
+      total: 42,
+      active: 40,
+      suspended: 2,
+      superAdmins: 2
+    },
+    rounds: {
+      updates: { latestFull: null, late: false, schedule: '0 0 * * *' },
+      instances: { latestFull: null, late: false, schedule: '0 2 * * *' },
+      historyLast7Days: []
+    }
   };
 
   const mockOrgSummary: AdminOrganizationSummary = {

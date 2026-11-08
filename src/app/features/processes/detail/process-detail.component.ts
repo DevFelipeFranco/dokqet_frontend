@@ -1,16 +1,27 @@
-import { Component, OnInit, computed, effect, inject, signal, untracked, ChangeDetectionStrategy } from '@angular/core';
-
+import { Component, OnInit, OnDestroy, computed, effect, inject, signal, untracked, ChangeDetectionStrategy } from '@angular/core';
+import { DatePipe } from '@angular/common';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ProcessService } from '../../../core/services/process.service';
 import { OrganizationService } from '../../../core/services/organization.service';
 import { CatalogService } from '../../../core/services/catalog.service';
 import { AuthService } from '../../../core/auth/auth.service';
+import { NotificationService } from '../../../core/services/notification.service';
 import { OrganizationStore } from '../../../core/state/organization.store';
-import { ProcessDetailView, RepresentedParty, PartyCategory } from '../../../core/models/process.model';
+import {
+  ProcessDetailView,
+  RepresentedParty,
+  PartyCategory,
+  FoundProcess,
+  ActuacionDocumentoItem,
+  ActuacionDocumentosView,
+  ActuacionAutoAnterior
+} from '../../../core/models/process.model';
 import { DismissalReasonDto, PartyCategoryDto } from '../../../core/models/catalog.model';
 import { Member } from '../../../core/models/organization.model';
 import { RadicadoPipe } from '../../../shared/pipes/radicado.pipe';
+import { formatLocalDate, parseDate } from '../../../core/utils/datetime.utils';
 import {
   LEGAL_CONSTANTS,
   formatRepresentedParty,
@@ -50,6 +61,7 @@ export type ActuacionViewMode = 'TABLE' | 'TIMELINE';
   imports: [
     RouterLink,
     FormsModule,
+    DatePipe,
     RadicadoPipe,
     CardComponent,
     CardHeaderComponent,
@@ -70,16 +82,18 @@ export type ActuacionViewMode = 'TABLE' | 'TIMELINE';
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './process-detail.component.html'
 })
-export class ProcessDetailComponent implements OnInit {
+export class ProcessDetailComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly processService = inject(ProcessService);
   private readonly orgService = inject(OrganizationService);
   private readonly catalogService = inject(CatalogService);
   private readonly authService = inject(AuthService);
+  private readonly notificationService = inject(NotificationService);
   readonly orgStore = inject(OrganizationStore);
 
   readonly RepresentedParty = RepresentedParty;
+  readonly RAMA_PUBLICACIONES_URL = 'https://publicacionesprocesales.ramajudicial.gov.co/web/publicaciones-procesales/inicio';
 
   // Catálogos dinámicos
   readonly representedParties = signal<PartyCategoryDto[]>([]);
@@ -98,6 +112,23 @@ export class ProcessDetailComponent implements OnInit {
   readonly error = signal<string | null>(null);
   /** Estado del indicador de radicado copiado */
   readonly copied = signal(false);
+
+  // Estados de Actualización bajo demanda y Cooldown de 10 min (HU-28)
+  readonly refreshing = signal<boolean>(false);
+  readonly cooldownRemainingSeconds = signal<number>(0);
+  readonly cooldownMessage = signal<string | null>(null);
+  private cooldownTimer: any = null;
+  private estadosPollTimer: ReturnType<typeof setTimeout> | null = null;
+  private estadosPollAttempts = 0;
+
+  // Estados del Flujo de Recarga Manual asistida (HU-28)
+  readonly showReloadModal = signal<boolean>(false);
+  readonly loadingLookup = signal<boolean>(false);
+  readonly lookupError = signal<string | null>(null);
+  readonly candidates = signal<FoundProcess[]>([]);
+  readonly selectedCandidateId = signal<number | null>(null);
+  readonly reloading = signal<boolean>(false);
+  readonly reloadError = signal<string | null>(null);
 
   /** Miembros del despacho para asignación de responsabilidad */
   readonly members = signal<Member[]>([]);
@@ -133,6 +164,25 @@ export class ProcessDetailComponent implements OnInit {
 
   // Modal para confirmar desvigilancia
   readonly confirmUnfollow = signal(false);
+
+  // US-025: Documentos de Actuaciones y Vista Previa Modal
+  private readonly sanitizer = inject(DomSanitizer);
+  readonly consultingDocumentos = signal<Set<string>>(new Set());
+  readonly documentosMap = signal<Map<string, ActuacionDocumentosView>>(new Map());
+
+  // Modal de previsualización
+  readonly previewDoc = signal<ActuacionDocumentoItem | null>(null);
+  readonly previewState = signal<'LOADING' | 'READY' | 'ERROR'>('LOADING');
+  readonly previewBlobUrl = signal<string | null>(null);
+  readonly previewGone = signal<boolean>(false);
+  readonly previewAttempt = signal<number>(0);
+  readonly isMobile = signal<boolean>(false);
+  private previewAbortController: AbortController | null = null;
+
+  readonly safePreviewUrl = computed<SafeResourceUrl | null>(() => {
+    const url = this.previewBlobUrl();
+    return url ? this.sanitizer.bypassSecurityTrustResourceUrl(url) : null;
+  });
 
   get actuacionSearch(): string {
     return this.actuacionSearchSignal();
@@ -285,6 +335,9 @@ export class ProcessDetailComponent implements OnInit {
    * Cuando ya existe un detalle cargado, ejecuta una actualización parcial sin desmontar la vista.
    */
   loadDetail(id: string, page: number, size: number = untracked(() => this.pageSize())): void {
+    this.clearEstadosPollTimer();
+    this.estadosPollAttempts = 0;
+
     const currentDetail = untracked(() => this.detail());
     const isInitialLoad = currentDetail === null || currentDetail.id !== id;
     if (isInitialLoad) {
@@ -305,6 +358,7 @@ export class ProcessDetailComponent implements OnInit {
             this.pageSize.set(res.data.pageSize);
           }
           this.expandedActuacionIds.set(new Set());
+          this.scheduleEstadosFollowUpIfNeeded(res.data);
         }
       },
       error: (err) => {
@@ -315,6 +369,55 @@ export class ProcessDetailComponent implements OnInit {
         }
       }
     });
+  }
+
+  /**
+   * Programa una recarga silenciosa (máximo 2 intentos) cuando el backend acaba de disparar
+   * la consulta inicial asíncrona al micrositio de Publicaciones Procesales.
+   */
+  private scheduleEstadosFollowUpIfNeeded(view: ProcessDetailView): void {
+    const hasPendingInitialLookup = view.actuaciones.some(
+      a => a.estado?.estadoVista === 'BUSCANDO' && a.estado?.buscadoAlMenosUnaVez === false
+    );
+    if (!hasPendingInitialLookup || this.estadosPollAttempts >= 2) {
+      this.clearEstadosPollTimer();
+      return;
+    }
+
+    this.clearEstadosPollTimer();
+    const delayMs = this.estadosPollAttempts === 0 ? 4000 : 6000;
+    this.estadosPollAttempts++;
+    const targetId = view.id;
+    const targetPage = view.page || 1;
+    const targetSize = view.pageSize || untracked(() => this.pageSize());
+
+    this.estadosPollTimer = setTimeout(() => {
+      this.refreshDetailSilently(targetId, targetPage, targetSize);
+    }, delayMs);
+  }
+
+  private refreshDetailSilently(id: string, page: number, size: number): void {
+    if (this.processId() !== id || this.currentPage() !== page) {
+      return;
+    }
+    this.processService.getProcessDetail(id, page, size).subscribe({
+      next: (res) => {
+        if (res.success && res.data && this.processId() === id && this.currentPage() === page) {
+          this.detail.set(res.data);
+          this.scheduleEstadosFollowUpIfNeeded(res.data);
+        }
+      },
+      error: () => {
+        this.clearEstadosPollTimer();
+      }
+    });
+  }
+
+  private clearEstadosPollTimer(): void {
+    if (this.estadosPollTimer) {
+      clearTimeout(this.estadosPollTimer);
+      this.estadosPollTimer = null;
+    }
   }
 
   /**
@@ -601,5 +704,310 @@ export class ProcessDetailComponent implements OnInit {
    */
   formatCategory(category?: PartyCategory | null): string {
     return formatPartyCategory(category);
+  }
+
+  /**
+   * Formato de tiempo restante para el cooldown (ej: "6:45")
+   */
+  readonly cooldownTimeFormatted = computed(() => {
+    const sec = this.cooldownRemainingSeconds();
+    if (sec <= 0) return '';
+    const mins = Math.floor(sec / 60);
+    const secs = sec % 60;
+    return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+  });
+
+  /**
+   * Dispara la actualización bajo demanda con cooldown de 10 min (RN-FE-28-02)
+   */
+  refreshProcess(): void {
+    if (this.refreshing() || this.cooldownRemainingSeconds() > 0) return;
+    if (this.detail()?.process.ultimoResultado === 'NOT_FOUND') return;
+
+    this.refreshing.set(true);
+    this.processService.refreshProcess(this.processId()).subscribe({
+      next: (res) => {
+        this.refreshing.set(false);
+        const newAct = res.data?.newActuaciones ?? 0;
+        const msg = newAct > 0
+          ? `Proceso actualizado correctamente. Se detectaron ${newAct} actuación(es) nueva(s).`
+          : 'Proceso actualizado correctamente. Sin novedades registradas.';
+        this.notificationService.showSuccess(msg);
+        this.loadDetail(this.processId(), this.currentPage(), this.pageSize());
+      },
+      error: (err) => {
+        this.refreshing.set(false);
+        if (err.status === 429) {
+          const remainingSecs = err.error?.remainingSeconds ?? ((err.error?.remainingMinutes ?? 10) * 60);
+          const detailMsg = err.error?.detail || err.error?.message || 'Consulta reciente en la Rama Judicial. Espera un momento antes de volver a consultar.';
+          this.cooldownMessage.set(detailMsg);
+          this.startCooldownTimer(remainingSecs);
+          this.notificationService.showInfo(detailMsg, 'Tiempo de espera requerido');
+        } else {
+          const msg = err.error?.detail || err.error?.message || 'No fue posible actualizar el proceso en la Rama Judicial.';
+          this.notificationService.showWarning(msg);
+        }
+      }
+    });
+  }
+
+  /**
+   * Inicia el temporizador de cuenta regresiva en segundos para el cooldown
+   */
+  private startCooldownTimer(seconds: number): void {
+    if (this.cooldownTimer) {
+      clearInterval(this.cooldownTimer);
+    }
+    this.cooldownRemainingSeconds.set(seconds);
+    this.cooldownTimer = setInterval(() => {
+      const current = this.cooldownRemainingSeconds();
+      if (current <= 1) {
+        this.cooldownRemainingSeconds.set(0);
+        this.cooldownMessage.set(null);
+        clearInterval(this.cooldownTimer);
+        this.cooldownTimer = null;
+      } else {
+        this.cooldownRemainingSeconds.set(current - 1);
+      }
+    }, 1000);
+  }
+
+  /**
+   * Evalúa si han transcurrido más de 24 horas desde la última consulta exitosa
+   */
+  isConsultationOver24h(dateIso?: string | null): boolean {
+    if (!dateIso) return true;
+    const d = parseDate(dateIso);
+    if (!d) return true;
+    return (Date.now() - d.getTime()) > 24 * 60 * 60 * 1000;
+  }
+
+  /**
+   * Formatea la fecha y hora de consulta según los estándares de Dokqet
+   */
+  formatConsultationDate(dateIso?: string | null): string {
+    if (!dateIso) return 'Sin fecha registrada';
+    return formatLocalDate(dateIso, 'datetime');
+  }
+
+  /**
+   * Abre el modal asistido de recarga manual e invoca reload-lookup (RN-FE-28-04, RN-FE-28-05)
+   */
+  openReloadModal(): void {
+    this.showReloadModal.set(true);
+    this.loadingLookup.set(true);
+    this.lookupError.set(null);
+    this.candidates.set([]);
+    this.selectedCandidateId.set(null);
+    this.reloadError.set(null);
+
+    this.processService.reloadLookup(this.processId()).subscribe({
+      next: (res) => {
+        this.loadingLookup.set(false);
+        this.candidates.set(res.data?.candidates || []);
+      },
+      error: (err) => {
+        this.loadingLookup.set(false);
+        this.lookupError.set(err.error?.detail || 'Error al consultar candidatos en la Rama Judicial.');
+      }
+    });
+  }
+
+  /**
+   * Cierra el modal de recarga manual y limpia estados
+   */
+  closeReloadModal(): void {
+    this.showReloadModal.set(false);
+    this.selectedCandidateId.set(null);
+    this.reloadError.set(null);
+    this.lookupError.set(null);
+  }
+
+  /**
+   * Selecciona un candidato de la lista
+   */
+  selectCandidate(idProceso: number): void {
+    this.selectedCandidateId.set(idProceso);
+  }
+
+  /**
+   * Confirma la recarga manual con el candidato seleccionado
+   */
+  confirmReload(): void {
+    const candId = this.selectedCandidateId();
+    if (!candId || this.reloading()) return;
+
+    this.reloading.set(true);
+    this.reloadError.set(null);
+
+    this.processService.reload(this.processId(), { selectedIdProceso: candId }).subscribe({
+      next: (res) => {
+        this.reloading.set(false);
+        this.showReloadModal.set(false);
+        this.notificationService.showSuccess(res.message || 'Proceso recargado y vinculado exitosamente desde la Rama Judicial.');
+        this.loadDetail(this.processId(), 1, this.pageSize());
+      },
+      error: (err) => {
+        this.reloading.set(false);
+        this.reloadError.set(err.error?.detail || err.error?.message || 'Error al ejecutar la recarga del proceso.');
+      }
+    });
+  }
+
+  isConsultingDocumentos(actuacionId: string): boolean {
+    return this.consultingDocumentos().has(actuacionId);
+  }
+
+  getDocumentosView(actuacion: { id: string; documentos?: ActuacionDocumentosView | null }): ActuacionDocumentosView | null {
+    return this.documentosMap().get(actuacion.id) ?? actuacion.documentos ?? null;
+  }
+
+  consultDocumentos(actuacionId: string): void {
+    if (this.consultingDocumentos().has(actuacionId)) return;
+    this.consultingDocumentos.update(set => {
+      const next = new Set(set);
+      next.add(actuacionId);
+      return next;
+    });
+
+    this.processService.consultActuacionDocumentos(this.processId(), actuacionId).subscribe({
+      next: (resp) => {
+        this.consultingDocumentos.update(set => {
+          const next = new Set(set);
+          next.delete(actuacionId);
+          return next;
+        });
+        if (resp.success && resp.data) {
+          this.documentosMap.update(map => {
+            const next = new Map(map);
+            next.set(actuacionId, resp.data);
+            return next;
+          });
+        }
+      },
+      error: (err) => {
+        this.consultingDocumentos.update(set => {
+          const next = new Set(set);
+          next.delete(actuacionId);
+          return next;
+        });
+        const msg = err.error?.detail || err.error?.message || 'No fue posible consultar los documentos en la Rama Judicial.';
+        this.notificationService.showError(msg);
+      }
+    });
+  }
+
+  openDocumentoPreview(doc: ActuacionDocumentoItem): void {
+    this.closePreviewModal();
+    this.previewDoc.set(doc);
+    this.previewState.set('LOADING');
+    this.previewGone.set(false);
+    this.previewAttempt.set(0);
+    this.checkIfMobile();
+    this.loadPdf(doc.url);
+  }
+
+  private checkIfMobile(): void {
+    if (typeof window !== 'undefined') {
+      this.isMobile.set(window.matchMedia('(pointer: coarse), (max-width: 767px)').matches);
+    }
+  }
+
+  private loadPdf(url: string): void {
+    if (this.previewAbortController) {
+      this.previewAbortController.abort();
+    }
+    const controller = new AbortController();
+    this.previewAbortController = controller;
+
+    this.fetchPdfWithRetry(url, controller.signal)
+      .then(blob => {
+        if (!controller.signal.aborted) {
+          const blobUrl = URL.createObjectURL(blob);
+          this.previewBlobUrl.set(blobUrl);
+          this.previewState.set('READY');
+        }
+      })
+      .catch((error: unknown) => {
+        if (!controller.signal.aborted) {
+          const isGone = error instanceof Error && error.message === 'GONE';
+          this.previewGone.set(isGone);
+          this.previewState.set('ERROR');
+        }
+      });
+  }
+
+  private async fetchPdfWithRetry(url: string, signal: AbortSignal): Promise<Blob> {
+    const TIMEOUT_MS = 60_000;
+    const RETRY_AFTER_MS = 2_000;
+    for (let attempt = 0; ; attempt++) {
+      try {
+        const timeoutController = new AbortController();
+        const timeoutId = setTimeout(() => timeoutController.abort(), TIMEOUT_MS);
+        const combinedSignal = (AbortSignal as any).any
+          ? (AbortSignal as any).any([signal, timeoutController.signal])
+          : signal;
+
+        const response = await fetch(url, { signal: combinedSignal, cache: 'no-store' });
+        clearTimeout(timeoutId);
+
+        if (response.status === 404) {
+          throw new Error('GONE');
+        }
+        const contentType = response.headers.get('content-type') ?? '';
+        if (!response.ok || !contentType.includes('pdf')) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        return new Blob([await response.arrayBuffer()], { type: 'application/pdf' });
+      } catch (err) {
+        if (err instanceof Error && err.message === 'GONE') throw err;
+        if (signal.aborted || attempt >= 1) throw err;
+        await new Promise(resolve => setTimeout(resolve, RETRY_AFTER_MS));
+      }
+    }
+  }
+
+  retryPreview(): void {
+    const doc = this.previewDoc();
+    if (!doc) return;
+    this.previewState.set('LOADING');
+    this.previewAttempt.update(n => n + 1);
+    this.loadPdf(doc.url);
+  }
+
+  downloadPreviewDoc(): void {
+    const blobUrl = this.previewBlobUrl();
+    const doc = this.previewDoc();
+    if (!blobUrl || !doc) return;
+    const link = document.createElement('a');
+    link.href = blobUrl;
+    link.download = doc.nombre.toLowerCase().endsWith('.pdf') ? doc.nombre : `${doc.nombre}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  closePreviewModal(): void {
+    if (this.previewAbortController) {
+      this.previewAbortController.abort();
+      this.previewAbortController = null;
+    }
+    const currentUrl = this.previewBlobUrl();
+    if (currentUrl) {
+      URL.revokeObjectURL(currentUrl);
+      this.previewBlobUrl.set(null);
+    }
+    this.previewDoc.set(null);
+    this.previewState.set('LOADING');
+    this.previewGone.set(false);
+  }
+
+  ngOnDestroy(): void {
+    this.closePreviewModal();
+    this.clearEstadosPollTimer();
+    if (this.cooldownTimer) {
+      clearInterval(this.cooldownTimer);
+      this.cooldownTimer = null;
+    }
   }
 }

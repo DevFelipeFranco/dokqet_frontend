@@ -265,4 +265,101 @@
     line-height: 1rem;
     color: var(--destructive);
   }
+
+  /* ==========================================================================
+     PANEL DE MARCA INMERSIVO Y ANIMACIÓN DE ORIGAMI (HU-27 / DOKQET BRAND)
+     Fases: inicio → mosaico → escaneo/encendido → pajaro → final.
+     ========================================================================== */
+
+  .marca-mosaico polygon {
+    fill: #0b3a3f;
+    stroke: #011416;
+    stroke-width: 2;
+    transform-box: fill-box;
+    transform-origin: center;
+    transition:
+      transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1),
+      opacity 0.4s,
+      fill 0.25s;
+  }
+
+  /* El escaneo recorre las columnas; el proceso con novedad queda en rojo */
+  .marca-mosaico polygon[data-escaneo] {
+    fill: #7a2a2c;
+  }
+
+  .marca-panel[data-fase="pajaro"] .marca-mosaico polygon[data-novedad],
+  .marca-panel[data-fase="final"] .marca-mosaico polygon[data-novedad],
+  .marca-mosaico polygon[data-encendido] {
+    fill: var(--brand, #ec1319);
+  }
+
+  .marca-panel[data-fase="inicio"] .marca-mosaico polygon {
+    transform: scale(0) rotate(90deg);
+  }
+
+  .marca-panel[data-fase="pajaro"] .marca-mosaico polygon,
+  .marca-panel[data-fase="final"] .marca-mosaico polygon {
+    opacity: 0.22;
+  }
+
+  .marca-pajaro {
+    transition:
+      opacity 0.45s,
+      transform 0.45s;
+  }
+
+  .marca-panel[data-fase="inicio"] .marca-pajaro,
+  .marca-panel[data-fase="mosaico"] .marca-pajaro {
+    opacity: 0;
+    transform: scale(0.25) rotate(-30deg);
+  }
+
+  .marca-aparece {
+    transition:
+      opacity 0.4s,
+      transform 0.4s;
+  }
+
+  .marca-panel:not([data-fase="final"]) .marca-aparece {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  .marca-aparece:nth-child(2) {
+    transition-delay: 0.22s;
+  }
+
+  .marca-aparece:nth-child(3) {
+    transition-delay: 0.44s;
+  }
+
+  .marca-simbolo {
+    transition: opacity 0.3s;
+  }
+
+  .marca-panel:not([data-fase="final"]) .marca-simbolo {
+    opacity: 0;
+  }
+
+  .marca-aviso {
+    transition:
+      opacity 0.4s,
+      transform 0.4s;
+  }
+
+  .marca-panel:not([data-aviso]) .marca-aviso {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .marca-mosaico polygon,
+    .marca-pajaro,
+    .marca-aparece,
+    .marca-simbolo,
+    .marca-aviso {
+      transition: none !important;
+    }
+  }
 }

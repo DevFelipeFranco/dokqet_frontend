@@ -7,9 +7,9 @@ import { ProblemDetailAccountLocked } from '../../../core/models/user.model';
 import { parseHttpAuthError, ParsedHttpError } from '../../../core/utils/http-error.utils';
 import { 
   ButtonComponent, 
-  FormAlertComponent,
-  LogoComponent
+  FormAlertComponent
 } from '../../../shared/components/ui';
+import { OrigamiBrandPanelComponent } from '../../../shared/components/brand';
 
 export interface LockInfoState {
   lockedUntil: Date;
@@ -25,7 +25,7 @@ export interface LockInfoState {
     RouterLink,
     ButtonComponent,
     FormAlertComponent,
-    LogoComponent
+    OrigamiBrandPanelComponent
 ],
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './sign-in.component.html'

@@ -6,6 +6,7 @@ import {
   effect,
   inject,
   input,
+  model,
   output,
   signal,
   untracked,
@@ -46,6 +47,7 @@ export class SchedulerTaskCardComponent implements OnInit {
   readonly task = input.required<ScheduledTaskDto>();
   readonly timezones = input.required<TimezoneOptionDto[]>();
   readonly globalPaused = input<boolean>(false);
+  readonly isExpanded = model<boolean>(false);
 
   readonly taskMutated = output<ScheduledTaskDto>();
   readonly runNowRequested = output<ScheduledTaskDto>();
@@ -332,7 +334,12 @@ export class SchedulerTaskCardComponent implements OnInit {
     });
   }
 
-  onToggleEnabled(): void {
+  toggleExpand(): void {
+    this.isExpanded.update((v) => !v);
+  }
+
+  onToggleEnabled(event?: Event): void {
+    event?.stopPropagation();
     if (this.togglingStatus()) return;
     const nextEnabled = !this.task().enabled;
     this.togglingStatus.set(true);

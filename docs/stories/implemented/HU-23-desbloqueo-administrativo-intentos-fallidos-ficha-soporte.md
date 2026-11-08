@@ -11,7 +11,7 @@
 | **Título** | Ficha de Soporte Super Admin: Desbloqueo Administrativo de Cuentas Bloqueadas por Intentos Fallidos con Modal de Confirmación y Registro Inmutable de Auditoría |
 | **Épica** | Backoffice de Plataforma (`/admin`), Ficha de Soporte Técnico, Gobernanza de Cuentas y Auditoría Inmutable |
 | **Módulos / Rutas Angular** | `src/app/core/models/super-admin.model.ts`, `src/app/core/services/super-admin.service.ts`, `src/app/features/admin/users/detail/admin-user-detail.component.{ts,html}`, `src/app/features/admin/users/admin-users.component.{ts,html}` |
-| **Estado** | `📝 Lista para Desarrollo` |
+| **Estado** | `🚀 Implementada / Verificada` |
 | **Prioridad** | `Alta (Soporte Operativo, Seguridad y Continuidad del Servicio)` |
 | **Tipo** | `Funcionalidad / Backoffice / Seguridad / UX (Angular 19+ Standalone Components)` |
 | **Actor Principal** | `Super Administrador (SUPER_ADMIN)` |

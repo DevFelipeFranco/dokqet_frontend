@@ -2,7 +2,7 @@
 
 * **ID de Historia:** `HU-16`
 * **Título:** Optimización de Perceived Performance y Estabilidad Visual (CLS) mediante Skeleton Loaders Contextuales en Reemplazo de Spinners Bloqueantes de Pantalla Completa.
-* **Estado:** Implementada / Lista para Verificación
+* **Estado:** 🚀 Implementada / Verificada
 * **Fecha:** Octubre 2026
 * **Módulos Impactados:**
   * **Core / Shared UI:** `<app-skeleton>` (componente atómico multi-variante), `<app-skeleton-table>`, `<app-skeleton-card-grid>`.

@@ -2,7 +2,7 @@
 
 * **ID de Historia:** `HU-15`
 * **Título:** Almacenamiento seguro de credenciales de sesión en cliente (Angular) y servidor (Spring Boot) mediante Tokens en Memoria, Cookies HttpOnly y Rotación de Refresh Token.
-* **Estado:** Completada e Implementada
+* **Estado:** 🚀 Implementada / Verificada
 * **Fecha:** Octubre 2026
 * **Módulos Impactados:**
   * **Frontend (`dokqet-frontend`):** `AuthService`, `pasetoInterceptor`, `APP_INITIALIZER` (`app.config.ts`), `authGuard`.

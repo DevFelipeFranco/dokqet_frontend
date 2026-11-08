@@ -88,6 +88,21 @@ export const routes: Routes = [
     redirectTo: 'admin/catalogos'
   },
   {
+    path: 'admin',
+    pathMatch: 'full',
+    redirectTo: 'admin/resumen'
+  },
+  {
+    path: 'admin/resumen',
+    title: 'Resumen Ejecutivo · Dokqet',
+    canActivate: [authGuard, superAdminGuard],
+    loadComponent: () => import('./features/admin/overview/overview-admin.component').then(m => m.OverviewAdminComponent)
+  },
+  {
+    path: 'admin/overview',
+    redirectTo: 'admin/resumen'
+  },
+  {
     path: 'admin/catalogos',
     title: 'Catálogos Maestros · Dokqet',
     canActivate: [authGuard, superAdminGuard],
@@ -98,6 +113,12 @@ export const routes: Routes = [
     title: 'Observabilidad de Organizaciones · Dokqet',
     canActivate: [authGuard, superAdminGuard],
     loadComponent: () => import('./features/admin/organizations/organizations-admin.component').then(m => m.OrganizationsAdminComponent)
+  },
+  {
+    path: 'admin/organizaciones/:id',
+    title: 'Ficha de Organización · Dokqet',
+    canActivate: [authGuard, superAdminGuard],
+    loadComponent: () => import('./features/admin/organizations/detail/admin-organization-detail.component').then(m => m.AdminOrganizationDetailComponent)
   },
   {
     path: 'admin/usuarios',

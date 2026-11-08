@@ -1,0 +1,79 @@
+<aside
+  #panelRef
+  [attr.data-fase]="currentFase()"
+  [attr.data-aviso]="showAviso() ? '' : null"
+  class="marca-panel relative flex flex-col bg-[#011416] px-5 pt-4 pb-5 text-white lg:sticky lg:top-0 lg:h-svh lg:self-start lg:border-r lg:border-white/10 lg:px-12 lg:py-10 select-none overflow-hidden"
+>
+  <!-- Dokqet Brand Header / Navigation Link -->
+  <a
+    routerLink="/"
+    class="flex w-fit items-center gap-2 focus:outline-none focus:ring-2 focus:ring-brand focus:ring-offset-2 focus:ring-offset-[#011416] rounded-md transition-opacity hover:opacity-90"
+    aria-label="Dokqet, ir al inicio"
+  >
+    <app-logo variant="simbolo" className="marca-simbolo h-6 lg:h-8"></app-logo>
+    <app-logo variant="nombre" className="h-5 text-white lg:h-7"></app-logo>
+  </a>
+
+  <!-- Mosaico de 48 Procesos y Animación de Origami -->
+  <div class="flex min-h-0 flex-1 flex-col items-center justify-center py-2 lg:py-6">
+    <div class="relative aspect-[225/258] h-[150px] lg:h-full lg:max-h-[390px] w-auto">
+      <!-- Mosaico de 48 Procesos -->
+      <svg
+        #mosaicoRef
+        viewBox="0 0 225 258"
+        class="marca-mosaico absolute inset-0 size-full"
+        aria-hidden="true"
+      >
+        @for (t of triangles; track t.index) {
+          <polygon
+            [attr.points]="t.puntos"
+            [attr.data-columna]="t.columna"
+            [attr.data-novedad]="t.isNovedad ? '' : null"
+          />
+        }
+      </svg>
+
+      <!-- Pájaro de Origami Animado -->
+      <svg
+        #pajaroRef
+        class="marca-pajaro absolute top-1/2 left-1/2 w-[80%] -translate-x-1/2 -translate-y-1/2"
+        aria-hidden="true"
+      ></svg>
+
+      <!-- Notificación Toast Simulada (Aviso de Novedad) -->
+      <div
+        class="marca-aviso absolute right-0 -bottom-3 left-0 hidden items-center gap-3 rounded-lg bg-white px-3 py-2 text-xs text-[#1a1a1a] shadow-lg lg:flex z-20 pointer-events-none"
+        aria-hidden="true"
+      >
+        <span class="size-2 flex-none rounded-full bg-brand"></span>
+        <div>
+          <b class="font-medium">Nueva actuación</b> · Auto fija fecha de audiencia
+          <br />
+          <span class="font-mono text-[11px] text-[#666]">99999-31-03-001-2023-00001-00</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mobile Summary Proposition -->
+  <p class="marca-aparece text-center text-sm text-[#c9d3d3] lg:hidden">
+    Vigila tus procesos y te avisa de cada novedad.
+  </p>
+
+  <!-- Desktop Value Proposition Pillars -->
+  @if (showFeatures()) {
+    <ul class="hidden flex-col gap-5 lg:flex mt-auto">
+      @for (f of features; track f.titulo) {
+        <li class="marca-aparece">
+          <p class="flex items-center gap-2 font-medium text-white">
+            <svg viewBox="0 0 10 9" class="size-2.5 flex-none fill-brand" aria-hidden="true">
+              <path d="M5 0L10 9H0Z" />
+            </svg>
+            {{ f.titulo }}
+          </p>
+          <p class="ml-[18px] text-sm text-[#9fb0b0]">{{ f.texto }}</p>
+        </li>
+      }
+    </ul>
+  }
+</aside>

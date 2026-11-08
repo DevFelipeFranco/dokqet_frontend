@@ -278,6 +278,21 @@
                   id="admin-submodules-menu"
                   class="mt-1 ml-4 pl-3 flex flex-col gap-1 border-l-2 border-primary/20 transition-all duration-200">
                   
+                  <!-- Submódulo 0: Resumen Ejecutivo -->
+                  <a
+                    routerLink="/admin/resumen"
+                    [class]="'relative flex items-center rounded-lg text-xs sm:text-[13px] transition-all px-2.5 py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ' + 
+                      (isActive('/admin/resumen') || isActive('/admin/overview')
+                        ? 'bg-card text-foreground font-semibold shadow-xs border border-border/90 [&>span>svg]:text-primary before:absolute before:left-0 before:top-1.5 before:bottom-1.5 before:w-1 before:rounded-r-full before:bg-primary' 
+                        : 'border border-transparent text-muted-foreground hover:bg-muted hover:text-foreground font-medium')">
+                    <span class="flex size-4 shrink-0 items-center justify-center mr-2">
+                      <svg class="size-4 shrink-0 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                      </svg>
+                    </span>
+                    <span class="flex-1 truncate text-left">Resumen Ejecutivo</span>
+                  </a>
+
                   <!-- Submódulo 1: Usuarios -->
                   <a
                     routerLink="/admin/usuarios"

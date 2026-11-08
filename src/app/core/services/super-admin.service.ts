@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import {
   AdminAction,
   AdminActionType,
@@ -11,6 +11,7 @@ import {
   AdminPlatformOverview,
   AdminSuperAdminRoleRequest,
   AdminUserDetail,
+  AdminUserOrganizationsGroupDto,
   AdminUserReasonRequest,
   AdminUserStatusFilter,
   AdminUserSummary,
@@ -28,7 +29,17 @@ export class SuperAdminService {
    * Obtiene las métricas consolidadas de la plataforma para observabilidad global
    */
   getPlatformOverview(): Observable<AdminApiResponse<AdminPlatformOverview>> {
-    return this.http.get<AdminApiResponse<AdminPlatformOverview>>(`${this.API_URL}/overview`);
+    return this.http.get<AdminApiResponse<AdminPlatformOverview>>(`${this.API_URL}/overview`).pipe(
+      map(res => {
+        if (res?.data) {
+          res.data.totalPersonalOrganizations = res.data.personalOrganizations;
+          res.data.totalCollectiveOrganizations = res.data.firmOrganizations;
+          res.data.totalUsers = res.data.users?.total ?? 0;
+          res.data.totalProcesses = res.data.processes?.distinct ?? 0;
+        }
+        return res;
+      })
+    );
   }
 
   /**
@@ -48,6 +59,29 @@ export class SuperAdminService {
     }
 
     return this.http.get<AdminApiResponse<PageResponse<AdminOrganizationSummary>>>(
+      `${this.API_URL}/organizations`,
+      { params }
+    );
+  }
+
+  /**
+   * Consulta el listado de organizaciones agrupadas jerárquicamente por usuario propietario (HU-25 / US-029)
+   */
+  getOrganizationsGrouped(
+    page: number = 0,
+    size: number = 10,
+    search?: string
+  ): Observable<AdminApiResponse<PageResponse<AdminUserOrganizationsGroupDto>>> {
+    let params = new HttpParams()
+      .set('page', page.toString())
+      .set('size', size.toString())
+      .set('grouped', 'true');
+
+    if (search && search.trim()) {
+      params = params.set('search', search.trim());
+    }
+
+    return this.http.get<AdminApiResponse<PageResponse<AdminUserOrganizationsGroupDto>>>(
       `${this.API_URL}/organizations`,
       { params }
     );

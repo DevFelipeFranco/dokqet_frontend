@@ -11,7 +11,7 @@
 | **Título** | Consola de Super Administrador: Buscador `unaccent`, Ficha de Soporte de Usuario, Suspensión/Reactivación con Motivo, Gestión de Super Admins con Contraseña Propia, Enlaces de Soporte y Registro Inmutable de Acciones (`AdminAction`) |
 | **Épica** | Backoffice de Plataforma (`/admin`), Gobernanza de Cuentas, Soporte Técnico al Usuario y Auditoría Inmutable |
 | **Módulos / Rutas Angular** | `src/app/core/models/super-admin.model.ts`, `src/app/core/services/super-admin.service.ts`, `src/app/core/interceptors/paseto.interceptor.ts`, `src/app/features/auth/sign-in/`, `src/app/features/admin/users/`, `src/app/features/admin/actions/`, `src/app/app.routes.ts`, `src/app/app.component.html` |
-| **Estado** | `📝 Lista para Desarrollo` |
+| **Estado** | `🚀 Implementada / Verificada` |
 | **Prioridad** | `Alta (Gobernanza, Seguridad y Soporte Operativo)` |
 | **Tipo** | `Funcionalidad / Backoffice / Seguridad / UX (Angular 19+ Standalone Components)` |
 | **Actor Principal** | `Super Administrador (SUPER_ADMIN)` |

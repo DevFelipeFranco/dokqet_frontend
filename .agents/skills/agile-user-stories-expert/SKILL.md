@@ -4,20 +4,22 @@ description: >
   Diseña, estructura, valida y redacta historias de usuario con criterios de aceptación en formato
   Gherkin (Dado-Cuando-Entonces / Given-When-Then), reglas de negocio de interfaz (RN-FE), modelos TypeScript
   y arquitectura Angular (Signals, Standalone Components, Tailwind CSS, Jasmine/Karma) para la plataforma Dokqet
-  exclusivamente dentro del directorio docs/stories/ (creándolo automáticamente si no existe).
+  exclusivamente dentro de docs/stories/, y gestiona su transición a estado implementado (🚀 Implementada / Verificada)
+  y traslado físico a docs/stories/implemented/ al verificarse satisfactoriamente.
 tags: [frontend, angular, user-stories, agile, bdd, gherkin, signals, tailwind, ui-ux, dokqet, testing]
-version: 2.0.0
+version: 2.1.0
 ---
 
 # 📋 Skill: Agile User Stories & Gherkin Requirements Expert for Frontend (`agile-user-stories-expert`)
 
 ## 1. Propósito y Alcance
-Esta skill guía a los Agentes de Inteligencia Artificial en la creación, refinamiento y mantenimiento de **historias de usuario ágiles con especificaciones ejecutables BDD en formato Gherkin para el Frontend de Dokqet** (Plataforma de Vigilancia y Gestión Judicial Automatizada para Colombia en **Angular 19+**), asegurando que:
+Esta skill guía a los Agentes de Inteligencia Artificial en la creación, refinamiento, mantenimiento y archivo de **historias de usuario ágiles con especificaciones ejecutables BDD en formato Gherkin para el Frontend de Dokqet** (Plataforma de Vigilancia y Gestión Judicial Automatizada para Colombia en **Angular 19+**), asegurando que:
 
 1. Cada requerimiento funcional o de experiencia de usuario quede documentado **estrictamente dentro del subdirectorio [`docs/stories/`](docs/stories/)** (creándolo automáticamente si no existe) bajo el estándar oficial `HU-{NN}-{kebab-case-slug}.md`.
 2. Los criterios de aceptación se redacten en **Gherkin riguroso** (`Dado`, `Cuando`, `Entonces`, `Y`), modelando con precisión la interacción del usuario, transiciones de señales (`signals`), renderizado condicional, estados de carga y respuestas de APIs REST (`ProblemDetail` RFC 9457).
 3. Se definan claramente los **modelos de datos TypeScript** (`src/app/core/models/`), **reglas de interacción y validación en cliente (RN-FE)** (Radicado 23 dígitos, DIAN Módulo 11, validadores reactivos) y su mapeo con la arquitectura Angular.
 4. Se apliquen los estándares de diseño y accesibilidad de Dokqet: **Tailwind CSS**, diseño adaptativo (Mobile/Tablet/Desktop), **WCAG 2.1 AA** (navegación por teclado, contraste, lectores de pantalla) y **Skeleton Loaders contextuales** para suprimir spinners de bloqueo global (CLS < 0.1).
+5. Se gestione el **ciclo de vida de la historia hasta su cierre**: al superar la verificación técnica (`npm run build` con 0 errores), actualizar su estado a `🚀 Implementada / Verificada` y mover físicamente el archivo a [`docs/stories/implemented/`](docs/stories/implemented/).
 
 ---
 

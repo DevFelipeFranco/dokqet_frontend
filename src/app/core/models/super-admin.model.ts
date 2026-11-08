@@ -1,14 +1,67 @@
 /**
- * Modelos de datos para el módulo de Super Administrador, Observabilidad Global (HU-18)
+ * Modelos de datos para el módulo de Super Administrador, Observabilidad Global (HU-18, HU-27 / US-021)
  * y Gestión de Cuentas, Suspensión, Soporte y Auditoría (HU-21 / US-020).
  */
 
+export interface AdminLatestFullRun {
+  id: string;
+  finishedAt: string; // ISO 8601 UTC
+  status: 'COMPLETED' | 'RUNNING' | 'INTERRUPTED' | 'STOPPED' | 'CUT';
+  checked: number;
+  errors: number;
+  withChanges: number;
+}
+
+export interface AdminRoundHealth {
+  latestFull: AdminLatestFullRun | null;
+  late: boolean;
+  schedule: string;
+}
+
+export interface AdminRunHistory {
+  runId: string;
+  startedAt: string; // ISO 8601 UTC
+  finishedAt: string | null;
+  status: 'COMPLETED' | 'RUNNING' | 'INTERRUPTED' | 'STOPPED' | 'CUT';
+  kind: 'UPDATES' | 'INSTANCES' | 'ESTADOS';
+  checked: number;
+  errors: number;
+  withChanges: number;
+  limited: boolean;
+}
+
+export interface AdminOverviewProcesses {
+  distinct: number;
+  follows: number;
+  monitoredByDay: number;
+  instancesDetected: number;
+}
+
+export interface AdminOverviewUsers {
+  total: number;
+  active: number;
+  suspended: number;
+  superAdmins: number;
+}
+
+export interface AdminOverviewRounds {
+  updates: AdminRoundHealth;
+  instances: AdminRoundHealth;
+  historyLast7Days: AdminRunHistory[];
+}
+
 export interface AdminPlatformOverview {
   totalOrganizations: number;
-  totalPersonalOrganizations: number;
-  totalCollectiveOrganizations: number;
-  totalUsers: number;
-  totalProcesses: number;
+  personalOrganizations: number;
+  firmOrganizations: number;
+  processes: AdminOverviewProcesses;
+  users: AdminOverviewUsers;
+  rounds: AdminOverviewRounds;
+  // Campos de compatibilidad con versiones anteriores de la vista
+  totalPersonalOrganizations?: number;
+  totalCollectiveOrganizations?: number;
+  totalUsers?: number;
+  totalProcesses?: number;
 }
 
 export interface AdminOrganizationSummary {
@@ -23,6 +76,28 @@ export interface AdminOrganizationSummary {
   activeMembersCount: number;
   processesCount: number;
   createdAt: string; // ISO 8601 UTC
+  ownerId?: string | null;
+  ownerName?: string | null;
+  ownerEmail?: string | null;
+  personalOwnerId?: string | null;
+  createdById?: string | null;
+}
+
+export type OrganizationsViewMode = 'GROUPED' | 'FLAT';
+
+export interface AdminUserOrganizationsGroupDto {
+  userId: string;
+  userName: string;
+  userEmail: string;
+  userDocumentType?: string | null;
+  userDocumentNumber?: string | null;
+  userStatus?: string;
+  personalWorkspace: AdminOrganizationSummary | null;
+  organizations: AdminOrganizationSummary[];
+  totalWorkspacesCount: number;
+  totalProcessesCount: number;
+  totalMembersCount: number;
+  createdAt?: string;
 }
 
 export interface AdminOrganizationDetail extends AdminOrganizationSummary {

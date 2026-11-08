@@ -163,4 +163,24 @@ describe('SchedulerAdminComponent', () => {
     component.onRunNow('RAMA_ACTUACIONES_SYNC');
     expect(component.actionError()).toContain('ejecución activa en curso');
   });
+
+  it('debe conmutar la expansión masiva de todas las tareas con toggleAllCards en modo CARDS', () => {
+    schedulerServiceSpy.getDashboard.and.returnValue(of({ success: true, data: MOCK_DASHBOARD }));
+    fixture.detectChanges();
+
+    component.viewMode.set('CARDS');
+    expect(component.allCardsExpanded()).toBeFalse();
+
+    // Expandir todas
+    component.toggleAllCards();
+    expect(component.allCardsExpanded()).toBeTrue();
+    expect(component.isTaskExpanded('RAMA_ACTUACIONES_SYNC')).toBeTrue();
+    expect(component.isTaskExpanded('RAMA_INSTANCES_SYNC')).toBeTrue();
+
+    // Colapsar todas
+    component.toggleAllCards();
+    expect(component.allCardsExpanded()).toBeFalse();
+    expect(component.isTaskExpanded('RAMA_ACTUACIONES_SYNC')).toBeFalse();
+    expect(component.isTaskExpanded('RAMA_INSTANCES_SYNC')).toBeFalse();
+  });
 });

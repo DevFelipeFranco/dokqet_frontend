@@ -456,7 +456,32 @@ export class ProfileComponent implements OnInit, OnDestroy {
     this.processService.listProcesses({ responsibleUserId: member.userId }).subscribe({
       next: (res) => {
         if (res.success && res.data) {
-          this.lawyerProcesses.set(res.data);
+          const raw = res.data as any;
+          const items: ProcessListItem[] = Array.isArray(raw)
+            ? raw
+            : (raw.items || []).map((i: any) => ({
+                id: i.process.id,
+                radicado: i.process.radicado,
+                instancia: i.process.instancia || '',
+                despacho: i.process.despacho,
+                departamento: i.process.departamento,
+                fechaUltimaActuacion: i.process.fechaUltimaActuacion,
+                ultimaConsulta: i.process.ultimaConsulta,
+                ultimoResultado: i.process.ultimoResultado,
+                esPrivado: i.process.esPrivado,
+                privadoDesde: i.process.privadoDesde,
+                demandantes: i.process.demandantes || [],
+                demandados: i.process.demandados || [],
+                responsibleUserId: i.process.responsibleUserId,
+                responsibleName: i.process.responsibleName,
+                representedParty: i.process.representedParty,
+                parentId: i.process.parentId,
+                parentRadicado: i.process.parentRadicado,
+                subprocesses: i.subprocesses || [],
+                newCount: i.process.newCount || 0,
+                instanceNotices: i.process.instanceNotices || 0
+              }));
+          this.lawyerProcesses.set(items);
         }
         this.loadingProcesses.set(false);
       },

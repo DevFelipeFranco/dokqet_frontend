@@ -182,3 +182,8 @@ export interface ProblemDetailSchedulerError {
   instance?: string;
   errors?: Record<string, string>;
 }
+
+export interface SchedulerCardExpansionState {
+  taskKey: string;
+  isExpanded: boolean;
+}

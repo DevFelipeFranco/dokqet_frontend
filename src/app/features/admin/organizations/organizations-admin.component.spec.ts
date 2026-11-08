@@ -11,7 +11,7 @@ import {
   AdminPlatformOverview,
   PageResponse
 } from '../../../core/models/super-admin.model';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 
 describe('OrganizationsAdminComponent', () => {
   let component: OrganizationsAdminComponent;
@@ -21,10 +21,29 @@ describe('OrganizationsAdminComponent', () => {
 
   const mockOverview: AdminPlatformOverview = {
     totalOrganizations: 12,
+    personalOrganizations: 8,
+    firmOrganizations: 4,
     totalPersonalOrganizations: 8,
     totalCollectiveOrganizations: 4,
     totalUsers: 35,
-    totalProcesses: 290
+    totalProcesses: 290,
+    processes: {
+      distinct: 290,
+      follows: 350,
+      monitoredByDay: 280,
+      instancesDetected: 30
+    },
+    users: {
+      total: 35,
+      active: 33,
+      suspended: 2,
+      superAdmins: 2
+    },
+    rounds: {
+      updates: { latestFull: null, late: false, schedule: '0 0 * * *' },
+      instances: { latestFull: null, late: false, schedule: '0 2 * * *' },
+      historyLast7Days: []
+    }
   };
 
   const mockOrgSummary: AdminOrganizationSummary = {
@@ -164,5 +183,195 @@ describe('OrganizationsAdminComponent', () => {
   it('formatNit debe retornar el NIT formateado con DV', () => {
     expect(component.formatNit(mockOrgSummary)).toBe('901234567-1');
     expect(component.formatNit({ ...mockOrgSummary, nit: null, nitDv: null })).toBe('—');
+  });
+
+  // =========================================================================
+  // PRUEBAS DE HU-25: VISTA JERÁRQUICA AGRUPADA POR PERSONA / TITULAR
+  // =========================================================================
+  it('debe inicializarse en modo GROUPED (Agrupado por Persona) por defecto', () => {
+    expect(component.viewMode()).toBe('GROUPED');
+  });
+
+  it('debe agrupar organizaciones bajo su usuario titular mediante buildUserGroups()', () => {
+    const personalOrg: AdminOrganizationSummary = {
+      id: 'org-pers-1',
+      name: 'Laura Gómez Pardo',
+      personType: 'NATURAL',
+      legalName: null,
+      nit: null,
+      nitDv: null,
+      isPersonal: true,
+      membersCount: 1,
+      activeMembersCount: 1,
+      processesCount: 5,
+      createdAt: '2026-01-01T00:00:00Z',
+      ownerId: 'usr-laura',
+      ownerName: 'Laura Gómez Pardo',
+      ownerEmail: 'laura.gomez@dokqet.com'
+    };
+
+    const collectiveOrg: AdminOrganizationSummary = {
+      id: 'org-col-1',
+      name: 'Gómez & Asociados Abogados S.A.S.',
+      personType: 'JURIDICA',
+      legalName: 'Gómez & Asociados S.A.S.',
+      nit: '901234567',
+      nitDv: '8',
+      isPersonal: false,
+      membersCount: 4,
+      activeMembersCount: 4,
+      processesCount: 30,
+      createdAt: '2026-01-05T00:00:00Z',
+      ownerId: 'usr-laura',
+      ownerName: 'Laura Gómez Pardo',
+      ownerEmail: 'laura.gomez@dokqet.com'
+    };
+
+    const groups = component.buildUserGroups([personalOrg, collectiveOrg]);
+    expect(groups.length).toBe(1);
+
+    const lauraGroup = groups[0];
+    expect(lauraGroup.userName).toBe('Laura Gómez Pardo');
+    expect(lauraGroup.personalWorkspace).toEqual(personalOrg);
+    expect(lauraGroup.organizations.length).toBe(1);
+    expect(lauraGroup.organizations[0].name).toBe('Gómez & Asociados Abogados S.A.S.');
+    expect(lauraGroup.totalWorkspacesCount).toBe(2);
+    expect(lauraGroup.totalProcessesCount).toBe(35); // 5 + 30
+    expect(lauraGroup.totalMembersCount).toBe(5);   // 1 + 4
+  });
+
+  it('debe agrupar "Mi espacio de trabajo" y "FIRMA SUPEr WAY" bajo el mismo usuario cuando comparten propietario', () => {
+    const personalOrg: AdminOrganizationSummary = {
+      id: 'org-pers-way',
+      name: 'Mi espacio de trabajo',
+      personType: 'NATURAL',
+      legalName: null,
+      nit: null,
+      nitDv: null,
+      isPersonal: true,
+      membersCount: 1,
+      activeMembersCount: 1,
+      processesCount: 3,
+      createdAt: '2026-02-01T00:00:00Z',
+      ownerId: 'usr-felipe-001',
+      ownerName: 'Felipe Way',
+      ownerEmail: 'felipe@dokqet.com',
+      personalOwnerId: 'usr-felipe-001'
+    };
+
+    const firmaOrg: AdminOrganizationSummary = {
+      id: 'org-firma-way',
+      name: 'FIRMA SUPEr WAY',
+      personType: 'JURIDICA',
+      legalName: 'Firma Super Way S.A.S.',
+      nit: '900999888',
+      nitDv: '3',
+      isPersonal: false,
+      membersCount: 2,
+      activeMembersCount: 2,
+      processesCount: 15,
+      createdAt: '2026-02-02T00:00:00Z',
+      ownerId: 'usr-felipe-001',
+      ownerName: 'Felipe Way',
+      ownerEmail: 'felipe@dokqet.com',
+      createdById: 'usr-felipe-001'
+    };
+
+    const groups = component.buildUserGroups([personalOrg, firmaOrg]);
+    expect(groups.length).toBe(1);
+
+    const felipeGroup = groups[0];
+    expect(felipeGroup.userName).toBe('Felipe Way');
+    expect(felipeGroup.userEmail).toBe('felipe@dokqet.com');
+    expect(felipeGroup.personalWorkspace).toEqual(personalOrg);
+    expect(felipeGroup.organizations.length).toBe(1);
+    expect(felipeGroup.organizations[0].name).toBe('FIRMA SUPEr WAY');
+    expect(felipeGroup.totalWorkspacesCount).toBe(2);
+    expect(felipeGroup.totalProcessesCount).toBe(18); // 3 + 15
+    expect(felipeGroup.totalMembersCount).toBe(3);   // 1 + 2
+  });
+
+  it('debe conmutar la expansión de un usuario con toggleUserExpand()', () => {
+    const userId = 'usr-test-123';
+    expect(component.isUserExpanded(userId)).toBeFalse();
+
+    component.toggleUserExpand(userId);
+    expect(component.isUserExpanded(userId)).toBeTrue();
+
+    component.toggleUserExpand(userId);
+    expect(component.isUserExpanded(userId)).toBeFalse();
+  });
+
+  it('debe conmutar la expansión masiva con toggleAllUsers()', () => {
+    const dummyGroups = [
+      {
+        userId: 'usr-1',
+        userName: 'Usuario 1',
+        userEmail: 'u1@dokqet.com',
+        personalWorkspace: null,
+        organizations: [],
+        totalWorkspacesCount: 0,
+        totalProcessesCount: 0,
+        totalMembersCount: 0,
+        userStatus: 'ACTIVE'
+      },
+      {
+        userId: 'usr-2',
+        userName: 'Usuario 2',
+        userEmail: 'u2@dokqet.com',
+        personalWorkspace: null,
+        organizations: [],
+        totalWorkspacesCount: 0,
+        totalProcessesCount: 0,
+        totalMembersCount: 0,
+        userStatus: 'ACTIVE'
+      }
+    ];
+
+    component.userGroups.set(dummyGroups);
+    expect(component.allUsersExpanded()).toBeFalse();
+
+    // Expandir todos
+    component.toggleAllUsers();
+    expect(component.allUsersExpanded()).toBeTrue();
+    expect(component.isUserExpanded('usr-1')).toBeTrue();
+    expect(component.isUserExpanded('usr-2')).toBeTrue();
+
+    // Colapsar todos
+    component.toggleAllUsers();
+    expect(component.allUsersExpanded()).toBeFalse();
+    expect(component.isUserExpanded('usr-1')).toBeFalse();
+    expect(component.isUserExpanded('usr-2')).toBeFalse();
+  });
+
+  it('debe alternar entre vista GROUPED y FLAT', () => {
+    component.viewMode.set('FLAT');
+    expect(component.viewMode()).toBe('FLAT');
+
+    component.viewMode.set('GROUPED');
+    expect(component.viewMode()).toBe('GROUPED');
+  });
+
+  it('openOrganizationDetail debe navegar a /admin/organizaciones/:id', () => {
+    const router = TestBed.inject(Router);
+    const navigateSpy = spyOn(router, 'navigate');
+
+    component.openOrganizationDetail('org-way-001');
+    expect(navigateSpy).toHaveBeenCalledWith(['/admin/organizaciones', 'org-way-001']);
+  });
+
+  it('openUserDetail debe navegar a /admin/usuarios/:id cuando el id es válido', () => {
+    const router = TestBed.inject(Router);
+    const navigateSpy = spyOn(router, 'navigate');
+
+    component.openUserDetail('usr-felipe-001');
+    expect(navigateSpy).toHaveBeenCalledWith(['/admin/usuarios', 'usr-felipe-001']);
+  });
+
+  it('getUserInitials debe retornar las iniciales correctas', () => {
+    expect(component.getUserInitials('Laura Gómez')).toBe('LG');
+    expect(component.getUserInitials('Carlos Mendoza Ruiz')).toBe('CM');
+    expect(component.getUserInitials('Dokqet')).toBe('DO');
+    expect(component.getUserInitials('')).toBe('US');
   });
 });

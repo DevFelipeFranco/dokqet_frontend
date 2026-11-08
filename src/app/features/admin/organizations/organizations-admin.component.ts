@@ -1,12 +1,15 @@
-import { Component, OnInit, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router, RouterLink } from '@angular/router';
 import { SuperAdminService } from '../../../core/services/super-admin.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import {
   AdminMember,
   AdminOrganizationSummary,
-  AdminPlatformOverview
+  AdminPlatformOverview,
+  AdminUserOrganizationsGroupDto,
+  OrganizationsViewMode
 } from '../../../core/models/super-admin.model';
 import {
   BadgeComponent,
@@ -30,6 +33,7 @@ import {
     CommonModule,
     DatePipe,
     FormsModule,
+    RouterLink,
     BreadcrumbsComponent,
     ButtonComponent,
     BadgeComponent,
@@ -45,6 +49,7 @@ import {
   templateUrl: './organizations-admin.component.html'
 })
 export class OrganizationsAdminComponent implements OnInit {
+  private readonly router = inject(Router);
   private readonly superAdminService = inject(SuperAdminService);
   private readonly notificationService = inject(NotificationService);
 
@@ -68,6 +73,16 @@ export class OrganizationsAdminComponent implements OnInit {
   readonly totalElements = signal<number>(0);
   readonly totalPages = signal<number>(0);
   readonly searchQuery = signal<string>('');
+
+  // Modo de visualización: Agrupado por Usuario vs Lista General Plana (HU-25)
+  readonly viewMode = signal<OrganizationsViewMode>('GROUPED');
+  readonly userGroups = signal<AdminUserOrganizationsGroupDto[]>([]);
+  readonly expandedUserIds = signal<Set<string>>(new Set<string>());
+
+  readonly allUsersExpanded = computed(() => {
+    const groups = this.userGroups();
+    return groups.length > 0 && groups.every((g) => this.expandedUserIds().has(g.userId));
+  });
 
   // Inspección de miembros de una firma
   readonly selectedOrg = signal<AdminOrganizationSummary | null>(null);
@@ -121,11 +136,14 @@ export class OrganizationsAdminComponent implements OnInit {
     this.superAdminService.getOrganizations(page, size, query).subscribe({
       next: (res) => {
         if (res.success && res.data) {
-          this.organizations.set(res.data.content || []);
+          const list = res.data.content || [];
+          this.organizations.set(list);
+          this.userGroups.set(this.buildUserGroups(list));
           this.totalElements.set(res.data.totalElements || 0);
           this.totalPages.set(res.data.totalPages || 0);
         } else {
           this.organizations.set([]);
+          this.userGroups.set([]);
           this.organizationsError.set('Respuesta inesperada al consultar organizaciones.');
         }
         this.loadingOrganizations.set(false);
@@ -255,5 +273,170 @@ export class OrganizationsAdminComponent implements OnInit {
       default:
         return 'secondary';
     }
+  }
+
+  /**
+   * Determina si la fila de un usuario está expandida en la vista jerárquica (HU-25)
+   */
+  isUserExpanded(userId: string): boolean {
+    return this.expandedUserIds().has(userId);
+  }
+
+  /**
+   * Conmuta la expansión de un usuario específico
+   */
+  toggleUserExpand(userId: string): void {
+    this.expandedUserIds.update((set) => {
+      const copy = new Set(set);
+      if (copy.has(userId)) {
+        copy.delete(userId);
+      } else {
+        copy.add(userId);
+      }
+      return copy;
+    });
+  }
+
+  /**
+   * Navega a la pantalla completa de la organización (HU-26)
+   */
+  openOrganizationDetail(orgId: string): void {
+    if (orgId) {
+      this.router.navigate(['/admin/organizaciones', orgId]);
+    }
+  }
+
+  /**
+   * Navega a la ficha de usuario titular
+   */
+  openUserDetail(userId: string): void {
+    if (userId && !userId.startsWith('email:') && !userId.startsWith('name:')) {
+      this.router.navigate(['/admin/usuarios', userId]);
+    }
+  }
+
+  /**
+   * Conmuta la expansión masiva de todos los usuarios
+   */
+  toggleAllUsers(): void {
+    const shouldExpand = !this.allUsersExpanded();
+    this.expandedUserIds.update((set) => {
+      const copy = new Set(set);
+      for (const group of this.userGroups()) {
+        if (shouldExpand) {
+          copy.add(group.userId);
+        } else {
+          copy.delete(group.userId);
+        }
+      }
+      return copy;
+    });
+  }
+
+  /**
+   * Obtiene iniciales a partir del nombre completo
+   */
+  getUserInitials(name: string): string {
+    if (!name) return 'US';
+    const clean = name.replace(/^Espacio Personal\s*-\s*/i, '').trim();
+    const parts = clean.split(/\s+/);
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    return clean.slice(0, 2).toUpperCase();
+  }
+
+  /**
+   * Agrupa las organizaciones por usuario propietario/titular
+   */
+  buildUserGroups(orgList: AdminOrganizationSummary[]): AdminUserOrganizationsGroupDto[] {
+    const map = new Map<string, AdminUserOrganizationsGroupDto>();
+
+    for (const org of orgList) {
+      // 1. Clave primaria unificada: ownerId, personalOwnerId o createdById
+      let userKey = org.ownerId || org.personalOwnerId || org.createdById;
+
+      // 2. Fallbacks de agrupación si el backend no tuviera id directo
+      if (!userKey && org.ownerEmail) {
+        userKey = 'email:' + org.ownerEmail.trim().toLowerCase();
+      }
+
+      if (!userKey && org.ownerName) {
+        userKey = 'name:' + org.ownerName.trim().toLowerCase();
+      }
+
+      let userName = org.ownerName;
+      let userEmail = org.ownerEmail;
+
+      if (org.isPersonal) {
+        if (!userName) {
+          const stripped = org.name.replace(/^Espacio Personal\s*-\s*/i, '').trim();
+          userName = stripped.toLowerCase() === 'mi espacio de trabajo' || !stripped ? 'Usuario Titular' : stripped;
+        }
+        if (!userKey) {
+          const stripped = org.name.replace(/^Espacio Personal\s*-\s*/i, '').trim();
+          userKey = stripped && stripped.toLowerCase() !== 'mi espacio de trabajo'
+            ? 'name:' + stripped.toLowerCase()
+            : org.id;
+        }
+        userEmail = userEmail || `${userName.toLowerCase().replace(/[^a-z0-9]/g, '.')}@dokqet.com`;
+      } else {
+        userKey = userKey || org.id;
+        userName = userName || org.name;
+        userEmail = userEmail || `${userName.toLowerCase().replace(/[^a-z0-9]/g, '.')}@dokqet.com`;
+      }
+
+      let group = map.get(userKey);
+      if (!group) {
+        group = {
+          userId: userKey,
+          userName: userName,
+          userEmail: userEmail,
+          userStatus: 'ACTIVE',
+          personalWorkspace: null,
+          organizations: [],
+          totalWorkspacesCount: 0,
+          totalProcessesCount: 0,
+          totalMembersCount: 0,
+          createdAt: org.createdAt
+        };
+        map.set(userKey, group);
+      } else {
+        // Enriquecer el nombre de la persona si el existente era preliminar o genérico
+        const isGenericName =
+          !group.userName ||
+          group.userName === 'Usuario Titular' ||
+          group.userName.toLowerCase() === 'mi espacio de trabajo' ||
+          group.userName.startsWith('Usuario ');
+        if (isGenericName && userName && userName !== 'Usuario Titular') {
+          group.userName = userName;
+        }
+        if (org.ownerEmail && (!group.userEmail || group.userEmail.endsWith('@dokqet.com'))) {
+          group.userEmail = org.ownerEmail;
+        }
+      }
+
+      if (org.isPersonal) {
+        group.personalWorkspace = org;
+        if (org.ownerName) {
+          group.userName = org.ownerName;
+        }
+      } else {
+        group.organizations.push(org);
+        if (org.ownerName && (!group.userName || group.userName === 'Usuario Titular' || group.userName.toLowerCase() === 'mi espacio de trabajo')) {
+          group.userName = org.ownerName;
+        }
+      }
+
+      group.totalWorkspacesCount = (group.personalWorkspace ? 1 : 0) + group.organizations.length;
+      group.totalProcessesCount =
+        (group.personalWorkspace?.processesCount ?? 0) +
+        group.organizations.reduce((acc, o) => acc + (o.processesCount || 0), 0);
+      group.totalMembersCount =
+        (group.personalWorkspace?.membersCount ?? 0) +
+        group.organizations.reduce((acc, o) => acc + (o.membersCount || 0), 0);
+    }
+
+    return Array.from(map.values());
   }
 }

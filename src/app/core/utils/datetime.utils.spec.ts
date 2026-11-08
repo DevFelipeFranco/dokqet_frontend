@@ -2,6 +2,7 @@ import {
   parseDate,
   formatLocalDate,
   formatRelativeTime,
+  formatRelativeConsultationDate,
   getUserTimeZone,
   COLOMBIA_TIMEZONE
 } from './datetime.utils';
@@ -67,5 +68,32 @@ describe('DateTimeUtils (Manejo de Fechas y Zonas Horarias)', () => {
     const tz = getUserTimeZone();
     expect(tz).toBeTruthy();
     expect(typeof tz).toBe('string');
+  });
+
+  describe('formatRelativeConsultationDate (HU-28 / RN-FE-28-01)', () => {
+    it('debe retornar "Sin consultar" si el valor es nulo o indefinido', () => {
+      expect(formatRelativeConsultationDate(null)).toBe('Sin consultar');
+      expect(formatRelativeConsultationDate(undefined)).toBe('Sin consultar');
+      expect(formatRelativeConsultationDate('')).toBe('Sin consultar');
+    });
+
+    it('debe retornar "hoy, [hora]" para consultas realizadas hoy', () => {
+      const now = new Date();
+      const res = formatRelativeConsultationDate(now.toISOString());
+      expect(res).toMatch(/^hoy, /);
+    });
+
+    it('debe retornar "ayer, [hora]" para consultas realizadas ayer', () => {
+      const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      const res = formatRelativeConsultationDate(yesterday.toISOString());
+      expect(res).toMatch(/^ayer, /);
+    });
+
+    it('debe retornar fecha corta para consultas anteriores a ayer', () => {
+      const past = new Date('2025-05-10T14:30:00Z');
+      const res = formatRelativeConsultationDate(past.toISOString());
+      expect(res).toContain('2025');
+      expect(res).toContain('10');
+    });
   });
 });

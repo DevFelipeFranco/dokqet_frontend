@@ -432,6 +432,24 @@
             </button>
           </div>
 
+          <!-- Botón de Control Masivo: Expandir / Colapsar todas (Visible únicamente en modo Tarjetas) -->
+          @if (viewMode() === 'CARDS') {
+            <button
+              type="button"
+              (click)="toggleAllCards()"
+              class="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-2.5 py-1 text-xs font-semibold text-muted-foreground hover:text-foreground shadow-2xs transition-colors cursor-pointer"
+              [attr.aria-label]="allCardsExpanded() ? 'Colapsar todas las tarjetas' : 'Expandir todas las tarjetas'">
+              <svg
+                [class]="'size-3.5 transition-transform duration-200 ' + (allCardsExpanded() ? 'rotate-180' : '')"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+              </svg>
+              <span>{{ allCardsExpanded() ? 'Colapsar todas' : 'Expandir todas' }}</span>
+            </button>
+          }
+
           <!-- Selector de Modo de Vista: Tabla (Default Escalar) vs Tarjetas -->
           <div class="flex items-center rounded-xl border border-border bg-muted/40 p-0.5 shrink-0" role="group" aria-label="Cambiar vista">
             <button
@@ -685,13 +703,15 @@
             </table>
           </div>
         } @else {
-          <!-- VISTA 2: LISTADO DE TARJETAS EXTENDIDAS (ESPACIADO OPTIMIZADO CON GRID GAP-6) -->
-          <div class="grid grid-cols-1 gap-6 pt-2">
+          <!-- VISTA 2: LISTADO DE TARJETAS COLAPSIBLES TIPO ACORDEÓN (ESPACIADO OPTIMIZADO GRID GAP-4) -->
+          <div class="grid grid-cols-1 gap-4 pt-2">
             @for (taskItem of filteredTasks(); track taskItem.taskKey) {
               <app-scheduler-task-card
                 [task]="taskItem"
                 [timezones]="availableTimezones()"
                 [globalPaused]="overview()?.globalPaused ?? false"
+                [isExpanded]="isTaskExpanded(taskItem.taskKey)"
+                (isExpandedChange)="onTaskExpandedChange(taskItem.taskKey, $event)"
                 (taskMutated)="onTaskMutated($event)"
                 (runNowRequested)="onRunNow($event)"
                 (stopRequested)="onStopTask($event)"

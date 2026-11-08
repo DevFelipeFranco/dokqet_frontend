@@ -144,6 +144,33 @@
 
           <!-- Header Action Buttons (Matching Prodex top-right buttons) -->
           <div class="flex flex-wrap items-center gap-2 shrink-0">
+            <!-- Botón Actualizar bajo demanda con Cooldown de 10 min (HU-28 / RN-FE-28-02) -->
+            <button
+              type="button"
+              (click)="refreshProcess()"
+              [disabled]="refreshing() || cooldownRemainingSeconds() > 0 || v.process.ultimoResultado === 'NOT_FOUND'"
+              [title]="v.process.ultimoResultado === 'NOT_FOUND' 
+                ? 'El expediente no fue encontrado en la Rama Judicial. Usa la recarga manual.' 
+                : (cooldownRemainingSeconds() > 0 
+                  ? (cooldownMessage() || 'Tiempo de espera requerido. Podrás volver a actualizar en ' + cooldownTimeFormatted()) 
+                  : 'Consultar novedades inmediatamente en la Rama Judicial')"
+              class="inline-flex h-9 items-center gap-2 rounded-xl border border-border bg-background px-3.5 text-xs sm:text-sm font-medium text-foreground shadow-2xs hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 transition-colors cursor-pointer">
+              <svg 
+                [class]="'size-4 text-muted-foreground ' + (refreshing() ? 'animate-spin' : '')" 
+                fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              <span>
+                @if (refreshing()) {
+                  Actualizando...
+                } @else if (cooldownRemainingSeconds() > 0) {
+                  Reintentar en {{ cooldownTimeFormatted() }}
+                } @else {
+                  Actualizar
+                }
+              </span>
+            </button>
+
             <button
               type="button"
               (click)="exportActuacionesCsv()"
@@ -175,6 +202,63 @@
             </button>
           </div>
         </div>
+
+        <!-- Banner: Proceso No Encontrado en la Rama Judicial (HU-28 / RN-FE-28-04) -->
+        @if (v.process.ultimoResultado === 'NOT_FOUND') {
+          <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-amber-900 dark:text-amber-200">
+            <div class="flex items-start gap-3">
+              <span class="flex size-7 shrink-0 items-center justify-center rounded-full bg-amber-500/20 text-amber-600 dark:text-amber-400 mt-0.5">
+                <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              </span>
+              <div class="flex flex-col gap-0.5">
+                <strong class="text-sm font-semibold text-foreground">Expediente no encontrado en la Rama Judicial</strong>
+                <p class="text-xs text-muted-foreground leading-relaxed">
+                  El identificador de este proceso pudo haber cambiado o fue reestructurado en la base de datos oficial.
+                  @if (!v.canReload) {
+                    <span class="block mt-1 font-medium text-amber-800 dark:text-amber-300">
+                      Solo los administradores de la organización o el abogado responsable del proceso pueden ejecutar la recarga desde la Rama.
+                    </span>
+                  }
+                </p>
+              </div>
+            </div>
+
+            @if (v.canReload) {
+              <button
+                type="button"
+                (click)="openReloadModal()"
+                class="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white px-3.5 py-2 text-xs sm:text-sm font-semibold shadow-xs transition-colors cursor-pointer">
+                <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                <span>Volver a cargar desde la Rama</span>
+              </button>
+            }
+          </div>
+        }
+
+        <!-- Aviso de Fallo Temporal en la Rama Judicial (HU-28 / RN-FE-28-03) -->
+        @if (v.process.ultimoResultado === 'ERROR') {
+          <div class="flex items-start gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3.5 text-xs text-amber-900 dark:text-amber-200">
+            <span class="flex size-5 shrink-0 items-center justify-center text-amber-600 dark:text-amber-400 mt-0.5">
+              <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </span>
+            <div class="flex-1 space-y-0.5">
+              <p>
+                <strong>Último intento fallido:</strong> {{ formatConsultationDate(v.process.ultimaRevision) }} (la Rama no respondió). Se vuelve a intentar en la siguiente revisión.
+              </p>
+              @if (isConsultationOver24h(v.process.ultimaConsulta)) {
+                <p class="font-semibold text-amber-800 dark:text-amber-300">
+                  ⚠️ No se ha podido consultar desde hace más de 24 horas.
+                </p>
+              }
+            </div>
+          </div>
+        }
 
         <!-- 2. 4 KPI Metric Cards Row (Interactive Filters for the Expediente) -->
         <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3.5">
@@ -255,11 +339,12 @@
             </button>
           </nav>
 
-          @if (v.process.ultimaConsulta) {
-            <span class="text-[11px] text-muted-foreground pb-2">
-              Sincronizado con Rama Judicial: <strong class="font-medium text-foreground">{{ v.process.ultimaConsulta }}</strong>
-            </span>
-          }
+          <div class="flex items-center gap-1.5 text-[11px] text-muted-foreground pb-2">
+            <span>Última consulta exitosa en la Rama:</span>
+            <strong class="font-medium text-foreground">
+              {{ formatConsultationDate(v.process.ultimaConsulta) }}
+            </strong>
+          </div>
         </div>
 
         <!-- ========================================================================= -->
@@ -540,6 +625,289 @@
                           } @else {
                             <span class="text-xs italic text-muted-foreground">Sin anotación registrada en estados</span>
                           }
+
+                          @if (a.estado) {
+                            <div class="mt-2.5 flex flex-col gap-1.5 rounded-lg border border-border/80 bg-muted/40 p-2 text-xs">
+                              @if (a.estado.estadoVista === 'ENCONTRADO') {
+                                <div class="flex flex-wrap items-center gap-1.5">
+                                  @if (a.estado.archivosProceso && a.estado.archivosProceso.length > 1) {
+                                    @for (file of a.estado.archivosProceso; track file.url) {
+                                      <a
+                                        [href]="file.url"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        class="inline-flex max-w-full items-center gap-1.5 rounded-md bg-emerald-600 px-2.5 py-1 text-xs font-semibold text-white shadow-2xs hover:bg-emerald-700 transition-colors"
+                                        [attr.aria-label]="'Abrir PDF del auto: ' + file.nombre">
+                                        <svg class="size-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                        </svg>
+                                        <span class="truncate">Auto notificado: {{ file.nombre }}</span>
+                                      </a>
+                                    }
+                                  } @else if (a.estado.processPdfUrl) {
+                                    <a
+                                      [href]="a.estado.processPdfUrl"
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      class="inline-flex items-center gap-1.5 rounded-md bg-emerald-600 px-2.5 py-1 text-xs font-semibold text-white shadow-2xs hover:bg-emerald-700 transition-colors"
+                                      [attr.aria-label]="'Abrir PDF del auto: ' + (a.estado.processPdfName || 'Auto')">
+                                      <svg class="size-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                      </svg>
+                                      <span>Abrir PDF del auto</span>
+                                    </a>
+                                  }
+                                  @if (a.estado.estadoGeneralUrl) {
+                                    <a
+                                      [href]="a.estado.estadoGeneralUrl"
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      class="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-2.5 py-1 text-xs font-medium text-foreground hover:bg-muted transition-colors"
+                                      [attr.aria-label]="'Ver estado general del juzgado: ' + (a.estado.estadoGeneralName || 'Estado')">
+                                      <svg class="size-3.5 shrink-0 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                      </svg>
+                                      <span>{{ a.estado.numeroEstado ? 'Ver Estado No. ' + a.estado.numeroEstado : 'Ver estado del juzgado' }}</span>
+                                    </a>
+                                  }
+                                </div>
+                                <div class="flex flex-wrap items-center justify-between gap-2">
+                                  @if (a.estado.processPdfName && (!a.estado.archivosProceso || a.estado.archivosProceso.length <= 1)) {
+                                    <span class="text-[11px] text-muted-foreground truncate" [title]="a.estado.processPdfName">
+                                      {{ a.estado.processPdfName }}
+                                    </span>
+                                  }
+                                  @if (a.estado.paginaUrl || a.estado.micrositioUrl) {
+                                    <a
+                                      [href]="a.estado.paginaUrl || a.estado.micrositioUrl"
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      class="inline-flex items-center gap-1 text-[11px] font-medium text-brand hover:underline whitespace-nowrap">
+                                      <span>Ver publicación en el micrositio</span>
+                                      <span aria-hidden="true">↗</span>
+                                    </a>
+                                  }
+                                </div>
+                              } @else if (a.estado.estadoVista === 'SOLO_ESTADO') {
+                                <div class="flex flex-col gap-1">
+                                  <div class="flex flex-wrap items-center justify-between gap-2">
+                                    @if (a.estado.estadoGeneralUrl) {
+                                      <a
+                                        [href]="a.estado.estadoGeneralUrl"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        class="inline-flex w-fit items-center gap-1.5 rounded-md border border-border bg-background px-2.5 py-1 text-xs font-medium text-foreground hover:bg-muted transition-colors"
+                                        [attr.aria-label]="'Ver estado general del juzgado: ' + (a.estado.estadoGeneralName || 'Estado')">
+                                        <svg class="size-3.5 shrink-0 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                        </svg>
+                                        <span>{{ a.estado.numeroEstado ? 'Ver Estado No. ' + a.estado.numeroEstado + ' (PDF)' : 'Ver estado del juzgado' }}</span>
+                                      </a>
+                                    }
+                                    @if (a.estado.paginaUrl || a.estado.micrositioUrl) {
+                                      <a
+                                        [href]="a.estado.paginaUrl || a.estado.micrositioUrl"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        class="inline-flex items-center gap-1 text-[11px] font-medium text-brand hover:underline whitespace-nowrap">
+                                        <span>Ver publicación en el micrositio</span>
+                                        <span aria-hidden="true">↗</span>
+                                      </a>
+                                    }
+                                  </div>
+                                  <span class="text-[11px] text-muted-foreground">
+                                    El despacho publicó el estado general pero no el auto individualizado. Busca el radicado dentro del documento.
+                                  </span>
+                                </div>
+                              } @else if (a.estado.estadoVista === 'BUSCANDO') {
+                                @if (a.estado.buscadoAlMenosUnaVez === false) {
+                                  <div class="inline-flex items-center gap-1.5 text-brand font-medium">
+                                    <svg class="size-3.5 shrink-0 animate-spin" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                                      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                                    </svg>
+                                    <span>Consultando publicaciones del juzgado en este momento...</span>
+                                  </div>
+                                } @else {
+                                  <div class="flex flex-wrap items-center justify-between gap-2 text-muted-foreground">
+                                    <span class="inline-flex items-center gap-1.5 font-medium text-foreground/85">
+                                      <svg class="size-3.5 shrink-0 text-amber-600 dark:text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                      </svg>
+                                      <span>Aún no publicado por el despacho · Revisión automática por 5 días hábiles</span>
+                                    </span>
+                                    <a
+                                      [href]="a.estado.micrositioUrl || RAMA_PUBLICACIONES_URL"
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      aria-label="Abrir portal oficial de Publicaciones Procesales de la Rama Judicial en una nueva pestaña"
+                                      class="inline-flex items-center gap-1 font-semibold text-brand hover:underline whitespace-nowrap">
+                                      <span>Abrir portal del despacho</span>
+                                      <span aria-hidden="true">↗</span>
+                                    </a>
+                                  </div>
+                                }
+                              } @else if (a.estado.estadoVista === 'NO_ENCONTRADO') {
+                                <div class="flex flex-wrap items-center justify-between gap-2">
+                                  <div class="inline-flex items-center gap-1 text-amber-700 dark:text-amber-400">
+                                    <span aria-hidden="true">⚠️</span>
+                                    <span>Auto no publicado por el despacho en el portal web</span>
+                                  </div>
+                                  <a
+                                    [href]="a.estado.micrositioUrl || RAMA_PUBLICACIONES_URL"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    aria-label="Consultar portal oficial de Publicaciones Procesales en una nueva pestaña"
+                                    class="inline-flex items-center gap-1 font-medium text-brand hover:underline whitespace-nowrap">
+                                    <span>Consultar portal del despacho</span>
+                                    <span aria-hidden="true">↗</span>
+                                  </a>
+                                </div>
+                              } @else if (a.estado.estadoVista === 'SIN_ESTADOS_DEL_JUZGADO') {
+                                <div class="flex flex-wrap items-center justify-between gap-2 text-muted-foreground">
+                                  <div class="inline-flex items-center gap-1">
+                                    <span aria-hidden="true">ℹ️</span>
+                                    <span>Este despacho judicial no publica estados electrónicos en este portal</span>
+                                  </div>
+                                  <a
+                                    [href]="a.estado.micrositioUrl || RAMA_PUBLICACIONES_URL"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    aria-label="Verificar en portal oficial de Publicaciones Procesales en una nueva pestaña"
+                                    class="inline-flex items-center gap-1 font-medium text-brand hover:underline whitespace-nowrap">
+                                    <span>Verificar portal del despacho</span>
+                                    <span aria-hidden="true">↗</span>
+                                  </a>
+                                </div>
+                              } @else if (a.estado.estadoVista === 'ENLACE') {
+                                @if (a.estado.processPdfUrl) {
+                                  <a
+                                    [href]="a.estado.processPdfUrl"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    class="inline-flex w-fit items-center gap-1.5 rounded-md border border-border bg-background px-2.5 py-1 text-xs font-semibold text-brand hover:underline transition-colors">
+                                    <span>🔗</span>
+                                    <span>{{ a.estado.processPdfName || 'Abrir documento enlazado' }}</span>
+                                  </a>
+                                } @else if (a.estado.micrositioUrl) {
+                                  <div class="flex flex-wrap items-center justify-between gap-2 text-muted-foreground">
+                                    <span>Fijación histórica anterior a 30 días</span>
+                                    <a
+                                      [href]="a.estado.micrositioUrl"
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      class="inline-flex items-center gap-1 font-medium text-brand hover:underline whitespace-nowrap">
+                                      <span>Consultar estado en el micrositio</span>
+                                      <span aria-hidden="true">↗</span>
+                                    </a>
+                                  </div>
+                                }
+                              } @else if (a.estado.estadoVista === 'ANTES') {
+                                <span class="text-xs text-muted-foreground">
+                                  🕒 Fijación de estado programada
+                                </span>
+                              }
+                            </div>
+                          }
+
+                          @if (a.tieneDocumentos) {
+                            @let docsView = getDocumentosView(a);
+                            <div class="mt-2 flex flex-col items-start gap-1.5 text-xs">
+                              @if (!docsView || docsView.kind === 'BOTON') {
+                                <button
+                                  type="button"
+                                  (click)="consultDocumentos(a.id)"
+                                  [disabled]="isConsultingDocumentos(a.id)"
+                                  class="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-2.5 py-1 text-xs font-medium text-foreground hover:bg-muted transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed">
+                                  @if (isConsultingDocumentos(a.id)) {
+                                    <svg class="size-3.5 shrink-0 animate-spin text-brand" fill="none" viewBox="0 0 24 24">
+                                      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                                    </svg>
+                                    <span>Consultando la Rama…</span>
+                                  } @else {
+                                    <svg class="size-3.5 shrink-0 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                                    </svg>
+                                    <span>Ver documentos</span>
+                                  }
+                                </button>
+                              } @else if (docsView.kind === 'VACIA') {
+                                <p class="text-muted-foreground">La Rama Judicial no muestra documentos de esta actuación.</p>
+                              } @else if (docsView.kind === 'LISTA') {
+                                <ul class="flex flex-col gap-1 w-full">
+                                  @for (doc of docsView.documentos; track doc.idRegDocumento) {
+                                    <li class="min-w-0">
+                                      <button
+                                        type="button"
+                                        (click)="openDocumentoPreview(doc)"
+                                        class="inline-flex max-w-full cursor-pointer items-center gap-1.5 text-left text-brand hover:underline">
+                                        <svg class="size-3.5 shrink-0 text-brand" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                        </svg>
+                                        <span class="truncate font-medium">{{ doc.nombre }}</span>
+                                      </button>
+                                      @if (doc.fechaCarga) {
+                                        <span class="text-muted-foreground text-[11px]"> · cargado el {{ doc.fechaCarga | date:'dd/MM/yyyy' }}</span>
+                                      }
+                                    </li>
+                                  }
+                                </ul>
+                                <p class="text-[11px] text-muted-foreground">Los documentos se abren desde la Rama Judicial.</p>
+                              }
+                            </div>
+                          }
+
+                          @if (a.autoAnterior) {
+                            @let prevDocsView = getDocumentosView({ id: a.autoAnterior.actuacionId, documentos: a.autoAnterior.documentos });
+                            <div class="mt-2.5 pt-2 border-t border-border/60 flex flex-col items-start gap-1 text-xs">
+                              <p class="text-muted-foreground font-medium">
+                                Documentos del auto anterior: «{{ a.autoAnterior.tipoActuacion || 'Actuación' }}»{{ a.autoAnterior.fecha ? ' del ' + (a.autoAnterior.fecha | date:'dd/MM/yyyy') : '' }}
+                              </p>
+                              @if (!prevDocsView || prevDocsView.kind === 'BOTON') {
+                                <button
+                                  type="button"
+                                  (click)="consultDocumentos(a.autoAnterior.actuacionId)"
+                                  [disabled]="isConsultingDocumentos(a.autoAnterior.actuacionId)"
+                                  class="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-2.5 py-1 text-xs font-medium text-foreground hover:bg-muted transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed">
+                                  @if (isConsultingDocumentos(a.autoAnterior.actuacionId)) {
+                                    <svg class="size-3.5 shrink-0 animate-spin text-brand" fill="none" viewBox="0 0 24 24">
+                                      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                                    </svg>
+                                    <span>Consultando la Rama…</span>
+                                  } @else {
+                                    <svg class="size-3.5 shrink-0 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                                    </svg>
+                                    <span>Ver documentos</span>
+                                  }
+                                </button>
+                              } @else if (prevDocsView.kind === 'VACIA') {
+                                <p class="text-muted-foreground">La Rama Judicial no muestra documentos de esta actuación.</p>
+                              } @else if (prevDocsView.kind === 'LISTA') {
+                                <ul class="flex flex-col gap-1 w-full">
+                                  @for (doc of prevDocsView.documentos; track doc.idRegDocumento) {
+                                    <li class="min-w-0">
+                                      <button
+                                        type="button"
+                                        (click)="openDocumentoPreview(doc)"
+                                        class="inline-flex max-w-full cursor-pointer items-center gap-1.5 text-left text-brand hover:underline">
+                                        <svg class="size-3.5 shrink-0 text-brand" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                        </svg>
+                                        <span class="truncate font-medium">{{ doc.nombre }}</span>
+                                      </button>
+                                      @if (doc.fechaCarga) {
+                                        <span class="text-muted-foreground text-[11px]"> · cargado el {{ doc.fechaCarga | date:'dd/MM/yyyy' }}</span>
+                                      }
+                                    </li>
+                                  }
+                                </ul>
+                                <p class="text-[11px] text-muted-foreground">Los documentos se abren desde la Rama Judicial.</p>
+                              }
+                            </div>
+                          }
                         </td>
 
                         <!-- Col 5: Términos Procesales (Inicia -> Vence) -->
@@ -676,6 +1044,239 @@
                             {{ isActuacionExpanded(a.id) ? 'Contraer texto' : 'Ver texto completo' }}
                           </button>
                         }
+                      }
+
+                      @if (a.estado) {
+                        <div class="mt-2 flex flex-col gap-1.5 rounded-lg border border-border/80 bg-muted/40 p-2 text-xs">
+                          @if (a.estado.estadoVista === 'ENCONTRADO') {
+                            <div class="flex flex-wrap items-center gap-1.5">
+                              @if (a.estado.processPdfUrl) {
+                                <a
+                                  [href]="a.estado.processPdfUrl"
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  class="inline-flex items-center gap-1.5 rounded-md bg-emerald-600 px-2.5 py-1 text-xs font-semibold text-white shadow-2xs hover:bg-emerald-700 transition-colors"
+                                  [attr.aria-label]="'Abrir PDF del auto: ' + (a.estado.processPdfName || 'Auto')">
+                                  <svg class="size-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                  </svg>
+                                  <span>Abrir PDF del auto</span>
+                                </a>
+                              }
+                              @if (a.estado.estadoGeneralUrl) {
+                                <a
+                                  [href]="a.estado.estadoGeneralUrl"
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  class="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-2.5 py-1 text-xs font-medium text-foreground hover:bg-muted transition-colors"
+                                  [attr.aria-label]="'Ver estado general del juzgado: ' + (a.estado.estadoGeneralName || 'Estado')">
+                                  <svg class="size-3.5 shrink-0 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                  </svg>
+                                  <span>Ver estado del juzgado</span>
+                                </a>
+                              }
+                            </div>
+                            @if (a.estado.processPdfName) {
+                              <span class="text-[11px] text-muted-foreground truncate" [title]="a.estado.processPdfName">
+                                {{ a.estado.processPdfName }}
+                              </span>
+                            }
+                          } @else if (a.estado.estadoVista === 'SOLO_ESTADO') {
+                            <div class="flex flex-col gap-1">
+                              @if (a.estado.estadoGeneralUrl) {
+                                <a
+                                  [href]="a.estado.estadoGeneralUrl"
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  class="inline-flex w-fit items-center gap-1.5 rounded-md border border-border bg-background px-2.5 py-1 text-xs font-medium text-foreground hover:bg-muted transition-colors"
+                                  [attr.aria-label]="'Ver estado general del juzgado: ' + (a.estado.estadoGeneralName || 'Estado')">
+                                  <svg class="size-3.5 shrink-0 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                  </svg>
+                                  <span>Ver estado del juzgado</span>
+                                </a>
+                              }
+                              <span class="text-[11px] text-muted-foreground">
+                                El despacho publicó el estado general pero no el auto individualizado.
+                              </span>
+                            </div>
+                          } @else if (a.estado.estadoVista === 'BUSCANDO') {
+                            @if (a.estado.buscadoAlMenosUnaVez === false) {
+                              <div class="inline-flex items-center gap-1.5 text-brand font-medium">
+                                <svg class="size-3.5 shrink-0 animate-spin" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                                </svg>
+                                <span>Consultando publicaciones del juzgado en este momento...</span>
+                              </div>
+                            } @else {
+                              <div class="flex flex-wrap items-center justify-between gap-2 text-muted-foreground">
+                                <span class="inline-flex items-center gap-1.5 font-medium text-foreground/85">
+                                  <svg class="size-3.5 shrink-0 text-amber-600 dark:text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                  </svg>
+                                  <span>Aún no publicado por el despacho · Revisión automática por 5 días hábiles</span>
+                                </span>
+                                <a
+                                  [href]="RAMA_PUBLICACIONES_URL"
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  aria-label="Abrir portal oficial de Publicaciones Procesales de la Rama Judicial en una nueva pestaña"
+                                  class="inline-flex items-center gap-1 font-semibold text-brand hover:underline whitespace-nowrap">
+                                  <span>Abrir portal oficial</span>
+                                  <span aria-hidden="true">↗</span>
+                                </a>
+                              </div>
+                            }
+                          } @else if (a.estado.estadoVista === 'NO_ENCONTRADO') {
+                            <div class="flex flex-wrap items-center justify-between gap-2">
+                              <div class="inline-flex items-center gap-1 text-amber-700 dark:text-amber-400">
+                                <span aria-hidden="true">⚠️</span>
+                                <span>Auto no publicado por el despacho en el portal web</span>
+                              </div>
+                              <a
+                                [href]="RAMA_PUBLICACIONES_URL"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                aria-label="Consultar portal oficial de Publicaciones Procesales en una nueva pestaña"
+                                class="inline-flex items-center gap-1 font-medium text-brand hover:underline whitespace-nowrap">
+                                <span>Consultar portal</span>
+                                <span aria-hidden="true">↗</span>
+                              </a>
+                            </div>
+                          } @else if (a.estado.estadoVista === 'SIN_ESTADOS_DEL_JUZGADO') {
+                            <div class="flex flex-wrap items-center justify-between gap-2 text-muted-foreground">
+                              <div class="inline-flex items-center gap-1">
+                                <span aria-hidden="true">ℹ️</span>
+                                <span>Este despacho judicial no publica estados electrónicos en este portal</span>
+                              </div>
+                              <a
+                                [href]="RAMA_PUBLICACIONES_URL"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                aria-label="Verificar en portal oficial de Publicaciones Procesales en una nueva pestaña"
+                                class="inline-flex items-center gap-1 font-medium text-brand hover:underline whitespace-nowrap">
+                                <span>Verificar portal</span>
+                                <span aria-hidden="true">↗</span>
+                              </a>
+                            </div>
+                          } @else if (a.estado.estadoVista === 'ENLACE') {
+                            @if (a.estado.processPdfUrl) {
+                              <a
+                                [href]="a.estado.processPdfUrl"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                class="inline-flex w-fit items-center gap-1.5 rounded-md border border-border bg-background px-2.5 py-1 text-xs font-semibold text-brand hover:underline transition-colors">
+                                <span>🔗</span>
+                                <span>{{ a.estado.processPdfName || 'Abrir documento enlazado' }}</span>
+                              </a>
+                            }
+                          } @else if (a.estado.estadoVista === 'ANTES') {
+                            <span class="text-xs text-muted-foreground">
+                              🕒 Fijación de estado programada
+                            </span>
+                          }
+                        </div>
+                      }
+
+                      @if (a.tieneDocumentos) {
+                        @let docsView = getDocumentosView(a);
+                        <div class="mt-2 flex flex-col items-start gap-1.5 text-xs">
+                          @if (!docsView || docsView.kind === 'BOTON') {
+                            <button
+                              type="button"
+                              (click)="consultDocumentos(a.id)"
+                              [disabled]="isConsultingDocumentos(a.id)"
+                              class="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-2.5 py-1 text-xs font-medium text-foreground hover:bg-muted transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed">
+                              @if (isConsultingDocumentos(a.id)) {
+                                <svg class="size-3.5 shrink-0 animate-spin text-brand" fill="none" viewBox="0 0 24 24">
+                                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                                </svg>
+                                <span>Consultando la Rama…</span>
+                              } @else {
+                                <svg class="size-3.5 shrink-0 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                                </svg>
+                                <span>Ver documentos</span>
+                              }
+                            </button>
+                          } @else if (docsView.kind === 'VACIA') {
+                            <p class="text-muted-foreground">La Rama Judicial no muestra documentos de esta actuación.</p>
+                          } @else if (docsView.kind === 'LISTA') {
+                            <ul class="flex flex-col gap-1 w-full">
+                              @for (doc of docsView.documentos; track doc.idRegDocumento) {
+                                <li class="min-w-0">
+                                  <button
+                                    type="button"
+                                    (click)="openDocumentoPreview(doc)"
+                                    class="inline-flex max-w-full cursor-pointer items-center gap-1.5 text-left text-brand hover:underline">
+                                    <svg class="size-3.5 shrink-0 text-brand" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    </svg>
+                                    <span class="truncate font-medium">{{ doc.nombre }}</span>
+                                  </button>
+                                  @if (doc.fechaCarga) {
+                                    <span class="text-muted-foreground text-[11px]"> · cargado el {{ doc.fechaCarga | date:'dd/MM/yyyy' }}</span>
+                                  }
+                                </li>
+                              }
+                            </ul>
+                            <p class="text-[11px] text-muted-foreground">Los documentos se abren desde la Rama Judicial.</p>
+                          }
+                        </div>
+                      }
+
+                      @if (a.autoAnterior) {
+                        @let prevDocsView = getDocumentosView({ id: a.autoAnterior.actuacionId, documentos: a.autoAnterior.documentos });
+                        <div class="mt-2.5 pt-2 border-t border-border/60 flex flex-col items-start gap-1 text-xs">
+                          <p class="text-muted-foreground font-medium">
+                            Documentos del auto anterior: «{{ a.autoAnterior.tipoActuacion || 'Actuación' }}»{{ a.autoAnterior.fecha ? ' del ' + (a.autoAnterior.fecha | date:'dd/MM/yyyy') : '' }}
+                          </p>
+                          @if (!prevDocsView || prevDocsView.kind === 'BOTON') {
+                            <button
+                              type="button"
+                              (click)="consultDocumentos(a.autoAnterior.actuacionId)"
+                              [disabled]="isConsultingDocumentos(a.autoAnterior.actuacionId)"
+                              class="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-2.5 py-1 text-xs font-medium text-foreground hover:bg-muted transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed">
+                              @if (isConsultingDocumentos(a.autoAnterior.actuacionId)) {
+                                <svg class="size-3.5 shrink-0 animate-spin text-brand" fill="none" viewBox="0 0 24 24">
+                                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                                </svg>
+                                <span>Consultando la Rama…</span>
+                              } @else {
+                                <svg class="size-3.5 shrink-0 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                                </svg>
+                                <span>Ver documentos</span>
+                              }
+                            </button>
+                          } @else if (prevDocsView.kind === 'VACIA') {
+                            <p class="text-muted-foreground">La Rama Judicial no muestra documentos de esta actuación.</p>
+                          } @else if (prevDocsView.kind === 'LISTA') {
+                            <ul class="flex flex-col gap-1 w-full">
+                              @for (doc of prevDocsView.documentos; track doc.idRegDocumento) {
+                                <li class="min-w-0">
+                                  <button
+                                    type="button"
+                                    (click)="openDocumentoPreview(doc)"
+                                    class="inline-flex max-w-full cursor-pointer items-center gap-1.5 text-left text-brand hover:underline">
+                                    <svg class="size-3.5 shrink-0 text-brand" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    </svg>
+                                    <span class="truncate font-medium">{{ doc.nombre }}</span>
+                                  </button>
+                                  @if (doc.fechaCarga) {
+                                    <span class="text-muted-foreground text-[11px]"> · cargado el {{ doc.fechaCarga | date:'dd/MM/yyyy' }}</span>
+                                  }
+                                </li>
+                              }
+                            </ul>
+                            <p class="text-[11px] text-muted-foreground">Los documentos se abren desde la Rama Judicial.</p>
+                          }
+                        </div>
                       }
                     </div>
 
@@ -1003,5 +1604,235 @@
         </div>
       }
     </app-modal>
+
+    <!-- Modal Asistido de Recarga Manual desde la Rama (HU-28 / RN-FE-28-05) -->
+    <app-modal
+      [isOpen]="showReloadModal()"
+      title="Volver a cargar desde la Rama Judicial"
+      description="Selecciona el proceso oficial correspondiente en la Rama Judicial para reanudar el seguimiento automático."
+      maxWidth="max-w-2xl"
+      [showFooter]="false"
+      (cancelled)="closeReloadModal()">
+
+      <div class="space-y-4">
+        <!-- Nota informativa sobre cuotas de consumo -->
+        <div class="rounded-xl border border-border/80 bg-muted/40 p-3 text-xs text-muted-foreground leading-relaxed flex items-start gap-2.5">
+          <svg class="size-4 shrink-0 text-primary mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <p>
+            Esta búsqueda utilizó <strong>1 consulta</strong> de la cuota de la Rama Judicial. Al confirmar el candidato se consumirá <strong>1 registro</strong> de cuota.
+          </p>
+        </div>
+
+        @if (loadingLookup()) {
+          <div class="py-10 flex flex-col items-center justify-center gap-3 text-center">
+            <svg class="size-8 animate-spin text-primary" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+            </svg>
+            <p class="text-xs sm:text-sm font-medium text-foreground">Consultando candidatos en el Portal de la Rama Judicial...</p>
+            <p class="text-xs text-muted-foreground">Buscando identificadores públicos actualizados para el radicado de 23 dígitos.</p>
+          </div>
+        } @else if (lookupError()) {
+          <div class="rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-xs sm:text-sm text-destructive">
+            <p class="font-medium">{{ lookupError() }}</p>
+          </div>
+        } @else if (candidates().length === 0) {
+          <!-- Mensaje oficial amigable cuando la Rama no devuelve candidatos -->
+          <div class="rounded-xl border border-border/80 bg-muted/30 p-5 text-center space-y-2">
+            <p class="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+              Se produjo un error con este proceso en la Rama Judicial. Espera e inténtalo de nuevo más tarde; se conservan los datos guardados. Si ya no lo necesitas, un administrador puede dejar de seguirlo.
+            </p>
+          </div>
+        } @else {
+          <!-- Lista de candidatos encontrados para selección -->
+          <div class="space-y-2.5 max-h-[380px] overflow-y-auto pr-1">
+            <p class="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              Candidatos disponibles ({{ candidates().length }})
+            </p>
+            @for (c of candidates(); track c.idProceso) {
+              <div
+                (click)="selectCandidate(c.idProceso)"
+                [class]="'cursor-pointer rounded-xl border p-3.5 transition-all ' + 
+                  (selectedCandidateId() === c.idProceso 
+                    ? 'border-primary bg-primary/5 ring-2 ring-primary/25 shadow-xs' 
+                    : 'border-border/80 hover:border-border hover:bg-muted/40')">
+                <div class="flex items-start justify-between gap-3">
+                  <div class="flex items-center gap-2.5">
+                    <input
+                      type="radio"
+                      [name]="'candidateRadio'"
+                      [id]="'cand-' + c.idProceso"
+                      [checked]="selectedCandidateId() === c.idProceso"
+                      (change)="selectCandidate(c.idProceso)"
+                      class="size-4 text-primary accent-primary cursor-pointer" />
+                    <label [for]="'cand-' + c.idProceso" class="font-semibold text-xs sm:text-sm text-foreground cursor-pointer">
+                      ID de Proceso: <span class="font-mono text-primary">{{ c.idProceso }}</span>
+                    </label>
+                  </div>
+                  @if (c.esPrivado) {
+                    <span class="rounded bg-muted px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground">
+                      Reserva Judicial
+                    </span>
+                  }
+                </div>
+
+                <div class="mt-2 text-xs space-y-1">
+                  <p class="font-medium text-foreground">
+                    {{ c.despacho || 'Despacho sin especificar' }}
+                    @if (c.departamento) {
+                      <span class="text-muted-foreground font-normal"> · {{ c.departamento }}</span>
+                    }
+                  </p>
+                  @if (c.sujetosProcesales) {
+                    <p class="text-muted-foreground line-clamp-2">
+                      <span class="font-semibold text-foreground/80">Partes:</span> {{ c.sujetosProcesales }}
+                    </p>
+                  }
+                  <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-muted-foreground pt-1 tabular-nums">
+                    @if (c.fechaProceso) {
+                      <span>Radicación: <strong class="text-foreground">{{ c.fechaProceso }}</strong></span>
+                    }
+                    @if (c.fechaUltimaActuacion) {
+                      <span>Últ. actuación: <strong class="text-foreground">{{ c.fechaUltimaActuacion }}</strong></span>
+                    }
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        }
+
+        @if (reloadError()) {
+          <div class="rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive">
+            <p>{{ reloadError() }}</p>
+          </div>
+        }
+
+        <!-- Botonera de Control del Modal -->
+        <div class="mt-4 flex flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-2 border-t border-border/70">
+          <app-button variant="outline" (buttonClick)="closeReloadModal()" [disabled]="reloading()">
+            Cancelar
+          </app-button>
+          <app-button
+            variant="default"
+            (buttonClick)="confirmReload()"
+            [disabled]="!selectedCandidateId() || reloading() || candidates().length === 0"
+            [loading]="reloading()">
+            Confirmar Recarga
+          </app-button>
+        </div>
+      </div>
+    </app-modal>
+
+    <!-- Modal de Vista Previa de Documento de Actuación (US-025 / Mejora 9.24) -->
+    @if (previewDoc()) {
+      <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-2 sm:p-6" role="dialog" aria-modal="true" [attr.aria-label]="previewDoc()?.nombre">
+        <div class="relative flex flex-col w-full max-w-4xl h-[90vh] rounded-xl bg-card border border-border shadow-2xl overflow-hidden">
+          <!-- Header -->
+          <div class="flex items-center justify-between border-b border-border px-4 py-3 bg-muted/40 shrink-0">
+            <div class="flex items-center gap-2 min-w-0 pr-4">
+              <svg class="size-4 shrink-0 text-brand" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <span class="truncate text-sm font-semibold text-foreground">{{ previewDoc()?.nombre }}</span>
+            </div>
+            <div class="flex items-center gap-2 shrink-0">
+              @if (previewState() === 'READY' && !isMobile()) {
+                <button
+                  type="button"
+                  (click)="downloadPreviewDoc()"
+                  class="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-brand-foreground hover:bg-brand/90 transition-colors cursor-pointer">
+                  <svg class="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                  <span>Descargar</span>
+                </button>
+              }
+              <button
+                type="button"
+                (click)="closePreviewModal()"
+                class="inline-flex size-8 items-center justify-center rounded-lg border border-border bg-background text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
+                title="Cerrar vista previa">
+                <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Content -->
+          <div class="flex flex-1 flex-col items-center justify-center p-4 bg-muted/20 min-h-0">
+            @if (previewState() === 'LOADING') {
+              <div class="flex flex-col items-center gap-3 text-center max-w-sm">
+                <svg class="size-8 animate-spin text-brand" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                </svg>
+                <p class="text-sm text-foreground/80 font-medium">
+                  Descargando el documento desde la Rama Judicial… puede tardar unos segundos.
+                </p>
+              </div>
+            } @else if (previewState() === 'ERROR') {
+              <div class="flex flex-col items-center gap-3 text-center max-w-sm">
+                <div class="size-10 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-600">
+                  <svg class="size-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                </div>
+                <p class="text-sm font-medium text-amber-800 dark:text-amber-300">
+                  {{ previewGone() ? 'La Rama Judicial ya no tiene este documento.' : 'La Rama Judicial no respondió. Intenta de nuevo en unos minutos.' }}
+                </p>
+                @if (!previewGone()) {
+                  <button
+                    type="button"
+                    (click)="retryPreview()"
+                    class="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer">
+                    <svg class="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    <span>Reintentar</span>
+                  </button>
+                }
+              </div>
+            } @else if (previewState() === 'READY') {
+              @if (isMobile()) {
+                <div class="flex flex-col items-center gap-3 text-center max-w-sm">
+                  <p class="text-sm text-foreground/80 font-medium">El documento está listo.</p>
+                  <div class="flex gap-2">
+                    <a
+                      [href]="previewBlobUrl()"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-muted transition-colors">
+                      <svg class="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                      </svg>
+                      <span>Abrir</span>
+                    </a>
+                    <button
+                      type="button"
+                      (click)="downloadPreviewDoc()"
+                      class="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-brand-foreground hover:bg-brand/90 transition-colors cursor-pointer">
+                      <svg class="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                      </svg>
+                      <span>Descargar</span>
+                    </button>
+                  </div>
+                </div>
+              } @else {
+                <iframe
+                  [src]="safePreviewUrl()"
+                  [title]="previewDoc()?.nombre || 'Documento Judicial'"
+                  class="w-full h-full rounded-lg border-0 bg-white"
+                ></iframe>
+              }
+            }
+          </div>
+        </div>
+      </div>
+    }
   }
 }

@@ -98,6 +98,7 @@ export class AppComponent {
     if (url.startsWith('/organizacion')) return 'Organización y Equipo';
     if (url.startsWith('/admin/usuarios')) return 'Gestión de Usuarios';
     if (url.startsWith('/admin/organizaciones')) return 'Observabilidad de Organizaciones';
+    if (url.startsWith('/admin/resumen') || url.startsWith('/admin/overview')) return 'Resumen Ejecutivo';
     if (url.startsWith('/admin/scheduler')) return 'Cron & Scheduler';
     if (url.startsWith('/admin/catalogos') || url.startsWith('/catalogos')) return 'Catálogos Maestros';
     if (url.startsWith('/admin/acciones')) return 'Registro de Acciones';

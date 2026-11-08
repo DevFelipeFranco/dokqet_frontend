@@ -11,7 +11,7 @@
 | **Título** | Vigencia de Sesión por Inactividad y Corte Diario a las 3:00 a. m. COT, Activación Idempotente en `/cuenta-activada` sin Auto-Login, Blindaje de Perfil y Gestión de Límites Operativos (HTTP 429) |
 | **Épica** | Seguridad de Sesiones PASETO, Gobernanza de Identidad, Onboarding Seguro y Protección contra Abuso |
 | **Módulos / Rutas Angular** | `src/app/core/auth/`, `src/app/core/interceptors/`, `src/app/features/auth/` (`/registro`, `/iniciar-sesion`, `/cuenta-activada`, `/activacion-pendiente`), `src/app/features/profile/` |
-| **Estado** | `📝 Lista para Desarrollo` |
+| **Estado** | `🚀 Implementada / Verificada` |
 | **Prioridad** | `Alta (Core de Seguridad y Estabilidad Operativa)` |
 | **Tipo** | `Seguridad, Arquitectura de Sesiones y Experiencia de Usuario (Security & UX)` |
 | **Actor Principal** | `Abogado Litigante / Administrador de Firma / Super Administrador / Nuevo Usuario Registrado` |

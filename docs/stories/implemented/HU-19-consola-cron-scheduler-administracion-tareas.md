@@ -4,7 +4,7 @@
 * **Código Equivalente Backend:** `US-018` (`Gestión Dinámica, Observabilidad y Control Operativo de Tareas Cron / Scheduler para Super Administrador`)
 * **Épica:** Backoffice Técnico, Gobernanza Operativa y Observabilidad de Procesos en Segundo Plano
 * **Prioridad:** Alta (Core Operativo y Continuidad de Vigilancia Judicial)
-* **Estado:** ✅ Completada
+* **Estado:** 🚀 Implementada / Verificada
 * **Fecha:** Octubre 2026
 
 ---
@@ -17,7 +17,7 @@
 | **Código Equivalente Backend** | `US-018` |
 | **Título** | Consola de Cron & Scheduler: Planificación Dinámica, Zona Horaria, Telemetría y Ejecución Inmediata para Super Administrador |
 | **Módulo / Rutas Angular** | `src/app/features/admin/scheduler` (`/admin/scheduler`) |
-| **Estado** | `✅ Completada` |
+| **Estado** | `🚀 Implementada / Verificada` |
 | **Prioridad** | `Alta (Core Operativo / Backoffice)` |
 | **Tipo** | `Funcionalidad y Experiencia de Usuario Operativa (Feature & UX/UI)` |
 | **Actor Principal** | `Super Administrador (SUPER_ADMIN - Área Técnica de Dokqet)` |

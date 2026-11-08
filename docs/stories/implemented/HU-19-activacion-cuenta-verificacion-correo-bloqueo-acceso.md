@@ -11,7 +11,7 @@
 | **Título** | Activación Obligatoria de Cuenta por Verificación de Correo Electrónico, Bloqueo Preventivo de Acceso a la Plataforma y Gestión de Reenvío de Enlace |
 | **Épica** | Autenticación, Seguridad y Onboarding de Litigantes |
 | **Módulo / Rutas Angular** | `src/app/features/auth/` (`/registro`, `/iniciar-sesion`, `/verificar-correo`, `/activacion-pendiente`) |
-| **Estado** | `📝 Lista para Desarrollo` |
+| **Estado** | `🚀 Implementada / Verificada` |
 | **Prioridad** | `Alta (Core de Seguridad y Prevención de Cuentas Falsas)` |
 | **Tipo** | `Seguridad y Experiencia de Usuario (Security & UX)` |
 | **Actor Principal** | Abogado Litigante / Administrador de Firma / Nuevo Usuario Registrado |

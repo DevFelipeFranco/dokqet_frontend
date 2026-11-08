@@ -182,3 +182,72 @@ export function formatRelativeTime(date: Date, locale = DEFAULT_LOCALE): string 
   if (Math.abs(diffHours) < 24) return `hace ${Math.abs(diffHours)} h`;
   return formatLocalDate(date, 'date');
 }
+
+/**
+ * Formatea la fecha de consulta judicial (HU-28 / RN-FE-28-01):
+ * - Si fue hoy: "hoy, 6:02 a. m."
+ * - Si fue ayer: "ayer, 4:15 p. m."
+ * - Si fue anterior: fecha corta (ej. "15 oct 2026")
+ * - Si es null/undefined: "Sin consultar"
+ */
+export function formatRelativeConsultationDate(value: string | number | Date | null | undefined): string {
+  const date = parseDate(value);
+  if (!date) return 'Sin consultar';
+
+  const timeStr = new Intl.DateTimeFormat('es-CO', {
+    timeZone: COLOMBIA_TIMEZONE,
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true
+  }).format(date);
+
+  const now = new Date();
+  const dateParts = new Intl.DateTimeFormat('es-CO', {
+    timeZone: COLOMBIA_TIMEZONE,
+    year: 'numeric',
+    month: 'numeric',
+    day: 'numeric'
+  }).formatToParts(date);
+
+  const nowParts = new Intl.DateTimeFormat('es-CO', {
+    timeZone: COLOMBIA_TIMEZONE,
+    year: 'numeric',
+    month: 'numeric',
+    day: 'numeric'
+  }).formatToParts(now);
+
+  const dYear = dateParts.find(p => p.type === 'year')?.value;
+  const dMonth = dateParts.find(p => p.type === 'month')?.value;
+  const dDay = dateParts.find(p => p.type === 'day')?.value;
+
+  const nYear = nowParts.find(p => p.type === 'year')?.value;
+  const nMonth = nowParts.find(p => p.type === 'month')?.value;
+  const nDay = nowParts.find(p => p.type === 'day')?.value;
+
+  if (dYear === nYear && dMonth === nMonth && dDay === nDay) {
+    return `hoy, ${timeStr}`;
+  }
+
+  const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+  const yParts = new Intl.DateTimeFormat('es-CO', {
+    timeZone: COLOMBIA_TIMEZONE,
+    year: 'numeric',
+    month: 'numeric',
+    day: 'numeric'
+  }).formatToParts(yesterday);
+
+  const yYear = yParts.find(p => p.type === 'year')?.value;
+  const yMonth = yParts.find(p => p.type === 'month')?.value;
+  const yDay = yParts.find(p => p.type === 'day')?.value;
+
+  if (dYear === yYear && dMonth === yMonth && dDay === yDay) {
+    return `ayer, ${timeStr}`;
+  }
+
+  return new Intl.DateTimeFormat('es-CO', {
+    timeZone: COLOMBIA_TIMEZONE,
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric'
+  }).format(date);
+}

@@ -3,7 +3,7 @@
 * **ID de Historia:** `HU-17`
 * **Código Equivalente Backend:** `US-016` (o `HU-16-AUTH` en microservicio)
 * **Título:** Regulación y Alerta de Intentos Fallidos de Inicio de Sesión, Interfaz de Cuenta Bloqueada con Contador Regresivo (HTTP 423) y Desbloqueo Administrativo para SuperAdmin.
-* **Estado:** ✅ Completada e Implementada
+* **Estado:** 🚀 Implementada / Verificada
 * **Fecha:** Octubre 2026
 * **Módulos Impactados:**
   * **Core Models (`src/app/core/models/user.model.ts`):** Nuevas interfaces `AccountLockedError`, `UserUnlockResponse`, extensión de modelo `User`.

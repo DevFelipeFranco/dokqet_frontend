@@ -1,0 +1,333 @@
+<div class="space-y-6">
+  <!-- 1. Breadcrumbs de Navegación -->
+  <app-breadcrumbs [items]="breadcrumbs"></app-breadcrumbs>
+
+  <!-- 2. Cabecera Principal -->
+  <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div>
+      <div class="flex items-center gap-2.5">
+        <h1 class="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+          Resumen Ejecutivo de Plataforma
+        </h1>
+        <span class="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary border border-primary/20">
+          Super Admin
+        </span>
+      </div>
+      <p class="mt-1 text-xs sm:text-sm text-muted-foreground">
+        Consolidado transversal de organizaciones, litigantes, procesos vigilados y salud operativa de rondas de sincronización.
+      </p>
+    </div>
+
+    <div class="flex items-center gap-2">
+      <app-button variant="outline" size="sm" (buttonClick)="loadOverview()" [title]="'Actualizar métricas en tiempo real'">
+        <svg class="size-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+        </svg>
+        <span>Actualizar</span>
+      </app-button>
+    </div>
+  </div>
+
+  @if (loading()) {
+    <app-skeleton-card-grid [count]="4" cols="grid-cols-1 sm:grid-cols-2 lg:grid-cols-4"></app-skeleton-card-grid>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="h-48 rounded-2xl border border-border bg-card p-6 animate-pulse"></div>
+      <div class="h-48 rounded-2xl border border-border bg-card p-6 animate-pulse"></div>
+    </div>
+  } @else {
+    @if (error()) {
+      <app-form-alert type="error">
+        <div class="flex items-center justify-between w-full">
+          <span>{{ error() }}</span>
+          <app-button variant="outline" size="sm" (buttonClick)="loadOverview()">Reintentar</app-button>
+        </div>
+      </app-form-alert>
+    }
+
+    <!-- 3. Tarjetas KPI de Métricas Globales -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+      <!-- Total Organizaciones -->
+      <app-stat-card
+        title="Total Organizaciones"
+        [value]="overview()?.totalOrganizations ?? 0"
+        [description]="(overview()?.firmOrganizations ?? 0) + ' firmas colectivas · ' + (overview()?.personalOrganizations ?? 0) + ' personales'"
+        dotColor="bg-blue-600 dark:bg-blue-400">
+      </app-stat-card>
+
+      <!-- Litigantes / Usuarios -->
+      <app-stat-card
+        title="Litigantes y Usuarios"
+        [value]="overview()?.users?.total ?? 0"
+        [description]="(overview()?.users?.active ?? 0) + ' activos · ' + (overview()?.users?.suspended ?? 0) + ' suspendidos'"
+        dotColor="bg-emerald-600 dark:bg-emerald-400">
+      </app-stat-card>
+
+      <!-- Expedientes Judiciales Únicos -->
+      <app-stat-card
+        title="Expedientes Únicos"
+        [value]="overview()?.processes?.distinct ?? 0"
+        [description]="(overview()?.processes?.follows ?? 0) + ' seguimientos multi-tenancy'"
+        dotColor="bg-violet-600 dark:bg-violet-400">
+      </app-stat-card>
+
+      <!-- Vigilancia en Ciclo Diario -->
+      <app-stat-card
+        title="Monitoreo Diario Activo"
+        [value]="overview()?.processes?.monitoredByDay ?? 0"
+        [description]="(overview()?.processes?.instancesDetected ?? 0) + ' instancias secundarias detectadas'"
+        dotColor="bg-amber-600 dark:bg-amber-400">
+      </app-stat-card>
+    </div>
+
+    <!-- 4. Monitor de Salud Operativa de Rondas de Sincronización -->
+    <div class="space-y-3">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-base sm:text-lg font-semibold text-foreground">
+            Salud Operativa de Rondas de Sincronización
+          </h2>
+          <p class="text-xs text-muted-foreground">
+            Estado de ejecución de las tareas automáticas contra los servicios de la Rama Judicial.
+          </p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- Tarjeta: Vigilancia Diaria (UPDATES) -->
+        <div 
+          [class]="'rounded-2xl border p-5 bg-card shadow-xs transition-colors ' + 
+            (overview()?.rounds?.updates?.late ? 'border-destructive/50 bg-destructive/5' : 'border-border')">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="size-2 rounded-full bg-blue-500"></span>
+                <h3 class="text-sm font-bold text-foreground">Vigilancia Diaria de Actuaciones</h3>
+              </div>
+              <p class="text-xs text-muted-foreground mt-0.5">
+                Programación: {{ overview()?.rounds?.updates?.schedule || 'Cron dinámico' }}
+              </p>
+            </div>
+
+            @if (overview()?.rounds?.updates?.late) {
+              <span class="inline-flex items-center gap-1.5 rounded-full bg-destructive/15 border border-destructive/30 px-2.5 py-0.5 text-xs font-semibold text-destructive animate-pulse" title="La última ronda completa superó el límite de tiempo de tolerancia (SLA 14h)">
+                <svg class="size-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                Retraso Operativo (&gt;14h)
+              </span>
+            } @else {
+              <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 px-2.5 py-0.5 text-xs font-semibold text-emerald-800 dark:text-emerald-300">
+                <span class="size-1.5 rounded-full bg-emerald-500"></span>
+                Al día
+              </span>
+            }
+          </div>
+
+          @if (overview()?.rounds?.updates?.latestFull; as latest) {
+            <div class="mt-4 grid grid-cols-3 gap-2.5 border-t border-border/70 pt-3 text-xs">
+              <div>
+                <span class="block text-muted-foreground">Última ronda:</span>
+                <span class="font-medium text-foreground truncate" [title]="formatDate(latest.finishedAt)">
+                  {{ formatDate(latest.finishedAt) }}
+                </span>
+              </div>
+              <div>
+                <span class="block text-muted-foreground">Revisados:</span>
+                <span class="font-semibold text-foreground">
+                  {{ latest.checked }} expedientes
+                </span>
+              </div>
+              <div>
+                <span class="block text-muted-foreground">Novedades / Fallos:</span>
+                <span class="font-medium text-foreground">
+                  <span class="text-emerald-600 dark:text-emerald-400 font-semibold">{{ latest.withChanges }}</span> / 
+                  <span [class]="latest.errors > 0 ? 'text-destructive font-semibold' : 'text-muted-foreground'">{{ latest.errors }}</span>
+                </span>
+              </div>
+            </div>
+          } @else {
+            <p class="mt-3 text-xs text-muted-foreground italic">
+              Sin ejecuciones completas oficiales registradas en el período.
+            </p>
+          }
+        </div>
+
+        <!-- Tarjeta: Revisión de Instancias (INSTANCES) -->
+        <div 
+          [class]="'rounded-2xl border p-5 bg-card shadow-xs transition-colors ' + 
+            (overview()?.rounds?.instances?.late ? 'border-destructive/50 bg-destructive/5' : 'border-border')">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="size-2 rounded-full bg-violet-500"></span>
+                <h3 class="text-sm font-bold text-foreground">Revisión de Nuevas Instancias</h3>
+              </div>
+              <p class="text-xs text-muted-foreground mt-0.5">
+                Programación: {{ overview()?.rounds?.instances?.schedule || 'Semanal / Dinámico' }}
+              </p>
+            </div>
+
+            @if (overview()?.rounds?.instances?.late) {
+              <span class="inline-flex items-center gap-1.5 rounded-full bg-destructive/15 border border-destructive/30 px-2.5 py-0.5 text-xs font-semibold text-destructive">
+                Retraso de Instancias
+              </span>
+            } @else {
+              <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 px-2.5 py-0.5 text-xs font-semibold text-emerald-800 dark:text-emerald-300">
+                <span class="size-1.5 rounded-full bg-emerald-500"></span>
+                Al día
+              </span>
+            }
+          </div>
+
+          @if (overview()?.rounds?.instances?.latestFull; as latest) {
+            <div class="mt-4 grid grid-cols-3 gap-2.5 border-t border-border/70 pt-3 text-xs">
+              <div>
+                <span class="block text-muted-foreground">Última ronda:</span>
+                <span class="font-medium text-foreground truncate" [title]="formatDate(latest.finishedAt)">
+                  {{ formatDate(latest.finishedAt) }}
+                </span>
+              </div>
+              <div>
+                <span class="block text-muted-foreground">Bases revisadas:</span>
+                <span class="font-semibold text-foreground">
+                  {{ latest.checked }} bases
+                </span>
+              </div>
+              <div>
+                <span class="block text-muted-foreground">Detectadas / Fallos:</span>
+                <span class="font-medium text-foreground">
+                  <span class="text-violet-600 dark:text-violet-400 font-semibold">{{ latest.withChanges }}</span> / 
+                  <span [class]="latest.errors > 0 ? 'text-destructive font-semibold' : 'text-muted-foreground'">{{ latest.errors }}</span>
+                </span>
+              </div>
+            </div>
+          } @else {
+            <p class="mt-3 text-xs text-muted-foreground italic">
+              Sin revisiones de instancias registradas en el período.
+            </p>
+          }
+        </div>
+      </div>
+    </div>
+
+    <!-- 5. Tabla de Historial de Rondas (Últimos 7 Días) con Distinción de Rondas Limitadas -->
+    <div class="rounded-2xl border border-border bg-card shadow-xs overflow-hidden">
+      <div class="p-4 sm:p-5 border-b border-border flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+        <div>
+          <h2 class="text-base sm:text-lg font-semibold text-foreground">
+            Historial de Ejecuciones (Últimos 7 Días)
+          </h2>
+          <p class="text-xs text-muted-foreground">
+            Auditoría de rondas programadas y ejecuciones restringidas de prueba (marcadas como Limitadas).
+          </p>
+        </div>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs sm:text-sm">
+          <thead class="bg-muted/50 border-b border-border text-[11px] font-semibold text-muted-foreground uppercase tracking-wider select-none">
+            <tr>
+              <th scope="col" class="py-3 px-4">Tarea / Tópico</th>
+              <th scope="col" class="py-3 px-3">Inicio</th>
+              <th scope="col" class="py-3 px-3">Duración</th>
+              <th scope="col" class="py-3 px-3">Revisados</th>
+              <th scope="col" class="py-3 px-3">Novedades</th>
+              <th scope="col" class="py-3 px-3">Errores</th>
+              <th scope="col" class="py-3 px-3">Estado</th>
+              <th scope="col" class="py-3 px-4 text-right">Clasificación</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-border/60 bg-card">
+            @if (!overview()?.rounds?.historyLast7Days?.length) {
+              <tr>
+                <td colspan="8" class="py-8 text-center text-xs text-muted-foreground italic">
+                  No hay registros de ejecuciones en los últimos 7 días.
+                </td>
+              </tr>
+            } @else {
+              @for (run of overview()?.rounds?.historyLast7Days; track run.runId) {
+                <tr class="hover:bg-muted/30 transition-colors">
+                  <!-- Tarea -->
+                  <td class="py-3 px-4 font-medium text-foreground">
+                    <div class="flex items-center gap-1.5">
+                      <span [class]="'size-2 rounded-full ' + (run.kind === 'UPDATES' ? 'bg-blue-500' : 'bg-violet-500')"></span>
+                      <span>{{ run.kind === 'UPDATES' ? 'Vigilancia diaria' : (run.kind === 'INSTANCES' ? 'Revisión instancias' : 'Publicación estados') }}</span>
+                    </div>
+                  </td>
+
+                  <!-- Inicio -->
+                  <td class="py-3 px-3 text-muted-foreground whitespace-nowrap">
+                    {{ formatDate(run.startedAt) }}
+                  </td>
+
+                  <!-- Duración -->
+                  <td class="py-3 px-3 text-muted-foreground whitespace-nowrap font-mono text-xs">
+                    {{ formatDuration(run.startedAt, run.finishedAt) }}
+                  </td>
+
+                  <!-- Revisados -->
+                  <td class="py-3 px-3 font-semibold text-foreground whitespace-nowrap tabular-nums">
+                    {{ run.checked }}
+                  </td>
+
+                  <!-- Novedades -->
+                  <td class="py-3 px-3 whitespace-nowrap tabular-nums">
+                    @if (run.withChanges > 0) {
+                      <span class="font-semibold text-emerald-600 dark:text-emerald-400">+{{ run.withChanges }}</span>
+                    } @else {
+                      <span class="text-muted-foreground">0</span>
+                    }
+                  </td>
+
+                  <!-- Errores -->
+                  <td class="py-3 px-3 whitespace-nowrap tabular-nums">
+                    @if (run.errors > 0) {
+                      <span class="font-semibold text-destructive">{{ run.errors }}</span>
+                    } @else {
+                      <span class="text-muted-foreground">0</span>
+                    }
+                  </td>
+
+                  <!-- Estado -->
+                  <td class="py-3 px-3 whitespace-nowrap">
+                    @if (run.status === 'COMPLETED') {
+                      <span class="inline-flex items-center rounded-full bg-emerald-500/15 px-2 py-0.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400">
+                        Completada
+                      </span>
+                    } @else if (run.status === 'RUNNING') {
+                      <span class="inline-flex items-center rounded-full bg-blue-500/15 px-2 py-0.5 text-xs font-semibold text-blue-700 dark:text-blue-400">
+                        En curso
+                      </span>
+                    } @else if (run.status === 'CUT' || run.status === 'INTERRUPTED') {
+                      <span class="inline-flex items-center rounded-full bg-destructive/15 px-2 py-0.5 text-xs font-semibold text-destructive">
+                        Interrumpida
+                      </span>
+                    } @else {
+                      <span class="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground">
+                        {{ run.status }}
+                      </span>
+                    }
+                  </td>
+
+                  <!-- Clasificación: Ronda Limitada vs Completa -->
+                  <td class="py-3 px-4 text-right whitespace-nowrap">
+                    @if (run.limited) {
+                      <span 
+                        class="inline-flex items-center gap-1 rounded-full bg-indigo-500/10 border border-indigo-500/30 px-2.5 py-0.5 text-xs font-semibold text-indigo-700 dark:text-indigo-400"
+                        title="Esta ejecución fue restringida a un lote parcial de procesos y no reemplaza la última ronda oficial de referencia">
+                        <svg class="size-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                        Limitada (Prueba)
+                      </span>
+                    } @else {
+                      <span class="inline-flex items-center rounded-full bg-muted/60 border border-border px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
+                        Completa
+                      </span>
+                    }
+                  </td>
+                </tr>
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+</div>

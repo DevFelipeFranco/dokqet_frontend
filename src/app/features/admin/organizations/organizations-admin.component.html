@@ -79,7 +79,7 @@
   <!-- 4. Contenedor de la Tabla Interactiva de Organizaciones -->
   <div class="rounded-2xl border border-border bg-card shadow-xs overflow-hidden">
     <!-- Barra de control y búsqueda -->
-    <div class="p-4 sm:p-5 border-b border-border flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div class="p-4 sm:p-5 border-b border-border flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
       <div>
         <h2 class="text-base sm:text-lg font-semibold text-foreground">
           Firmas Jurídicas y Organizaciones
@@ -89,27 +89,58 @@
         </p>
       </div>
 
-      <!-- Buscador dinámico -->
-      <div class="relative w-full sm:w-80">
-        <svg class="size-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-        </svg>
-        <input
-          type="text"
-          [ngModel]="searchQuery()"
-          (ngModelChange)="onSearchChange($event)"
-          placeholder="Buscar por nombre, NIT o razón..."
-          aria-label="Buscar organizaciones por nombre comercial, razón social o NIT"
-          class="h-9 w-full rounded-xl border border-border bg-background pl-9 pr-9 text-xs sm:text-sm text-foreground placeholder:text-muted-foreground shadow-2xs outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30 transition-all" />
-        @if (searchQuery()) {
+      <div class="flex flex-wrap items-center gap-3">
+        <!-- Buscador dinámico -->
+        <div class="relative w-full sm:w-72">
+          <svg class="size-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          <input
+            type="text"
+            [ngModel]="searchQuery()"
+            (ngModelChange)="onSearchChange($event)"
+            placeholder="Buscar persona, correo, firma o NIT..."
+            aria-label="Buscar organizaciones por persona, correo, nombre comercial o NIT"
+            class="h-9 w-full rounded-xl border border-border bg-background pl-9 pr-9 text-xs text-foreground placeholder:text-muted-foreground shadow-2xs outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30 transition-all" />
+          @if (searchQuery()) {
+            <button
+              type="button"
+              (click)="clearSearch()"
+              aria-label="Limpiar búsqueda"
+              class="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground text-xs p-1 cursor-pointer">
+              ✕
+            </button>
+          }
+        </div>
+
+        <!-- Selector de Modo de Vista: Agrupado por Persona vs Lista General Plana -->
+        <div class="flex items-center rounded-xl border border-border bg-muted/40 p-0.5 shrink-0" role="group" aria-label="Cambiar vista">
           <button
             type="button"
-            (click)="clearSearch()"
-            aria-label="Limpiar búsqueda"
-            class="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground text-xs p-1 cursor-pointer">
-            ✕
+            (click)="viewMode.set('GROUPED')"
+            [class]="'inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold transition-all cursor-pointer ' +
+              (viewMode() === 'GROUPED'
+                ? 'bg-card text-foreground shadow-2xs'
+                : 'text-muted-foreground hover:text-foreground')">
+            <svg class="size-3.5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+            </svg>
+            <span>Por Persona</span>
           </button>
-        }
+
+          <button
+            type="button"
+            (click)="viewMode.set('FLAT')"
+            [class]="'inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold transition-all cursor-pointer ' +
+              (viewMode() === 'FLAT'
+                ? 'bg-card text-foreground shadow-2xs'
+                : 'text-muted-foreground hover:text-foreground')">
+            <svg class="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+            </svg>
+            <span>Lista General</span>
+          </button>
+        </div>
       </div>
     </div>
 
@@ -142,112 +173,307 @@
           </app-empty-state>
         </div>
       } @else {
-        <!-- Tabla interactiva de organizaciones -->
-        <div class="overflow-x-auto">
-          <table class="w-full border-collapse text-left text-xs sm:text-sm" aria-label="Tabla de organizaciones del sistema">
-            <thead>
-              <tr class="border-b border-border bg-muted/40 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider select-none">
-                <th scope="col" class="py-3.5 pl-5 pr-3">Organización</th>
-                <th scope="col" class="py-3.5 px-3">Tipo</th>
-                <th scope="col" class="py-3.5 px-3">NIT / DV</th>
-                <th scope="col" class="py-3.5 px-3">Personas vinculadas</th>
-                <th scope="col" class="py-3.5 px-3">Expedientes vigilados</th>
-                <th scope="col" class="py-3.5 px-3">Fecha registro</th>
-                <th scope="col" class="py-3.5 pl-3 pr-5 text-right">Acciones</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-border/60 bg-card">
-              @for (org of organizations(); track org.id) {
-                <tr class="hover:bg-muted/30 transition-colors">
-                  <!-- Organización (Nombre comercial y Razón social) -->
-                  <td class="py-3.5 pl-5 pr-3">
-                    <div class="flex flex-col">
-                      <span class="font-semibold text-foreground truncate max-w-xs sm:max-w-sm">
-                        {{ org.name }}
-                      </span>
-                      @if (org.legalName && org.legalName !== org.name) {
-                        <span class="text-[11px] text-muted-foreground truncate max-w-xs">
-                          {{ org.legalName }}
-                        </span>
-                      }
-                    </div>
-                  </td>
-
-                  <!-- Tipo: Firma Jurídica vs Persona Natural -->
-                  <td class="py-3.5 px-3 whitespace-nowrap">
-                    @if (org.personType === 'JURIDICA') {
-                      <app-badge variant="brand">Firma Jurídica</app-badge>
-                    } @else {
-                      <app-badge variant="secondary">Persona Natural</app-badge>
-                    }
-                    @if (org.isPersonal) {
-                      <span class="ml-1 text-[10px] text-muted-foreground">(Personal)</span>
-                    }
-                  </td>
-
-                  <!-- NIT / DV -->
-                  <td class="py-3.5 px-3 whitespace-nowrap font-mono text-xs">
-                    {{ formatNit(org) }}
-                  </td>
-
-                  <!-- Personas Vinculadas -->
-                  <td class="py-3.5 px-3 whitespace-nowrap">
-                    <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-muted text-xs font-semibold tabular-nums text-foreground">
-                      <svg class="size-3.5 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                      </svg>
-                      <span>{{ org.membersCount }}</span>
-                      @if (org.activeMembersCount !== org.membersCount) {
-                        <span class="text-[10px] text-muted-foreground font-normal">({{ org.activeMembersCount }} act.)</span>
-                      }
-                    </div>
-                  </td>
-
-                  <!-- Expedientes Vigilados -->
-                  <td class="py-3.5 px-3 whitespace-nowrap">
-                    <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-primary/10 text-xs font-semibold tabular-nums text-primary">
-                      <svg class="size-3.5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
-                      </svg>
-                      <span>{{ org.processesCount }}</span>
-                    </div>
-                  </td>
-
-                  <!-- Fecha de Registro -->
-                  <td class="py-3.5 px-3 whitespace-nowrap text-muted-foreground text-xs tabular-nums">
-                    {{ org.createdAt | date:'dd/MM/yyyy' }}
-                  </td>
-
-                  <!-- Acciones: Inspeccionar Equipo -->
-                  <td class="py-3.5 pl-3 pr-5 text-right whitespace-nowrap">
-                    <app-button
-                      variant="outline"
-                      size="sm"
-                      (buttonClick)="openMembersModal(org)"
-                      [title]="'Inspeccionar quién conforma ' + org.name"
-                      aria-label="Ver equipo de la firma">
-                      <svg class="size-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                      </svg>
-                      <span>Ver equipo</span>
-                    </app-button>
-                  </td>
+        @if (viewMode() === 'GROUPED') {
+          <!-- VISTA 1: TABLA JERÁRQUICA AGRUPADA POR PERSONA / TITULAR (HU-25 / HU-26) -->
+          <div class="overflow-x-auto">
+            <table class="w-full border-collapse text-left text-xs sm:text-sm" aria-label="Tabla de usuarios y sus organizaciones">
+              <thead>
+                <tr class="border-b border-border bg-muted/40 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider select-none">
+                  <th scope="col" class="py-3.5 pl-5 pr-3 min-w-[200px]">Persona / Titular</th>
+                  <th scope="col" class="py-3.5 px-3 min-w-[220px]">Espacio Personal</th>
+                  <th scope="col" class="py-3.5 px-3 min-w-[260px]">Firmas Colectivas</th>
+                  <th scope="col" class="py-3.5 px-3 whitespace-nowrap">Total Expedientes</th>
+                  <th scope="col" class="py-3.5 px-3 whitespace-nowrap">Integrantes</th>
+                  <th scope="col" class="py-3.5 pl-3 pr-5 text-right whitespace-nowrap">Acción</th>
                 </tr>
-              }
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody class="divide-y divide-border/60 bg-card">
+                @for (group of userGroups(); track group.userId) {
+                  <tr class="hover:bg-muted/20 transition-colors">
+                    <!-- Columna 1: Avatar + Nombre + Correo -->
+                    <td class="py-3.5 pl-5 pr-3">
+                      <div class="flex items-center gap-3">
+                        <div class="size-9 rounded-full bg-primary/10 text-primary font-bold flex items-center justify-center text-xs shrink-0 border border-primary/20">
+                          {{ getUserInitials(group.userName) }}
+                        </div>
+
+                        <div class="flex flex-col min-w-0">
+                          <span class="font-bold text-foreground text-sm truncate max-w-xs sm:max-w-sm">
+                            {{ group.userName }}
+                          </span>
+                          <span class="text-[11px] text-muted-foreground truncate max-w-xs">
+                            {{ group.userEmail }}
+                          </span>
+                        </div>
+                      </div>
+                    </td>
+
+                    <!-- Columna 2: Espacio Personal (Botón Claro con Nombre Completo y Acción a Ficha) -->
+                    <td class="py-3.5 px-3">
+                      @if (group.personalWorkspace) {
+                        <a
+                          [routerLink]="['/admin/organizaciones', group.personalWorkspace.id]"
+                          class="group flex items-center justify-between gap-3 rounded-xl border border-border/80 bg-card hover:border-emerald-500/50 hover:bg-emerald-500/[0.04] p-2.5 text-xs transition-all cursor-pointer shadow-2xs hover:shadow-xs"
+                          [title]="'Abrir pantalla de ' + group.personalWorkspace.name">
+                          <div class="flex items-center gap-2.5 min-w-0">
+                            <!-- Icono distintivo de Espacio Personal -->
+                            <div class="size-7 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-500/20 group-hover:bg-emerald-500/20 transition-colors">
+                              <svg class="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                              </svg>
+                            </div>
+
+                            <div class="flex flex-col min-w-0">
+                              <div class="flex items-center gap-1.5 flex-wrap">
+                                <span class="font-bold text-foreground group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors text-xs">
+                                  {{ group.personalWorkspace.name }}
+                                </span>
+                                <span class="rounded-full bg-emerald-500/10 px-1.5 py-0.2 text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
+                                  Personal
+                                </span>
+                              </div>
+
+                              <div class="flex items-center gap-1.5 text-[11px] text-muted-foreground mt-0.5">
+                                <span class="text-primary font-medium">{{ group.personalWorkspace.processesCount }} expedientes</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <!-- Indicador de Acción -->
+                          <div class="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 opacity-80 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all shrink-0 pl-1">
+                            <span class="hidden sm:inline">Ver detalle</span>
+                            <svg class="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                            </svg>
+                          </div>
+                        </a>
+                      } @else {
+                        <span class="text-xs text-muted-foreground italic">Sin espacio personal</span>
+                      }
+                    </td>
+
+                    <!-- Columna 3: Firmas Jurídicas Colectivas (Botón Claro con Nombre Completo y Acción a Ficha) -->
+                    <td class="py-3.5 px-3">
+                      @if (group.organizations.length > 0) {
+                        <div class="flex flex-col gap-2">
+                          @for (org of group.organizations; track org.id) {
+                            <a
+                              [routerLink]="['/admin/organizaciones', org.id]"
+                              class="group flex items-center justify-between gap-3 rounded-xl border border-border/80 bg-card hover:border-indigo-500/50 hover:bg-indigo-500/[0.04] p-2.5 text-xs transition-all cursor-pointer shadow-2xs hover:shadow-xs"
+                              [title]="'Abrir pantalla de firma ' + org.name">
+                              <div class="flex items-center gap-2.5 min-w-0">
+                                <!-- Icono distintivo de Firma Jurídica Colectiva -->
+                                <div class="size-7 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0 border border-indigo-500/20 group-hover:bg-indigo-500/20 transition-colors">
+                                  <svg class="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                                  </svg>
+                                </div>
+
+                                <div class="flex flex-col min-w-0">
+                                  <div class="flex items-center gap-1.5 flex-wrap">
+                                    <!-- Nombre COMPLETO de la firma -->
+                                    <span class="font-bold text-foreground group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors text-xs">
+                                      {{ org.name }}
+                                    </span>
+                                    <span class="rounded-full bg-indigo-500/10 px-1.5 py-0.2 text-[10px] font-semibold text-indigo-700 dark:text-indigo-400 border border-indigo-500/20">
+                                      Firma
+                                    </span>
+                                  </div>
+
+                                  <!-- Metadatos de la firma: miembros, expedientes y NIT -->
+                                  <div class="flex items-center gap-1.5 text-[11px] text-muted-foreground mt-0.5 flex-wrap">
+                                    <span>{{ org.membersCount }} {{ org.membersCount === 1 ? 'persona' : 'personas' }}</span>
+                                    <span>·</span>
+                                    <span class="text-primary font-medium">{{ org.processesCount }} expedientes</span>
+                                    @if (org.nit) {
+                                      <span>·</span>
+                                      <span class="font-mono text-[10px]">NIT {{ formatNit(org) }}</span>
+                                    }
+                                  </div>
+                                </div>
+                              </div>
+
+                              <!-- Indicador de Acción -->
+                              <div class="inline-flex items-center gap-1 text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 opacity-80 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all shrink-0 pl-1">
+                                <span class="hidden sm:inline">Ver detalle</span>
+                                <svg class="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                                </svg>
+                              </div>
+                            </a>
+                          }
+                        </div>
+                      } @else {
+                        <span class="text-xs text-muted-foreground italic">Sin firmas colectivas</span>
+                      }
+                    </td>
+
+                    <!-- Columna 4: Total Expedientes Acumulados -->
+                    <td class="py-3.5 px-3 whitespace-nowrap">
+                      <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-primary/10 text-xs font-semibold tabular-nums text-primary border border-primary/20">
+                        <svg class="size-3.5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                        </svg>
+                        <span>{{ group.totalProcessesCount }} expedientes</span>
+                      </div>
+                    </td>
+
+                    <!-- Columna 5: Integrantes en Firmas -->
+                    <td class="py-3.5 px-3 whitespace-nowrap">
+                      <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-muted text-xs font-semibold tabular-nums text-foreground border border-border">
+                        <svg class="size-3.5 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                        </svg>
+                        <span>{{ group.totalMembersCount }} personas</span>
+                      </div>
+                    </td>
+
+                    <!-- Columna 6: Acción Ficha -->
+                    <td class="py-3.5 pl-3 pr-5 text-right whitespace-nowrap">
+                      @if (group.personalWorkspace || group.organizations.length > 0) {
+                        @let targetOrg = group.organizations[0] || group.personalWorkspace;
+                        <a
+                          [routerLink]="['/admin/organizaciones', targetOrg.id]"
+                          class="inline-flex items-center gap-1.5 rounded-lg border border-primary/20 bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary hover:bg-primary/20 transition-all cursor-pointer shadow-2xs">
+                          <span>Abrir</span>
+                          <svg class="size-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                          </svg>
+                        </a>
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        } @else {
+          <!-- VISTA 2: TABLA PLANA TRADICIONAL DE ORGANIZACIONES (HU-18 / HU-26) -->
+          <div class="overflow-x-auto">
+            <table class="w-full border-collapse text-left text-xs sm:text-sm" aria-label="Tabla de organizaciones del sistema">
+              <thead>
+                <tr class="border-b border-border bg-muted/40 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider select-none">
+                  <th scope="col" class="py-3.5 pl-5 pr-3">Organización</th>
+                  <th scope="col" class="py-3.5 px-3">Tipo</th>
+                  <th scope="col" class="py-3.5 px-3">NIT / DV</th>
+                  <th scope="col" class="py-3.5 px-3">Personas vinculadas</th>
+                  <th scope="col" class="py-3.5 px-3">Expedientes vigilados</th>
+                  <th scope="col" class="py-3.5 px-3">Fecha registro</th>
+                  <th scope="col" class="py-3.5 pl-3 pr-5 text-right">Acciones</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-border/60 bg-card">
+                @for (org of organizations(); track org.id) {
+                  <tr class="hover:bg-muted/30 transition-colors">
+                    <!-- Organización (Nombre comercial y Razón social) -->
+                    <td class="py-3.5 pl-5 pr-3">
+                      <a
+                        [routerLink]="['/admin/organizaciones', org.id]"
+                        class="flex flex-col group cursor-pointer"
+                        [title]="'Abrir pantalla de ' + org.name">
+                        <span class="font-semibold text-foreground group-hover:text-primary transition-colors truncate max-w-xs sm:max-w-sm">
+                          {{ org.name }}
+                        </span>
+                        @if (org.legalName && org.legalName !== org.name) {
+                          <span class="text-[11px] text-muted-foreground truncate max-w-xs">
+                            {{ org.legalName }}
+                          </span>
+                        }
+                      </a>
+                    </td>
+
+                    <!-- Tipo: Firma Jurídica vs Persona Natural -->
+                    <td class="py-3.5 px-3 whitespace-nowrap">
+                      @if (org.personType === 'JURIDICA') {
+                        <app-badge variant="brand">Firma Jurídica</app-badge>
+                      } @else {
+                        <app-badge variant="secondary">Persona Natural</app-badge>
+                      }
+                      @if (org.isPersonal) {
+                        <span class="ml-1 text-[10px] text-muted-foreground">(Personal)</span>
+                      }
+                    </td>
+
+                    <!-- NIT / DV -->
+                    <td class="py-3.5 px-3 whitespace-nowrap font-mono text-xs">
+                      {{ formatNit(org) }}
+                    </td>
+
+                    <!-- Personas Vinculadas -->
+                    <td class="py-3.5 px-3 whitespace-nowrap">
+                      <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-muted text-xs font-semibold tabular-nums text-foreground">
+                        <svg class="size-3.5 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                        </svg>
+                        <span>{{ org.membersCount }}</span>
+                        @if (org.activeMembersCount !== org.membersCount) {
+                          <span class="text-[10px] text-muted-foreground font-normal">({{ org.activeMembersCount }} act.)</span>
+                        }
+                      </div>
+                    </td>
+
+                    <!-- Expedientes Vigilados -->
+                    <td class="py-3.5 px-3 whitespace-nowrap">
+                      <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-primary/10 text-xs font-semibold tabular-nums text-primary">
+                        <svg class="size-3.5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                        </svg>
+                        <span>{{ org.processesCount }}</span>
+                      </div>
+                    </td>
+
+                    <!-- Fecha de Registro -->
+                    <td class="py-3.5 px-3 whitespace-nowrap text-muted-foreground text-xs tabular-nums">
+                      {{ org.createdAt | date:'dd/MM/yyyy' }}
+                    </td>
+
+                    <!-- Acciones: Ficha y Equipo -->
+                    <td class="py-3.5 pl-3 pr-5 text-right whitespace-nowrap">
+                      <div class="inline-flex items-center gap-2 justify-end">
+                        <a
+                          [routerLink]="['/admin/organizaciones', org.id]"
+                          class="inline-flex items-center gap-1 rounded-lg border border-primary/20 bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary hover:bg-primary/20 transition-all cursor-pointer shadow-2xs">
+                          <span>Ver Ficha</span>
+                          <svg class="size-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                          </svg>
+                        </a>
+                        <app-button
+                          variant="outline"
+                          size="sm"
+                          (buttonClick)="openMembersModal(org)"
+                          [title]="'Inspeccionar quién conforma ' + org.name">
+                          <svg class="size-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                          </svg>
+                          <span>Equipo</span>
+                        </app-button>
+                      </div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
 
         <!-- Paginación dinámica -->
         <div class="p-4 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted-foreground">
           <div>
-            Mostrando 
-            <span class="font-semibold text-foreground tabular-nums">{{ (currentPage() * pageSize()) + 1 }}</span>
-            a
-            <span class="font-semibold text-foreground tabular-nums">{{ ((currentPage() + 1) * pageSize() > totalElements()) ? totalElements() : ((currentPage() + 1) * pageSize()) }}</span>
-            de
-            <span class="font-semibold text-foreground tabular-nums">{{ totalElements() }}</span>
-            organizaciones
+            @if (viewMode() === 'GROUPED') {
+              Mostrando
+              <span class="font-semibold text-foreground tabular-nums">{{ userGroups().length }}</span>
+              {{ userGroups().length === 1 ? 'persona con espacios' : 'personas con espacios' }}
+              (Total {{ organizations().length }} organizaciones)
+            } @else {
+              Mostrando 
+              <span class="font-semibold text-foreground tabular-nums">{{ (currentPage() * pageSize()) + 1 }}</span>
+              a
+              <span class="font-semibold text-foreground tabular-nums">{{ ((currentPage() + 1) * pageSize() > totalElements()) ? totalElements() : ((currentPage() + 1) * pageSize()) }}</span>
+              de
+              <span class="font-semibold text-foreground tabular-nums">{{ totalElements() }}</span>
+              organizaciones
+            }
           </div>
 
           <div class="flex items-center gap-2">
